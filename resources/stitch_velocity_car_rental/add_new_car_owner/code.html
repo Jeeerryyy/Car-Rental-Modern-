@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add New Car - LuxeDrive Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#110b02",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-container": "#292113",
+                      "surface-container": "#f0eded",
+                      "on-surface": "#1c1b1c",
+                      "inverse-on-surface": "#f3f0f0",
+                      "on-primary-fixed": "#181c24",
+                      "surface": "#fcf8f9",
+                      "inverse-surface": "#313031",
+                      "surface-dim": "#dcd9da",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "primary": "#080c14",
+                      "background": "#fcf8f9",
+                      "surface-tint": "#5a5e69",
+                      "secondary": "#505f76",
+                      "on-background": "#1c1b1c",
+                      "on-secondary-fixed": "#0b1c30",
+                      "inverse-primary": "#c3c6d2",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#45474b",
+                      "primary-fixed": "#dfe2ef",
+                      "surface-container-high": "#ebe7e8",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "outline-variant": "#c6c6cc",
+                      "surface-variant": "#e5e2e2",
+                      "tertiary-fixed": "#f0e0ca",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-tertiary-container": "#948875",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e5e2e2",
+                      "outline": "#76777c",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#434751",
+                      "secondary-container": "#d0e1fb",
+                      "primary-container": "#1e222b",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#fcf8f9",
+                      "primary-fixed-dim": "#c3c6d2",
+                      "tertiary-fixed-dim": "#d3c4af",
+                      "on-secondary-container": "#54647a",
+                      "surface-container-low": "#f6f3f3",
+                      "on-tertiary-fixed": "#221a0d",
+                      "on-tertiary-fixed-variant": "#4f4535",
+                      "on-primary-container": "#868994"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-padding": "80px",
+                      "container-max": "1280px",
+                      "stack-sm": "8px",
+                      "stack-lg": "32px",
+                      "gutter": "24px",
+                      "stack-md": "16px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Manrope"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "headline-sm": [
+                              "Manrope"
+                      ],
+                      "display-lg": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "label-md": [
+                              "Manrope"
+                      ],
+                      "headline-md": [
+                              "Manrope"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg": [
+                              "56px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body { background-color: #fcf8f9; color: #1c1b1c; }
+    </style>
+</head>
+<body class="flex">
+<!-- SideNavBar Component from JSON -->
+<nav class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 font-manrope text-sm font-semibold h-screen w-72 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 flat flex flex-col p-6 space-y-6 hidden md:flex z-50">
+<div class="mb-8">
+<span class="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">LuxeDrive</span>
+</div>
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200">
+<img alt="Executive User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a confident executive user, wearing a tailored dark suit. Clean, modern corporate lighting with a solid light grey background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFAGJpuhAm47SONGhwphPwms2Dj5NJqlrBWSZh5qOJ1YW2Aq4NfZiK_zi_wi2wmKyhdJCwM88d-8oDKOnys6pZbME9TgdcqDLiGZyIO7BO2yr9No01gvrzWfeEIfwdsk5eUNnZfmQWhjU1Pg6R3Mc6Ty-g01s92BUAkHx09Gc8BC8TQzMFtDGf2R9VTuw0RqrseqebKmkkEOUcDaKgQaKbEt7UfdNpra2k0OzcR0BDstxXdo6S2gVOrW-PC5Qfvv_HkdlptTCPm8h-"/>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-slate-900">LuxeDrive Admin</div>
+<div class="font-label-sm text-label-sm text-slate-500">Premium Management</div>
+</div>
+</div>
+<div class="flex flex-col flex-1 space-y-2">
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
+<span>Manage Bookings</span>
+</a>
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">directions_car</span>
+<span>Fleet Performance</span>
+</a>
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">payments</span>
+<span>Earnings</span>
+</a>
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary-container hover:text-white transition-colors duration-300">
+<span class="material-symbols-outlined text-sm">add</span>
+                Add New Car
+             </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-72 min-h-screen bg-background">
+<!-- Top App Bar for Mobile (Fallback) -->
+<header class="md:hidden bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40">
+<span class="font-headline-sm text-headline-sm font-black uppercase text-slate-900 tracking-tighter">LuxeDrive</span>
+<button class="text-slate-900">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<div class="max-w-[1000px] mx-auto px-4 md:px-8 py-8 md:py-12">
+<div class="mb-10">
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">List Your Vehicle</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Add a new premium vehicle to your executive fleet.</p>
+</div>
+<!-- Bento-style Form Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column (Main Form Details) -->
+<div class="lg:col-span-2 space-y-8">
+<!-- Section 1: Car Details -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-surface-variant">
+<div class="flex items-center gap-3 mb-6 pb-4 border-b border-surface-variant">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="font-label-md text-label-md">1</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Vehicle Details</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Make</label>
+<select class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 px-4 font-body-md text-on-surface appearance-none cursor-pointer">
+<option disabled="" selected="" value="">Select Make</option>
+<option>Mercedes-Benz</option>
+<option>BMW</option>
+<option>Audi</option>
+<option>Porsche</option>
+<option>Land Rover</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Model</label>
+<input class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 px-4 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="e.g. S-Class" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Year</label>
+<select class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 px-4 font-body-md text-on-surface appearance-none cursor-pointer">
+<option>2024</option>
+<option>2023</option>
+<option>2022</option>
+<option>2021</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">License Plate</label>
+<input class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 px-4 font-body-md text-on-surface placeholder:text-outline-variant uppercase" placeholder="ABC-1234" type="text"/>
+</div>
+<div class="md:col-span-2 space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Vehicle Description</label>
+<textarea class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 px-4 font-body-md text-on-surface placeholder:text-outline-variant resize-none" placeholder="Highlight premium features, interior details, etc..." rows="3"></textarea>
+</div>
+</div>
+<!-- Specs sub-grid -->
+<div class="mt-8 pt-6 border-t border-surface-variant">
+<h3 class="font-label-md text-label-md text-on-surface mb-4">Key Specifications</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface p-3 rounded-lg flex items-center gap-3 border border-surface-variant">
+<span class="material-symbols-outlined text-outline">group</span>
+<input class="w-full bg-transparent border-0 p-0 font-body-md text-on-surface focus:ring-0" type="number" value="4"/>
+</div>
+<div class="bg-surface p-3 rounded-lg flex items-center gap-3 border border-surface-variant">
+<span class="material-symbols-outlined text-outline">settings</span>
+<select class="w-full bg-transparent border-0 p-0 font-body-md text-on-surface focus:ring-0 cursor-pointer appearance-none">
+<option>Auto</option>
+<option>Manual</option>
+</select>
+</div>
+<div class="bg-surface p-3 rounded-lg flex items-center gap-3 border border-surface-variant">
+<span class="material-symbols-outlined text-outline">luggage</span>
+<input class="w-full bg-transparent border-0 p-0 font-body-md text-on-surface focus:ring-0" type="number" value="3"/>
+</div>
+<div class="bg-surface p-3 rounded-lg flex items-center gap-3 border border-surface-variant">
+<span class="material-symbols-outlined text-outline">local_gas_station</span>
+<select class="w-full bg-transparent border-0 p-0 font-body-md text-on-surface focus:ring-0 cursor-pointer appearance-none">
+<option>Petrol</option>
+<option>Diesel</option>
+<option>Electric</option>
+<option>Hybrid</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Pricing & Availability -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-surface-variant">
+<div class="flex items-center gap-3 mb-6 pb-4 border-b border-surface-variant">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="font-label-md text-label-md">2</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Pricing &amp; Availability</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Daily Rate ($)</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 font-body-md text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 pl-8 pr-4 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="250" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Discount Weekly (%)</label>
+<div class="relative">
+<input class="w-full bg-surface-container border-0 rounded-lg focus:ring-2 focus:ring-primary py-3 pl-4 pr-8 font-body-md text-on-surface placeholder:text-outline-variant" placeholder="10" type="number"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 font-body-md text-on-surface-variant">%</span>
+</div>
+</div>
+<div class="md:col-span-2 mt-4 space-y-4">
+<div class="flex items-center justify-between p-4 border border-surface-variant rounded-lg bg-surface">
+<div>
+<div class="font-label-md text-label-md text-on-surface">Instant Booking</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Automatically accept bookings without manual review</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-4 border border-surface-variant rounded-lg bg-surface">
+<div>
+<div class="font-label-md text-label-md text-on-surface">Chauffeur Service Available</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Offer this vehicle with an executive driver</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column (Photos & Submit) -->
+<div class="space-y-8">
+<!-- Section 3: Photos -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-surface-variant h-full flex flex-col">
+<div class="flex items-center gap-3 mb-6 pb-4 border-b border-surface-variant">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="font-label-md text-label-md">3</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Vehicle Photos</h2>
+</div>
+<div class="flex-1 flex flex-col gap-4">
+<!-- Primary Upload Zone -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-8 bg-surface text-center cursor-pointer hover:bg-surface-container transition-colors group">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-primary">add_a_photo</span>
+</div>
+<div class="font-label-md text-label-md text-on-surface mb-1">Upload Primary Photo</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">High quality exterior shot. PNG, JPG max 5MB</div>
+</div>
+<!-- Thumbnail Grid (Empty State) -->
+<div class="grid grid-cols-2 gap-3 mt-2">
+<div class="aspect-video bg-surface-container rounded-lg border border-surface-variant flex items-center justify-center text-outline-variant">
+<span class="material-symbols-outlined">directions_car</span>
+</div>
+<div class="aspect-video bg-surface-container rounded-lg border border-surface-variant flex items-center justify-center text-outline-variant">
+<span class="material-symbols-outlined">airline_seat_recline_normal</span>
+</div>
+<div class="aspect-video bg-surface-container rounded-lg border border-surface-variant flex items-center justify-center text-outline-variant">
+<span class="material-symbols-outlined">speed</span>
+</div>
+<div class="aspect-video bg-surface-container rounded-lg border border-dashed border-outline-variant flex items-center justify-center text-outline-variant cursor-pointer hover:bg-surface">
+<span class="material-symbols-outlined text-sm">add</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="mt-8 pt-8 border-t border-surface-variant flex flex-col md:flex-row items-center justify-between gap-4">
+<button class="w-full md:w-auto px-6 py-3 font-label-md text-label-md text-on-surface hover:bg-surface-container rounded-lg transition-colors">
+                    Save as Draft
+                </button>
+<button class="w-full md:w-auto px-8 py-3 bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-2 hover:bg-tertiary-container transition-colors shadow-sm">
+                    Publish Listing
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

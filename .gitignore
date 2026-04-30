@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+build_error.log
+.code-review-graph/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+HANDOVER_CREDENTIALS.md
+CLIENT_HANDOVER.md

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LuxeDrive Admin - Manage Bookings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#110b02",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#292113",
+                        "surface-container": "#f0eded",
+                        "on-surface": "#1c1b1c",
+                        "inverse-on-surface": "#f3f0f0",
+                        "on-primary-fixed": "#181c24",
+                        "surface": "#fcf8f9",
+                        "inverse-surface": "#313031",
+                        "surface-dim": "#dcd9da",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary": "#080c14",
+                        "background": "#fcf8f9",
+                        "surface-tint": "#5a5e69",
+                        "secondary": "#505f76",
+                        "on-background": "#1c1b1c",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-primary": "#c3c6d2",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#45474b",
+                        "primary-fixed": "#dfe2ef",
+                        "surface-container-high": "#ebe7e8",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "outline-variant": "#c6c6cc",
+                        "surface-variant": "#e5e2e2",
+                        "tertiary-fixed": "#f0e0ca",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-tertiary-container": "#948875",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e5e2e2",
+                        "outline": "#76777c",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#434751",
+                        "secondary-container": "#d0e1fb",
+                        "primary-container": "#1e222b",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fcf8f9",
+                        "primary-fixed-dim": "#c3c6d2",
+                        "tertiary-fixed-dim": "#d3c4af",
+                        "on-secondary-container": "#54647a",
+                        "surface-container-low": "#f6f3f3",
+                        "on-tertiary-fixed": "#221a0d",
+                        "on-tertiary-fixed-variant": "#4f4535",
+                        "on-primary-container": "#868994"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-padding": "80px",
+                        "container-max": "1280px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Manrope"],
+                        "display-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "label-md": ["Manrope"],
+                        "headline-md": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "display-lg": ["56px", { "lineHeight": "1.1", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar (Shared Component JSON Source of Truth) -->
+<nav class="h-screen w-72 fixed left-0 top-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col h-full p-6 space-y-6">
+<!-- Header -->
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container">
+<img alt="Executive User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a business executive in a modern, well-lit office environment. The lighting is soft and natural, creating a bright, welcoming light-mode aesthetic. The color palette relies on neutral grays, pristine whites, and deep blacks for the subject's attire. The mood is confident, reliable, and sophisticated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEl8jXbTbHD2Pq36XGRm8NrLmxsYMc5ldYO2eyBWXf1H46YlgFn1P2WpSOleSer96IOxapca64cp2uAJyLsUxi4R9NEtIvU-TGEzB4a5ygam3TNHA6e_O0RQk2XWo3FSYH32aanBbsfL0p3vdkxov2hI9vNEpRoIZx2vI-HxLcrvmTyeuvlX_imrlwCPH8HdYbXPhLp1QVUb1u0Axis7M7mZjH7ZgotnHI6ETMQsh05xoh1Lf6Ehqyvkz4Xa1p01lSSOM9QuABwzsm"/>
+</div>
+<div>
+<h2 class="text-lg font-black text-slate-900 dark:text-white font-manrope">LuxeDrive Admin</h2>
+<p class="font-manrope text-sm font-semibold text-slate-500 dark:text-slate-400">Premium Management</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col space-y-2">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform font-manrope text-sm font-semibold text-slate-900 dark:text-slate-50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Manage Bookings (Active - Determined by Intent) -->
+<a class="flex items-center gap-3 bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-900 rounded-lg p-3 shadow-md font-manrope text-sm font-semibold text-slate-900 dark:text-slate-50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span>Manage Bookings</span>
+</a>
+<!-- Fleet Performance (Inactive) -->
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform font-manrope text-sm font-semibold text-slate-900 dark:text-slate-50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">directions_car</span>
+<span>Fleet Performance</span>
+</a>
+<!-- Earnings (Inactive) -->
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform font-manrope text-sm font-semibold text-slate-900 dark:text-slate-50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">payments</span>
+<span>Earnings</span>
+</a>
+<!-- Settings (Inactive) -->
+<a class="flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 translate-x-0 hover:translate-x-1 transition-transform font-manrope text-sm font-semibold text-slate-900 dark:text-slate-50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="mt-auto pt-6">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined">add</span>
+                Add New Car
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-72 flex-1 flex flex-col p-section-padding max-w-container-max mx-auto w-full">
+<!-- Header -->
+<header class="mb-stack-lg flex items-end justify-between">
+<div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Booking Management</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Comprehensive overview of all executive fleet reservations.</p>
+</div>
+<div class="flex gap-stack-sm">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg bg-surface hover:bg-surface-container transition-colors text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    Export CSV
+                </button>
+</div>
+</header>
+<!-- Control Bar (Filters & Search) -->
+<div class="bg-surface rounded-xl border border-outline-variant p-4 mb-gutter shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-wrap gap-4 items-center justify-between">
+<div class="flex flex-wrap gap-4 items-center w-full md:w-auto flex-1">
+<!-- Search Input -->
+<div class="relative w-full md:w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md font-body-md text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Search by Booking ID or User..." type="text"/>
+</div>
+<!-- Date Range Filter -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 cursor-pointer hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-outline mr-2 text-[18px]">event</span>
+<span class="font-label-md text-label-md text-on-surface">Oct 12, 2024 - Oct 19, 2024</span>
+<span class="material-symbols-outlined text-outline ml-2 text-[18px]">keyboard_arrow_down</span>
+</div>
+</div>
+<!-- Status Tabs -->
+<div class="flex items-center bg-surface-container p-1 rounded-lg border border-outline-variant">
+<button class="px-4 py-1.5 bg-surface shadow-sm rounded-md font-label-sm text-label-sm text-primary">All Bookings</button>
+<button class="px-4 py-1.5 rounded-md font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">Confirmed</button>
+<button class="px-4 py-1.5 rounded-md font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">Pending</button>
+<button class="px-4 py-1.5 rounded-md font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">Cancelled</button>
+</div>
+</div>
+<!-- Data Table Bento Shell -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden flex-1">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse whitespace-nowrap">
+<thead>
+<tr class="bg-surface-container-lowest border-b border-outline-variant">
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Booking ID</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">User</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Vehicle</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Dates &amp; Duration</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Total Price</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: Confirmed -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 font-label-md text-label-md text-primary">#LX-8892A</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container flex-shrink-0">
+<img alt="Client Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a female executive in a bright, modern corporate setting. The lighting is pristine and high-key, reinforcing a clean, light-mode design system. The subject wears dark, tailored clothing that contrasts sharply with the airy, minimalist background. The mood is sophisticated and highly capable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjaZ7zcoDNWBZJu3hEVvjooBi3geYZ-0_nrAuMIwZiiL9LM6ib2oUBOAXUMjbik7qS34PkRDm5BUMeqoC3uDK2_guHSl5a08v9N2FUBRXgjjAVG9iFTImJu9RdTqBwxOG212eZqEFL3g6_lS5XEoi8dbqRHz-RGufR4C9ZX-ZZ-1QawlpA14KHWX7oi4z8zpLji_mNw9G1ikWy8dtgT-UXvbF_LU624qsH3ydDvnZspyR92Wv6dDta1TAzC7wPotDRn4bmMB-40Mv3"/>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Sarah Jenkins</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">sarah.j@corp.com</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 rounded bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img alt="Car Thumbnail" class="w-full h-full object-cover" data-alt="A high-end luxury executive sedan photographed against a stark, modern concrete background. The lighting is deliberate and sophisticated, highlighting the car's metallic grey finish within a bright, minimalist setting. The aesthetic is extremely clean and premium, relying on a palette of neutral greys and stark whites. The mood conveys elite transportation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlgYFXqF8LTcyXkkjIsD8duicK87QSJuc8F3jhZ7NYO2gMDA8vTPckFbEGoMDQ1DIekpjQPkgWVqK2pQPeMHiNVkQVbBvXE_G5N4BDNk-gzlGwiXy5mMmWnI0080cyGSPcZUU6MhK3OOX1oYSA0iMdORJTpY-bwQ23m9xcQsmd-j-2eVTKop3VcfyNoDywl2kvvq9mFNJnPLNv1M76nvpD2cnZmGQ-Ubl7z5brVYjaM54uDEtLkrS5L5jy2R1fJcuWZQZPsYer_opX"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Mercedes-Benz S-Class</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="font-label-md text-label-md text-on-surface">Oct 14 - Oct 16</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">3 Days</div>
+</td>
+<td class="px-6 py-4 font-label-md text-label-md text-primary text-right">$1,450.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container text-on-secondary-container">
+<span class="w-1.5 h-1.5 rounded-full bg-on-secondary-container mr-1.5"></span>
+                                    Confirmed
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded hover:bg-surface-container">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Pending -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 font-label-md text-label-md text-primary">#LX-8893B</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center text-primary font-bold text-xs">
+                                        MR
+                                    </div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Michael Ross</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">m.ross@pearson.net</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 rounded bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img alt="Car Thumbnail" class="w-full h-full object-cover" data-alt="A sleek black luxury SUV parked in a minimalist architectural space. The lighting is cool and diffused, enhancing the vehicle's glossy finish against a bright, airy backdrop. The color scheme is strictly monochromatic, utilizing deep blacks and crisp whites to establish a modern, corporate aesthetic. The overall feeling is powerful and refined." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC4x5UwOYBAUx3ZgRdmIJUkz5KPSPkjm90YrHmzbmjpSiM_1yVjvN8I6z-3EKo1BDGkQpnYqdg08rKbLWKfBcUQQJ5rDapoYzRZvZXdpcqdTAB6XaK6VCjnYHWuM8vk4qFS0m7TpS0s-0rA5LVfdisH_ERbJCUEwksCaAlA8G26MKgSyDbRsm9HBSxSYxw3Ilc1C3YUv69WtQf9ONi8wlDyLbfkt55fTgw0Lo84sRqeiQ8U_Aa_jdY8RnwRFj-3RJzV6WQWNVzbkKh"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Range Rover Autobiography</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="font-label-md text-label-md text-on-surface">Oct 18 - Oct 22</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">5 Days</div>
+</td>
+<td class="px-6 py-4 font-label-md text-label-md text-primary text-right">$2,800.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-tertiary-fixed text-on-tertiary-fixed">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-fixed mr-1.5"></span>
+                                    Pending Approval
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded hover:bg-surface-container">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Cancelled -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer bg-surface-container-lowest/50">
+<td class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">#LX-8885C</td>
+<td class="px-6 py-4 opacity-75">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container flex-shrink-0">
+<img alt="Client Avatar" class="w-full h-full object-cover" data-alt="A clear, professional portrait of a male business client in a highly lit, minimalist environment. The aesthetic is clean and modern, leaning into a light-mode design language with soft shadows. The subject is dressed in sharp, dark professional attire, contrasting nicely with the pale surroundings. The mood is serious but approachable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt5pKR7E-Kx76japXJl6c4bAoPL5v4ArH51ypJ_r8G8ncNXLs1nYc14LvEmEi0baXQwaV_6hGq8rdVtZg_Zgbuwlr76TPN-8sR9G1KaZ779hrImuvlhX0uXV2Z4HtHcXv_TnMCYxa4Oh7WntRDvzbbExukerBDdH3JmTJzeVXBQRU3pP9laEOFRz2smiIuU4WbQrUDNICMYac6UJTLP2KLmdw8TPzu8sg2F-AnRPkAAszytxlabDN4VFu0jADfdY-kkXEhjM4suT62"/>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">David Chen</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">d.chen@ventures.io</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 opacity-75">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 rounded bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img alt="Car Thumbnail" class="w-full h-full object-cover" data-alt="A pristine white executive sports sedan viewed from a low angle in a stark, bright studio environment. The lighting is incredibly soft and even, producing minimal shadows to maintain a flat, modern UI aesthetic. The color palette is almost entirely white and light grey, accented only by the dark tint of the car windows. The mood is sterile, clean, and highly engineered." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhx63F1pQoB9S6U-dOdrw-YOnPntEexuT8VMce69ZEDLyGW8NEYwdRj5PrSYyn45d4_NFHEPsyT_o0XMQWN0wROX41EQ2hDZH75rUzkphLuqnKkw2RGINF064zrxQnMXIJXoc9cGf3VtqLAddV52x3UnLbHH0ZlCvAANGK1um7yUAIGkBp0W_oXvw59T80BIs3I9uJJWvS-zO9JoJte8bvc36fk813-GDARlMW9CifCWKMUBjZQG1blKsI3_HvcHhpmBZ1f5uoopzE"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Porsche Panamera</span>
+</div>
+</td>
+<td class="px-6 py-4 opacity-75">
+<div class="font-label-md text-label-md text-on-surface line-through">Oct 10 - Oct 11</div>
+<div class="font-label-sm text-label-sm text-error">Cancelled by User</div>
+</td>
+<td class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right line-through">$850.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-on-error-container mr-1.5"></span>
+                                    Cancelled
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded hover:bg-surface-container">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Confirmed -->
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4 font-label-md text-label-md text-primary">#LX-8895D</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center text-primary font-bold text-xs">
+                                        EL
+                                    </div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Elena Lawson</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">elawson@designco.com</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 rounded bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img alt="Car Thumbnail" class="w-full h-full object-cover" data-alt="A dark blue luxury executive sedan shown in profile against a bright, minimalist background. The soft, diffuse lighting emphasizes the smooth curves and premium finish of the vehicle, perfectly suited for a light-mode dashboard. The color palette focuses on deep navy against crisp white, creating a sense of professional elegance. The mood is calm and authoritative." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS7hgwvjxWhMaD9TT3o-nHIF4hmeBlenUNpFe_ryHV8zunUC4tU2crjaq15KlCsagfZ-BsLChyR5uNzRYfLvSVKoghOnk6MgXnS53NWyTimZBmgqZPdWSFv2jXlO45JeUUPJH_KoDK1IA0Uz1p29Vj5FgFGAU9Sl8xSPv9ZA241GrsR7E6Q4ziIcRnw43NSFm3Wi3SHTy20mEFoyhMxLnXDu-PPmj8KOB6aIgbGi_pGCWmT7wVgzz_2y89okl3RLsYWF5flpo5V8J8"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">BMW 7 Series</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="font-label-md text-label-md text-on-surface">Oct 25 - Oct 27</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">2 Days</div>
+</td>
+<td class="px-6 py-4 font-label-md text-label-md text-primary text-right">$1,100.00</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary-container text-on-secondary-container">
+<span class="w-1.5 h-1.5 rounded-full bg-on-secondary-container mr-1.5"></span>
+                                    Confirmed
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded hover:bg-surface-container">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+<div class="font-body-md text-body-md text-on-surface-variant">
+                    Showing <span class="font-semibold text-on-surface">1</span> to <span class="font-semibold text-on-surface">4</span> of <span class="font-semibold text-on-surface">128</span> entries
+                </div>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-outline-variant rounded bg-surface text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-50" disabled="">Previous</button>
+<button class="px-3 py-1 border border-outline-variant rounded bg-surface text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">Next</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

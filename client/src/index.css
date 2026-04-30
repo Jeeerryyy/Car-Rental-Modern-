@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── design tokens ────────────────────────────────────────── */
+@layer base {
+  :root {
+    --clr-dark:    #111118;
+    --clr-dark-2:  #1e1e2a;
+    --clr-dark-3:  #2b2b3a;
+    --clr-primary: #111118;
+    --clr-accent:  #e8e0d0;
+    --clr-white:   #ffffff;
+    --clr-off:     #f6f5f2;
+    --clr-off-2:   #edecea;
+    --clr-text:    #111118;
+    --clr-muted:   #595966;
+    --clr-border:  #e2e0db;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --radius-xl: 32px;
+
+    --font-body:    'DM Sans', sans-serif;
+    --font-display: 'Playfair Display', serif;
+
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+    --shadow-md: 0 8px 28px rgba(0,0,0,.09);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--clr-text);
+    background: var(--clr-white);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+}
+
+/* ── shared components ────────────────────────────────────── */
+@layer utilities {
+  .btn-primary {
+    @apply bg-dark text-white border-none rounded-sm px-[30px] py-[14px]
+           font-body text-[15px] font-semibold cursor-pointer
+           flex items-center gap-2 transition-all duration-200
+           no-underline hover:opacity-85 hover:-translate-y-px;
+  }
+  .btn-outline {
+    @apply bg-transparent text-dark border-[1.5px] border-dark rounded-sm
+           px-[26px] py-[14px] font-body text-[15px] font-semibold cursor-pointer
+           flex items-center gap-2 transition-all duration-200
+           no-underline hover:bg-dark hover:text-white;
+  }
+}
+
+/* ── field-input (search widget, forms) ───────────────────── */
+.field-input {
+  @apply w-full pl-10 pr-4 py-3 rounded-md border border-border
+         focus:border-dark outline-none text-sm font-medium;
+}
+
+/* ── marquee ──────────────────────────────────────────────── */
+@keyframes marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 30s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* ── skeleton shimmer ─────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── accessibility ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
