@@ -1,7 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { 
+  ChevronRightIcon, 
+  CheckCircleIcon, 
+  SettingsIcon, 
+  UsersIcon, 
+  FuelIcon, 
+  CalendarIcon,
+  ErrorIcon,
+  LockIcon,
+  ShieldCheckIcon,
+  PhoneIcon,
+  WhatsAppIcon,
+  ArrowRightIcon,
+  StarIcon,
+  TransmissionIcon
+} from '../components/ui/Icons';
+import BookingFlow from '../components/booking/BookingFlow';
 
 const CarDetail = () => {
   const { id } = useParams();
@@ -9,69 +26,23 @@ const CarDetail = () => {
   const { isAuthenticated } = useAuth();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
-  const [success, setSuccess] = useState(null);
-  const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
-    pickupDate: '',
-    dropoffDate: '',
-    pickupLocation: 'Junagadh City',
-    dropoffLocation: 'Junagadh City',
-    paymentMethod: 'UPI',
-    driverRequired: false
-  });
+  const [showBookingFlow, setShowBookingFlow] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fetchCar = async () => {
       try {
         const res = await api.get(`/api/cars/${id}`);
         setCar(res.data);
       } catch {
+        // silent fail — !car state handled in render with not-found UI
       } finally {
         setLoading(false);
       }
     };
     fetchCar();
   }, [id]);
-
-  const days = formData.pickupDate && formData.dropoffDate
-    ? Math.max(1, Math.ceil((new Date(formData.dropoffDate) - new Date(formData.pickupDate)) / (1000 * 60 * 60 * 24)))
-    : 0;
-  const driverCharge = formData.driverRequired ? days * 500 : 0;
-  const totalPrice = car ? (days * car.pricePerDay) + driverCharge : 0;
-
-  const handleBooking = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!isAuthenticated) {
-      navigate('/auth');
-      return;
-    }
-
-    if (new Date(formData.pickupDate) < new Date().setHours(0, 0, 0, 0)) {
-      setError('Pickup date cannot be in the past');
-      return;
-    }
-    if (new Date(formData.dropoffDate) <= new Date(formData.pickupDate)) {
-      setError('Drop-off date must be after pickup date');
-      return;
-    }
-
-    setBooking(true);
-    try {
-      const res = await api.post('/api/bookings', {
-        carId: id,
-        ...formData
-      });
-      setSuccess(res.data.confirmationNumber);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Booking failed. Please try again.');
-    } finally {
-      setBooking(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -83,278 +54,220 @@ const CarDetail = () => {
 
   if (!car) {
     return (
-      <div className="min-h-screen bg-off flex items-center justify-center">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-5xl text-muted mb-4 block">error</span>
-          <h2 className="font-display text-2xl font-bold text-dark mb-2">Vehicle Not Found</h2>
-          <p className="text-muted mb-6">This vehicle may have been removed from our fleet.</p>
-          <Link to="/cars" className="btn-primary inline-flex">Back to Fleet</Link>
+      <div className="min-h-screen bg-off flex items-center justify-center p-4">
+        <div className="bg-white rounded-[var(--radius-xl)] p-12 text-center max-w-md shadow-sm border border-border">
+          <ErrorIcon className="w-16 h-16 text-muted/20 mx-auto mb-6" />
+          <h2 className="text-2xl font-display font-bold text-dark mb-4">Vehicle Not Found</h2>
+          <p className="text-muted mb-8">The vehicle you are looking for might have been retired or the link is incorrect.</p>
+          <Link to="/cars" className="btn-primary px-10">Back to Fleet</Link>
         </div>
       </div>
     );
   }
 
-  const locations = ['Junagadh City', 'Junagadh Airport (IATA: JGA)', 'Keshod Airport', 'Somnath', 'Gir', 'Veraval', 'Porbandar', 'Rajkot'];
+  const features = [
+    { label: 'Verified Vehicle', icon: ShieldCheckIcon, desc: 'Passed 150+ point quality check' },
+    { label: 'Insurance Included', icon: LockIcon, desc: 'Zero depreciation insurance coverage' },
+    { label: '24/7 Roadside', icon: PhoneIcon, desc: 'Instant support anywhere, anytime' },
+    { label: 'Sanitized Car', icon: CheckCircleIcon, desc: 'Deep cleaned before every delivery' }
+  ];
 
   return (
-    <div className="bg-off min-h-screen pt-12 pb-24">
-      <div className="max-w-[1320px] mx-auto px-10">
-
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted mb-8">
+    <div className="min-h-screen bg-off pt-24 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted mb-8">
           <Link to="/" className="hover:text-dark transition-colors">Home</Link>
-          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          <Link to="/cars" className="hover:text-dark transition-colors">Cars</Link>
-          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          <span className="font-semibold text-dark">{car.make} {car.model}</span>
-        </div>
+          <ChevronRightIcon className="w-3 h-3" />
+          <Link to="/cars" className="hover:text-dark transition-colors">Fleet</Link>
+          <ChevronRightIcon className="w-3 h-3" />
+          <span className="text-dark">{car.make} {car.model}</span>
+        </nav>
 
-        {/* Success State */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-[var(--radius-md)] p-8 text-center mb-8">
-            <span className="material-symbols-outlined text-green-600 text-5xl mb-3 block">check_circle</span>
-            <h2 className="font-display text-2xl font-bold text-dark mb-2">Booking Confirmed!</h2>
-            <p className="text-muted mb-1">Your confirmation number is:</p>
-            <p className="font-mono text-2xl font-bold text-dark bg-white px-4 py-2 rounded-md inline-block border border-green-200 mt-2 mb-4">{success}</p>
-            <p className="text-sm text-muted mb-6">A confirmation has been sent. You can view your booking in your profile.</p>
-            <div className="flex gap-4 justify-center">
-              <Link to="/profile" className="btn-primary">View My Bookings</Link>
-              <Link to="/cars" className="btn-outline">Browse More</Link>
-            </div>
-          </div>
-        )}
-
-        {!success && (
-          <div className="flex flex-col lg:flex-row gap-10">
-
-            {/* Left: Car Info */}
-            <div className="flex-1">
-              {/* Main Image */}
-              <div className="bg-white rounded-[var(--radius-lg)] p-8 border border-border shadow-sm mb-6">
-                <div className="relative bg-off rounded-[var(--radius-md)] p-8 flex items-center justify-center h-[400px]">
-                  <img
-                    src={car.images?.[0] || 'https://via.placeholder.com/600x400?text=Car'}
-                    alt={`${car.make} ${car.model}`}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                  <div className={`absolute top-4 left-4 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${car.status === 'Available' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}`}>
-                    {car.status}
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          
+          {/* Left Column: Visuals & Info */}
+          <div className="lg:col-span-8 space-y-12">
+            
+            {/* Image Gallery */}
+            <section className="bg-white rounded-[var(--radius-xl)] p-4 border border-border shadow-sm">
+              <div className="aspect-[16/9] rounded-lg overflow-hidden bg-off relative group">
+                <img 
+                  src={car.images?.[activeImage] || 'https://via.placeholder.com/800x450'} 
+                  className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" 
+                  alt={car.model} 
+                />
+                <div className="absolute top-6 left-6 flex gap-2">
+                  <span className="bg-dark/90 text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Verified</span>
+                  {car.isPopular && <span className="bg-dark text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Popular Choice</span>}
                 </div>
               </div>
-
-              {/* Specs Grid */}
-              <div className="bg-white rounded-[var(--radius-md)] p-8 border border-border shadow-sm mb-6">
-                <h2 className="font-display text-2xl font-bold text-dark mb-6">Vehicle Specifications</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="flex flex-col items-center text-center p-4 bg-off rounded-[var(--radius-sm)] border border-border">
-                    <span className="material-symbols-outlined text-muted text-[28px] mb-2">settings</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Transmission</span>
-                    <span className="font-bold text-dark">{car.transmission}</span>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4 bg-off rounded-[var(--radius-sm)] border border-border">
-                    <span className="material-symbols-outlined text-muted text-[28px] mb-2">event_seat</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Seats</span>
-                    <span className="font-bold text-dark">{car.seats}</span>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4 bg-off rounded-[var(--radius-sm)] border border-border">
-                    <span className="material-symbols-outlined text-muted text-[28px] mb-2">local_gas_station</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Fuel</span>
-                    <span className="font-bold text-dark">{car.fuelType}</span>
-                  </div>
-                  <div className="flex flex-col items-center text-center p-4 bg-off rounded-[var(--radius-sm)] border border-border">
-                    <span className="material-symbols-outlined text-muted text-[28px] mb-2">calendar_today</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Year</span>
-                    <span className="font-bold text-dark">{car.year}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Features */}
-              {car.features && car.features.length > 0 && (
-                <div className="bg-white rounded-[var(--radius-md)] p-8 border border-border shadow-sm mb-6">
-                  <h2 className="font-display text-xl font-bold text-dark mb-4">Features</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {car.features.map((f, i) => (
-                      <span key={i} className="bg-off text-dark px-3 py-1.5 rounded-md text-sm font-semibold border border-border flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
-                        {f}
-                      </span>
-                    ))}
-                  </div>
+              
+              {car.images?.length > 1 && (
+                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
+                  {car.images.map((img, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => setActiveImage(i)}
+                      className={`relative w-24 aspect-square rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImage === i ? 'border-accent shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    >
+                      <img src={img} className="w-full h-full object-cover" alt="" />
+                    </button>
+                  ))}
                 </div>
               )}
+            </section>
 
-              {/* Drive Option & Deposit */}
-              <div className="bg-white rounded-[var(--radius-md)] p-8 border border-border shadow-sm">
-                <h2 className="font-display text-xl font-bold text-dark mb-4">Rental Information</h2>
-                <div className="flex flex-col gap-3 text-sm">
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted font-medium">Category</span>
-                    <span className="font-bold text-dark">{car.category}</span>
+            {/* Title & Stats */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-border">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-display font-bold text-dark mb-4">{car.make} {car.model}</h1>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-1 text-amber-500">
+                    {[1,2,3,4,5].map(s => <StarIcon key={s} className="w-4 h-4 fill-current" />)}
+                    <span className="text-muted text-sm font-bold ml-2">(4.9/5)</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted font-medium">Drive Option</span>
-                    <span className="font-bold text-dark">{car.driveOption}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-muted font-medium">License Plate</span>
-                    <span className="font-mono font-bold text-dark">{car.licensePlate}</span>
-                  </div>
-                  {car.securityDeposit > 0 && (
-                    <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted font-medium">Security Deposit</span>
-                      <span className="font-bold text-dark">₹{Number(car.securityDeposit).toLocaleString('en-IN')}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted px-3 py-1 bg-off rounded-full border border-border">{car.year} Model</span>
+                </div>
+              </div>
+              <div className="text-left md:text-right">
+                <p className="text-sm text-muted font-bold uppercase tracking-widest mb-1">Standard Daily Rate</p>
+                <p className="text-4xl font-display font-bold text-dark">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+
+            {/* Quick Specs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { label: 'Transmission', value: car.transmission, icon: TransmissionIcon },
+                { label: 'Capacity', value: `${car.seats} Seats`, icon: UsersIcon },
+                { label: 'Fuel Type', value: car.fuelType, icon: FuelIcon },
+                { label: 'Kilometers', value: 'Unlimited', icon: SettingsIcon }
+              ].map(spec => (
+                <div key={spec.label} className="bg-white p-6 rounded-2xl border border-border shadow-sm group hover:border-dark transition-all">
+                  <spec.icon className="w-6 h-6 text-muted mb-4 group-hover:text-dark transition-colors" />
+                  <p className="text-[10px] text-muted font-bold uppercase tracking-wider mb-1">{spec.label}</p>
+                  <p className="text-sm font-bold text-dark">{spec.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Description */}
+            <section>
+              <h2 className="text-2xl font-display font-bold text-dark mb-6">About this Vehicle</h2>
+              <p className="text-muted leading-relaxed mb-8">
+                The {car.make} {car.model} offers an exceptional blend of performance, comfort, and state-of-the-art technology. 
+                Perfect for both urban navigation and long-distance cruising, this vehicle is meticulously maintained by our 
+                in-house technicians to ensure the highest standards of safety and reliability for your journey.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {features.map((f, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-off border border-border flex items-center justify-center shrink-0">
+                      <f.icon className="w-6 h-6 text-dark" />
                     </div>
-                  )}
-                  <div className="flex justify-between py-2">
-                    <span className="text-muted font-medium">Daily Rate</span>
-                    <span className="font-bold text-dark text-lg">₹{Number(car.pricePerDay).toLocaleString('en-IN')}/day</span>
+                    <div>
+                      <h4 className="font-bold text-dark text-sm">{f.label}</h4>
+                      <p className="text-xs text-muted mt-1">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column: Sticky Booking Sidebar */}
+          <div className="lg:col-span-4 sticky top-32">
+            <div className="bg-white rounded-[var(--radius-xl)] border border-border p-8 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                <CalendarIcon className="w-32 h-32" />
+              </div>
+
+              <div className="relative z-10">
+                <h3 className="text-xl font-display font-bold text-dark mb-6">Reserve Now</h3>
+                
+                <div className="space-y-6 mb-8">
+                  <div className="p-4 bg-off rounded-xl border border-border">
+                    <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted mb-2">
+                      <span>Rent Type</span>
+                      <span className="text-accent">{car.driveOption}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-bold text-dark">{car.category} Series</p>
+                      <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted">Security Deposit</span>
+                      <span className="font-bold">₹{Number(car.securityDeposit || 5000).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted">Rental Charge</span>
+                      <span className="font-bold">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted">GST (Included)</span>
+                      <span className="font-bold text-emerald-600">0%</span>
+                    </div>
+                    <div className="pt-4 border-t border-border flex justify-between items-end">
+                      <span className="text-dark font-bold">Total Estimate</span>
+                      <span className="text-2xl font-display font-bold text-dark">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => isAuthenticated ? setShowBookingFlow(true) : navigate('/auth')}
+                  className="w-full btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10"
+                >
+                  <span className="text-lg font-bold">Proceed to Booking</span>
+                  <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <p className="text-[10px] text-center text-muted mt-6 font-bold uppercase tracking-widest leading-relaxed">
+                  Instant confirmation • No hidden fees • Verified documents required
+                </p>
+
+                <div className="mt-8 pt-8 border-t border-border space-y-4">
+                  <p className="text-xs font-bold text-muted uppercase tracking-wider">Assistance Required?</p>
+                  <div className="flex gap-4">
+                    <a href="tel:+918792492717" className="flex-1 bg-off hover:bg-dark hover:text-white border border-border rounded-lg p-3 flex flex-col items-center gap-1 transition-all group">
+                      <PhoneIcon className="w-4 h-4 text-muted group-hover:text-white" />
+                      <span className="text-[10px] font-bold uppercase tracking-tighter">Call Hub</span>
+                    </a>
+                    <a href="https://wa.me/918792492717" className="flex-1 bg-off hover:bg-emerald-500 hover:text-white border border-border rounded-lg p-3 flex flex-col items-center gap-1 transition-all group">
+                      <WhatsAppIcon className="w-4 h-4 text-muted group-hover:text-white" />
+                      <span className="text-[10px] font-bold uppercase tracking-tighter">WhatsApp</span>
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right: Booking Form */}
-            <div className="w-full lg:w-[420px] flex-shrink-0">
-              <div className="bg-white rounded-[var(--radius-lg)] border border-border shadow-sm sticky top-[100px]">
-                <div className="p-8 border-b border-border">
-                  <h2 className="font-display text-xl font-bold text-dark mb-1">{car.make} {car.model}</h2>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-dark">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
-                    <span className="text-sm text-muted font-medium">/ day</span>
-                  </div>
-                </div>
-
-                <form onSubmit={handleBooking} className="p-8 flex flex-col gap-5">
-                  {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100">
-                      {error}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-bold text-dark uppercase tracking-wider mb-2">Pick-up Location</label>
-                    <select
-                      className="w-full px-4 py-3 rounded-md border border-border focus:border-dark outline-none text-sm font-medium bg-white"
-                      value={formData.pickupLocation}
-                      onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
-                      required
-                    >
-                      {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-dark uppercase tracking-wider mb-2">Drop-off Location</label>
-                    <select
-                      className="w-full px-4 py-3 rounded-md border border-border focus:border-dark outline-none text-sm font-medium bg-white"
-                      value={formData.dropoffLocation}
-                      onChange={(e) => setFormData({ ...formData, dropoffLocation: e.target.value })}
-                      required
-                    >
-                      {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-dark uppercase tracking-wider mb-2">Pick-up Date</label>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-3 rounded-md border border-border focus:border-dark outline-none text-sm font-medium"
-                        value={formData.pickupDate}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-dark uppercase tracking-wider mb-2">Drop-off Date</label>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-3 rounded-md border border-border focus:border-dark outline-none text-sm font-medium"
-                        value={formData.dropoffDate}
-                        min={formData.pickupDate || new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setFormData({ ...formData, dropoffDate: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-dark uppercase tracking-wider mb-2">Payment Method</label>
-                    <select
-                      className="w-full px-4 py-3 rounded-md border border-border focus:border-dark outline-none text-sm font-medium bg-white"
-                      value={formData.paymentMethod}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                    >
-                      <option value="UPI">UPI</option>
-                      <option value="Card">Card</option>
-                      <option value="NetBanking">Net Banking</option>
-                      <option value="Cash">Cash on Pickup</option>
-                    </select>
-                  </div>
-
-                  {(car.driveOption === 'With Driver' || car.driveOption === 'Both') && (
-                    <label className="flex items-center gap-3 cursor-pointer bg-off p-4 rounded-md border border-border">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-dark"
-                        checked={formData.driverRequired}
-                        onChange={(e) => setFormData({ ...formData, driverRequired: e.target.checked })}
-                      />
-                      <div>
-                        <span className="text-sm font-bold text-dark block">Add Driver</span>
-                        <span className="text-xs text-muted">₹500 extra per day</span>
-                      </div>
-                    </label>
-                  )}
-
-                  {/* Price Summary */}
-                  {days > 0 && (
-                    <div className="bg-off p-4 rounded-md border border-border">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-muted">₹{Number(car.pricePerDay).toLocaleString('en-IN')} × {days} day{days > 1 ? 's' : ''}</span>
-                        <span className="font-semibold text-dark">₹{Number(days * car.pricePerDay).toLocaleString('en-IN')}</span>
-                      </div>
-                      {driverCharge > 0 && (
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted">Driver charge</span>
-                          <span className="font-semibold text-dark">₹{Number(driverCharge).toLocaleString('en-IN')}</span>
-                        </div>
-                      )}
-                      {car.securityDeposit > 0 && (
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-muted">Security deposit (refundable)</span>
-                          <span className="font-semibold text-dark">₹{Number(car.securityDeposit).toLocaleString('en-IN')}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm font-bold text-dark pt-2 border-t border-border mt-2">
-                        <span>Total</span>
-                        <span className="text-lg">₹{Number(totalPrice).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={booking || car.status !== 'Available'}
-                    className="bg-dark text-white font-semibold text-[15px] px-8 py-3.5 rounded-md hover:bg-dark-2 transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {booking ? 'Processing...' : car.status !== 'Available' ? 'Currently Unavailable' : 'Confirm Booking'}
-                  </button>
-
-                  <p className="text-xs text-muted text-center flex items-center justify-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">lock</span>
-                    Secure booking · Free cancellation before pickup
-                  </p>
-                </form>
-              </div>
+            <div className="mt-8 flex items-center gap-4 px-4 text-muted">
+              <ShieldCheckIcon className="w-8 h-8 opacity-40" />
+              <p className="text-[11px] leading-snug font-medium italic">
+                "Your safety is our priority. All Modern Selfdrive vehicles are GPS tracked and come with emergency assistance."
+              </p>
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Booking Flow Modal */}
+      {showBookingFlow && (
+        <BookingFlow 
+          car={car} 
+          onClose={() => setShowBookingFlow(false)} 
+          onComplete={(booking) => {
+            setShowBookingFlow(false);
+            navigate('/profile', { state: { newBooking: booking } });
+          }}
+        />
+      )}
     </div>
   );
 };

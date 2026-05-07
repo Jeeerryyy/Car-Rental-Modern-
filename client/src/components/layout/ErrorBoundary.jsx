@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { WarningIcon } from '../ui/Icons';
 
 export default class ErrorBoundary extends Component {
   state = { hasError: false };
@@ -9,7 +10,9 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[ErrorBoundary]', error, info);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[ErrorBoundary]', error, info);
+    }
   }
 
   render() {
@@ -18,7 +21,7 @@ export default class ErrorBoundary extends Component {
     return (
       <div className="min-h-screen bg-off flex items-center justify-center">
         <div className="text-center max-w-md px-6">
-          <span className="material-symbols-outlined text-6xl text-muted mb-4 block">warning</span>
+          <WarningIcon className="w-16 h-16 text-muted mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold text-dark mb-3">Something went wrong</h1>
           <p className="text-muted mb-8 leading-relaxed">
             An unexpected error occurred. Please try refreshing the page.

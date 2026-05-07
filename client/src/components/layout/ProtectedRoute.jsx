@@ -23,5 +23,18 @@ export default function ProtectedRoute({ children }) {
 }
 
 export function AdminRoute({ children }) {
-  return <AuthGate requireAdmin>{children}</AuthGate>;
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-6 h-6 border-[3px] border-dark border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) return <Navigate to="/owner/login" replace />;
+  if (user?.role !== 'admin') return <Navigate to="/" replace />;
+  
+  return children;
 }

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import api from '../services/api';
+import socket, { connectSocket, disconnectSocket } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -10,6 +11,16 @@ export function AuthProvider({ children }) {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+
+  // Handle socket connections based on auth state
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin') {
+      connectSocket();
+      socket.emit('join-owner-room');
+    } else {
+      disconnectSocket();
+    }
+  }, [isAuthenticated, user?.role]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -42,6 +53,11 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(true);
   }, []);
 
+  const updateUser = useCallback((userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  }, []);
+
   const register = useCallback(async (form) => {
     try {
       const { data } = await api.post('/api/auth/register', form);
@@ -62,6 +78,26 @@ export function AuthProvider({ children }) {
     }
   }, [persist]);
 
+  const ownerLogin = useCallback(async (form) => {
+    try {
+      const { data } = await api.post('/api/auth/owner-login', form);
+      persist(data.token, data.user);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || 'Login failed' };
+    }
+  }, [persist]);
+
+  const googleLogin = useCallback(async (token) => {
+    try {
+      const { data } = await api.post('/api/auth/google', { token });
+      persist(data.token, data.user);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || 'Google login failed' };
+    }
+  }, [persist]);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -70,8 +106,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated, loading, register, login, logout }),
-    [user, isAuthenticated, loading, register, login, logout],
+    () => ({ user, isAuthenticated, loading, register, login, ownerLogin, googleLogin, logout, updateUser }),
+    [user, isAuthenticated, loading, register, login, ownerLogin, googleLogin, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,29 +1,48 @@
-const express  = require('express');
-const router   = express.Router();
-const bcrypt   = require('bcryptjs');
-const jwt      = require('jsonwebtoken');
-const { body } = require('express-validator');
+/**
+ * Auth Routes - User authentication, registration, profile management, OAuth
+ * @module routes/auth
+ */
 
-const User     = require('../models/User');
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { body } = require('express-validator');
+const { OAuth2Client } = require('google-auth-library');
+
+const User = require('../models/User');
 const validate = require('../middleware/validate');
 const { protect } = require('../middleware/authMiddleware');
+const upload = require('../middleware/upload');
 
 const SALT_ROUNDS = 12;
-const TOKEN_TTL   = '7d';
+const TOKEN_TTL = '7d';
 
+/**
+ * Generate JWT token for authenticated user
+ * @param {Object} user - User document
+ * @returns {string} JWT token
+ */
 function signToken(user) {
   return jwt.sign(
     { user: { id: user.id, role: user.role } },
     process.env.JWT_SECRET,
-    { expiresIn: TOKEN_TTL },
+    { expiresIn: TOKEN_TTL, algorithm: 'HS256', issuer: 'modern-selfdrive' },
   );
 }
 
+/**
+ * Sanitize user object for response - excludes sensitive fields
+ * @param {Object} u - User document
+ * @returns {Object} Safe user object
+ */
 function safeUser(u) {
   return { id: u.id, name: u.name, email: u.email, role: u.role, membershipTier: u.membershipTier };
 }
 
-/* ── register ────────────────────────────────────────────── */
+/**
+ * POST /api/auth/register - Create new user account
+ */
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
@@ -34,7 +53,8 @@ router.post('/register', [
   try {
     const { name, email, password, phone } = req.body;
 
-    if (await User.findOne({ email })) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({ success: false, error: 'User already exists' });
     }
 
@@ -44,12 +64,13 @@ router.post('/register', [
 
     res.json({ success: true, token, user: safeUser(user) });
   } catch (err) {
-    console.error('[auth/register]', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
-/* ── login ───────────────────────────────────────────────── */
+/**
+ * POST /api/auth/login - Authenticate user and return JWT
+ */
 router.post('/login', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').notEmpty().withMessage('Password is required'),
@@ -65,24 +86,71 @@ router.post('/login', [
 
     res.json({ success: true, token: signToken(user), user: safeUser(user) });
   } catch (err) {
-    console.error('[auth/login]', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
-/* ── me ──────────────────────────────────────────────────── */
+/**
+ * POST /api/auth/owner-login - Dedicated owner login with credentials from env
+ */
+router.post('/owner-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const OWNER_EMAIL = process.env.OWNER_EMAIL;
+    const OWNER_PASSWORD = process.env.OWNER_PASSWORD;
+    
+    if (!OWNER_EMAIL || !OWNER_PASSWORD) {
+      logger.error('[AUTH] Owner credentials not configured in environment');
+      return res.status(500).json({ success: false, error: 'Server configuration error' });
+    }
+    
+    if (email === OWNER_EMAIL && password === OWNER_PASSWORD) {
+      let user = await User.findOne({ email });
+      
+      if (!user) {
+        const hash = await bcrypt.hash(password, SALT_ROUNDS);
+        user = await User.create({ 
+          name: 'Modern Drive Owner', 
+          email, 
+          password: hash, 
+          role: 'admin',
+          termsAccepted: true 
+        });
+      } else if (user.role !== 'admin') {
+        user.role = 'admin';
+        await user.save();
+      }
+
+      return res.json({ 
+        success: true, 
+        token: signToken(user), 
+        user: { ...safeUser(user), termsAccepted: user.termsAccepted } 
+      });
+    }
+
+    res.status(401).json({ success: false, error: 'Unauthorized Access' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/auth/me - Get current authenticated user profile
+ */
 router.get('/me', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password -resetOtp -resetOtpExpiry');
+    const user = await User.findById(req.user._id).select('-password -resetOtp -resetOtpExpiry');
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
     res.json(user);
   } catch (err) {
-    console.error('[auth/me]', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
-/* ── profile update ──────────────────────────────────────── */
+/**
+ * PATCH /api/auth/profile - Update user profile fields
+ */
 router.patch('/profile', protect, [
   body('name').optional().trim().isLength({ min: 2 }),
   body('phone').optional().trim(),
@@ -91,12 +159,12 @@ router.patch('/profile', protect, [
 ], async (req, res) => {
   try {
     const fields = {};
-    ['name', 'phone', 'licenseNumber'].forEach((k) => {
-      if (req.body[k] !== undefined) fields[k] = req.body[k];
+    ['name', 'phone', 'licenseNumber'].forEach((key) => {
+      if (req.body[key] !== undefined) fields[key] = req.body[key];
     });
 
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      req.user._id,
       { $set: fields },
       { new: true },
     ).select('-password -resetOtp -resetOtpExpiry');
@@ -104,12 +172,13 @@ router.patch('/profile', protect, [
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
     res.json(user);
   } catch (err) {
-    console.error('[auth/profile]', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
-/* ── forgot password (OTP) ───────────────────────────────── */
+/**
+ * POST /api/auth/forgot-password - Request password reset OTP
+ */
 router.post('/forgot-password', [
   body('email').isEmail().normalizeEmail(),
   validate,
@@ -125,19 +194,20 @@ router.post('/forgot-password', [
     user.resetOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    // In production, wire up an email/SMS transport here
+    // Dev mode OTP logging - remove in production
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[reset] OTP for ${req.body.email}: ${otp}`);
+      process.stdout.write(`[DEV] OTP for ${req.body.email}: ${otp}\n`);
     }
 
     res.json({ success: true, message: genericMsg });
   } catch (err) {
-    console.error('[auth/forgot]', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
-/* ── reset password ──────────────────────────────────────── */
+/**
+ * POST /api/auth/reset-password - Reset password using OTP
+ */
 router.post('/reset-password', [
   body('email').isEmail().normalizeEmail(),
   body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
@@ -167,7 +237,118 @@ router.post('/reset-password', [
 
     res.json({ success: true, message: 'Password reset — you can now sign in.' });
   } catch (err) {
-    console.error('[auth/reset]', err.message);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+/**
+ * POST /api/auth/google - Google OAuth authentication
+ */
+router.post('/google', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, error: 'No token provided' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({ name, email, googleId, password: '' });
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      await user.save();
+    }
+
+    const jwtToken = signToken(user);
+    res.json({
+      success: true,
+      token: jwtToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        kyc: user.kyc,
+        termsAccepted: user.termsAccepted
+      },
+    });
+  } catch (err) {
+    res.status(401).json({ success: false, error: 'Invalid Google token' });
+  }
+});
+
+/**
+ * POST /api/auth/kyc - Upload KYC document (driving license)
+ */
+router.post('/kyc', protect, upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    let fileUrl = req.file.path;
+    if (!fileUrl.startsWith('http')) {
+      fileUrl = `/uploads/${req.file.filename}`;
+    }
+
+    user.kyc = { drivingLicenseUrl: fileUrl, status: 'pending' };
+    await user.save();
+
+    res.json({ success: true, kyc: user.kyc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Upload failed' });
+  }
+});
+
+/**
+ * POST /api/auth/accept-terms - Accept terms and conditions
+ */
+router.post('/accept-terms', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.termsAccepted = true;
+    await user.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /api/auth/account - Delete own account
+ */
+router.delete('/account', protect, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ success: true, message: 'Account deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * PATCH /api/auth/remove-admin - Remove admin role (make regular user)
+ */
+router.patch('/remove-admin', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.role = 'user';
+    user.name = user.name.replace(/owner/gi, '').trim() || user.name;
+    await user.save();
+    res.json({ success: true, user });
+  } catch (err) {
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

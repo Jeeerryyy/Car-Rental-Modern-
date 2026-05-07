@@ -1,12 +1,63 @@
-node_modules/
-dist/
+# Environment
 .env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+client/dist/
+client/build/
+
+# Logs
+logs/
 *.log
-build_error.log
-.code-review-graph/
-.DS_Store
-Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pm2.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js
+
+# IDE
 .vscode/
 .idea/
-HANDOVER_CREDENTIALS.md
-CLIENT_HANDOVER.md
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+temp/
+tmp/
+.cache/
+*.tmp
+
+# Uploads
+uploads/
+!uploads/.gitkeep
+
+# PDF Generation
+temp/
+
+# Secrets
+credentials.json
+service-account.json
+
+# Misc
+*.bak
+*.orig
+*.log
