@@ -1,0 +1,212 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Modern Selfdrive Car API",
+    "description": "Self-drive car rental platform API with user authentication, fleet management, booking system, and owner dashboard.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@modernselfdrivecar.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.modernselfdrivecar.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "User authentication and profile management" },
+    { "name": "Cars", "description": "Vehicle fleet listing and details" },
+    { "name": "Bookings", "description": "Booking creation and management" },
+    { "name": "Admin", "description": "Owner/admin operations" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "minLength": 2 },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" },
+          "400": { "description": "Validation error or user already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, returns JWT token" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/cars": {
+      "get": {
+        "tags": ["Cars"],
+        "summary": "List all cars with pagination and filters",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string" } },
+          { "name": "minPrice", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxPrice", "in": "query", "schema": { "type": "number" } },
+          { "name": "transmission", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": { "description": "Returns list of cars with pagination" }
+        }
+      }
+    },
+    "/api/cars/{id}": {
+      "get": {
+        "tags": ["Cars"],
+        "summary": "Get car details by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Returns car details" },
+          "404": { "description": "Car not found" }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Create new booking",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["carId", "pickupDate", "dropoffDate", "pickupLocation", "dropoffLocation"],
+                "properties": {
+                  "carId": { "type": "string" },
+                  "pickupDate": { "type": "string", "format": "date-time" },
+                  "dropoffDate": { "type": "string", "format": "date-time" },
+                  "pickupLocation": { "type": "string" },
+                  "dropoffLocation": { "type": "string" },
+                  "driverRequired": { "type": "boolean" },
+                  "promoCode": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Booking created successfully" },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Car not found" }
+        }
+      }
+    },
+    "/api/bookings/my": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get user's bookings",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Returns user's bookings" }
+        }
+      }
+    },
+    "/api/admin/cars": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all cars (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Returns all cars" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - admin only" }
+        }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Create new car (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Car created" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/admin/bookings": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all bookings (admin, paginated)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Returns bookings with pagination" }
+        }
+      }
+    },
+    "/api/admin/analytics": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get dashboard analytics",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Returns analytics data" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
