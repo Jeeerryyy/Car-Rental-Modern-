@@ -61,3 +61,11 @@ service-account.json
 *.bak
 *.orig
 *.log
+
+# Design assets
+_stitch_extracted/
+*.zip
+
+# Planning
+.planning/
+.code-review-graph/
