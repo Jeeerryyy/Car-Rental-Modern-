@@ -133,7 +133,6 @@ const seedCars = [
   }
 ];
 
-const User = require('./models/User');
 const Booking = require('./models/Booking');
 
 const seedDB = async () => {
@@ -149,53 +148,7 @@ const seedDB = async () => {
     const createdCars = await Car.insertMany(seedCars);
     console.log(`Added ${createdCars.length} Modern Selfdrive Cars`);
 
-    // Find the admin user to attach some bookings to, or create a dummy user
-    let user = await User.findOne({ email: 'admin@modernselfdrivecar.com' });
-    if (!user) {
-      console.log('Admin user not found. Skipping booking generation.');
-    } else {
-      const demoBookings = [
-        {
-          carId: createdCars[0]._id,
-          userId: user._id,
-          pickupDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-          dropoffDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-          pickupLocation: 'Airport',
-          dropoffLocation: 'Downtown',
-          totalPrice: 3600,
-          status: 'Completed',
-          confirmationNumber: 'MDS-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-          paymentStatus: 'Paid',
-          rating: 5,
-        },
-        {
-          carId: createdCars[2]._id,
-          userId: user._id,
-          pickupDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // yesterday
-          dropoffDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // tomorrow
-          pickupLocation: 'Downtown',
-          dropoffLocation: 'Airport',
-          totalPrice: 5400,
-          status: 'Active',
-          confirmationNumber: 'MDS-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-          paymentStatus: 'Paid',
-        },
-        {
-          carId: createdCars[4]._id,
-          userId: user._id,
-          pickupDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-          dropoffDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-          pickupLocation: 'Airport',
-          dropoffLocation: 'Airport',
-          totalPrice: 17500,
-          status: 'Upcoming',
-          confirmationNumber: 'MDS-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-          paymentStatus: 'Pending',
-        }
-      ];
-      await Booking.insertMany(demoBookings);
-      console.log('Added 3 demo bookings for analytics');
-    }
+    console.log('Added ' + createdCars.length + ' cars. Create bookings via API or admin panel.');
 
     process.exit(0);
   } catch (error) {
