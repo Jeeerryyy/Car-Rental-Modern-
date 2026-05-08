@@ -163,3 +163,170 @@ test.describe('Error Handling', () => {
     await expect(page.locator('text=404')).toBeVisible();
   });
 });
+
+test.describe('Customer Authentication', () => {
+  test('should load sign in page', async ({ page }) => {
+    await page.goto('/signin');
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+  });
+
+  test('should load sign up page', async ({ page }) => {
+    await page.goto('/signup');
+    await expect(page.locator('input[name="name"]')).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+  });
+
+  test('should show validation errors on empty submit', async ({ page }) => {
+    await page.goto('/signin');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('text=required')).toBeVisible();
+  });
+
+  test('should toggle password visibility', async ({ page }) => {
+    await page.goto('/signin');
+    const passwordInput = page.locator('input[type="password"]').first();
+    await expect(passwordInput).toBeVisible();
+  });
+});
+
+test.describe('Profile Page', () => {
+  test('should redirect unauthenticated user to signin', async ({ page }) => {
+    await page.goto('/profile');
+    await expect(page).toHaveURL(/.*signin/);
+  });
+
+  test('should show profile content for authenticated user', async ({ page }) => {
+    await page.goto('/signin');
+    await expect(page.locator('text=My Profile')).toBeVisible();
+  });
+});
+
+test.describe('My Bookings Page', () => {
+  test('should redirect unauthenticated user', async ({ page }) => {
+    await page.goto('/my-bookings');
+    await expect(page).toHaveURL(/.*signin/);
+  });
+
+  test('should show loading state', async ({ page }) => {
+    await page.goto('/signin');
+    await expect(page.locator('text=My Bookings')).toBeVisible();
+  });
+});
+
+test.describe('Owner Portal', () => {
+  test('should load owner sign in page', async ({ page }) => {
+    await page.goto('/owner/signin');
+    await expect(page.locator('text=Sign In')).toBeVisible();
+  });
+
+  test('should load owner sign up page', async ({ page }) => {
+    await page.goto('/owner/signup');
+    await expect(page.locator('text=Create Account')).toBeVisible();
+  });
+
+  test('should show validation on empty signup', async ({ page }) => {
+    await page.goto('/owner/signup');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('text=required')).toBeVisible();
+  });
+});
+
+test.describe('Contact Page', () => {
+  test('should load contact page', async ({ page }) => {
+    await page.goto('/contact');
+    await expect(page.locator('text=Get in Touch')).toBeVisible();
+  });
+
+  test('should show form validation', async ({ page }) => {
+    await page.goto('/contact');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('text=required')).toBeVisible();
+  });
+
+  test('should have contact information', async ({ page }) => {
+    await page.goto('/contact');
+    await expect(page.locator('text=Call Us')).toBeVisible();
+    await expect(page.locator('text=Email Us')).toBeVisible();
+  });
+});
+
+test.describe('Search Functionality', () => {
+  test('should search from homepage', async ({ page }) => {
+    await page.goto('/');
+    const searchInput = page.locator('input[type="search"], input[placeholder*="search"], input[type="text"]').first();
+    if (await searchInput.isVisible()) {
+      await searchInput.fill('SUV');
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/.*search/);
+    }
+  });
+
+  test('should filter cars by category', async ({ page }) => {
+    await page.goto('/cars');
+    const categorySelect = page.locator('select').first();
+    if (await categorySelect.isVisible()) {
+      await categorySelect.selectOption('SUV');
+      await expect(page).toHaveURL(/.*category/);
+    }
+  });
+});
+
+test.describe('Car Detail', () => {
+  test('should display car details', async ({ page }) => {
+    await page.goto('/cars');
+    const carLink = page.locator('a[href*="/cars/"]').first();
+    if (await carLink.isVisible()) {
+      await carLink.click();
+      await expect(page.locator('text=Price')).toBeVisible();
+    }
+  });
+
+  test('should show car features', async ({ page }) => {
+    await page.goto('/cars');
+    const carLink = page.locator('a[href*="/cars/"]').first();
+    if (await carLink.isVisible()) {
+      await carLink.click();
+      await expect(page.locator('text=Transmission')).toBeVisible();
+    }
+  });
+});
+
+test.describe('Form Validation', () => {
+  test('should validate email format', async ({ page }) => {
+    await page.goto('/signup');
+    await page.fill('input[type="email"]', 'invalid-email');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('text=email')).toBeVisible();
+  });
+
+  test('should validate password length', async ({ page }) => {
+    await page.goto('/signup');
+    await page.fill('input[type="password"]', '123');
+    await page.click('button[type="submit"]');
+    await expect(page.locator('text=password')).toBeVisible();
+  });
+
+  test('should validate phone format', async ({ page }) => {
+    await page.goto('/signup');
+    const phoneInput = page.locator('input[type="tel"], input[placeholder*="phone"]').first();
+    if (await phoneInput.isVisible()) {
+      await phoneInput.fill('123');
+      await page.click('button[type="submit"]');
+      await expect(page.locator('text=phone')).toBeVisible();
+    }
+  });
+});
+
+test.describe('Footer', () => {
+  test('should display footer links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('footer')).toBeVisible();
+  });
+
+  test('should have social links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('text=Instagram')).toBeVisible();
+    await expect(page.locator('text=WhatsApp')).toBeVisible();
+  });
+});

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import axiosInstance from '../api/axiosInstance';
 import CarCard from '../components/ui/CarCard';
 import {
   FilterIcon,
@@ -45,7 +45,7 @@ const Cars = () => {
       setLoading(true);
       setError(null);
       try {
-        let query = `/api/cars?maxPrice=${committedFilters.maxPrice}&limit=60`;
+        let query = `/cars?maxPrice=${committedFilters.maxPrice}&limit=60`;
         if (committedFilters.transmission) query += `&transmission=${committedFilters.transmission}`;
         if (committedFilters.fuelType)     query += `&fuelType=${committedFilters.fuelType}`;
         if (committedFilters.driveOption)  query += `&driveOption=${committedFilters.driveOption}`;

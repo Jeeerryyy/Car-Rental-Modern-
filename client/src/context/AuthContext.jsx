@@ -1,120 +1,80 @@
-import { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import api from '../services/api';
-import socket, { connectSocket, disconnectSocket } from '../services/socket';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../api/axiosInstance';
+import toast from 'react-hot-toast';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('user')); }
-    catch { return null; }
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+export const useAuth = () => useContext(AuthContext);
 
-  // Handle socket connections based on auth state
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user is already logged in on mount
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'admin') {
-      connectSocket();
-      socket.emit('join-owner-room');
-    } else {
-      disconnectSocket();
-    }
-  }, [isAuthenticated, user?.role]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { setLoading(false); return; }
-
-    let cancelled = false;
-    api.get('/api/auth/me')
-      .then((res) => {
-        if (cancelled) return;
-        localStorage.setItem('user', JSON.stringify(res.data));
-        setUser(res.data);
-        setIsAuthenticated(true);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+    const checkAuth = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (response.success && response.data.user) {
+          setUser(response.data.user);
+        }
+      } catch (error) {
+        // Silently fail, user is just not logged in
         setUser(null);
-        setIsAuthenticated(false);
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => { cancelled = true; };
+    checkAuth();
   }, []);
 
-  const persist = useCallback((token, userData) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    setIsAuthenticated(true);
-  }, []);
-
-  const updateUser = useCallback((userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-  }, []);
-
-  const register = useCallback(async (form) => {
+  const login = async (credentials) => {
     try {
-      const { data } = await api.post('/api/auth/register', form);
-      persist(data.token, data.user);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Registration failed' };
+      const response = await api.post('/auth/login', credentials);
+      if (response.success) {
+        setUser(response.data.user);
+        toast.success(`Welcome back, ${response.data.user.name.split(' ')[0]}!`);
+        return { success: true, role: response.data.user.role };
+      }
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
-  }, [persist]);
+  };
 
-  const login = useCallback(async (form) => {
+  const register = async (userData) => {
     try {
-      const { data } = await api.post('/api/auth/login', form);
-      persist(data.token, data.user);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Login failed' };
+      const response = await api.post('/auth/register', userData);
+      if (response.success) {
+        setUser(response.data.user);
+        toast.success('Registration successful!');
+        return { success: true, role: response.data.user.role };
+      }
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Registration failed' };
     }
-  }, [persist]);
+  };
 
-  const ownerLogin = useCallback(async (form) => {
+  const logout = async () => {
     try {
-      const { data } = await api.post('/api/auth/owner-login', form);
-      persist(data.token, data.user);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Login failed' };
+      await api.post('/auth/logout');
+      setUser(null);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-  }, [persist]);
+  };
 
-  const googleLogin = useCallback(async (token) => {
-    try {
-      const { data } = await api.post('/api/auth/google', { token });
-      persist(data.token, data.user);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Google login failed' };
-    }
-  }, [persist]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-  }, []);
-
-  const value = useMemo(
-    () => ({ user, isAuthenticated, loading, register, login, ownerLogin, googleLogin, logout, updateUser }),
-    [user, isAuthenticated, loading, register, login, ownerLogin, googleLogin, logout, updateUser],
-  );
+  const value = {
+    user,
+    isLoading,
+    login,
+    register,
+    logout,
+    isAuthenticated: !!user,
+    isOwner: user?.role === 'owner',
+    isCustomer: user?.role === 'customer'
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-}
+};

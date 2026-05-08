@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import axiosInstance from '../api/axiosInstance';
+import toast from 'react-hot-toast';
 import { 
   PhoneIcon, 
   MailIcon, 
   LocationIcon, 
   WhatsAppIcon, 
-  InstagramIcon, 
+  InstagramIcon,
   FacebookIcon,
   MapIcon,
   CheckIcon,
@@ -14,15 +16,26 @@ import {
 const Contact = () => {
   const [formState, setFormState] = useState('idle'); // idle | sending | success
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormState('sending');
-    // Simulate API call
-    setTimeout(() => {
+    
+    const formData = new FormData(e.target);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      message: formData.get('message')
+    };
+
+    try {
+      await axiosInstance.post('/contact', data);
       setFormState('success');
       e.target.reset();
       setTimeout(() => setFormState('idle'), 5000);
-    }, 1500);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send message');
+      setFormState('idle');
+    }
   };
 
   const SOCIAL_LINKS = [

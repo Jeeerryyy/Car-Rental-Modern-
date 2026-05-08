@@ -1,47 +1,39 @@
 import { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import ProtectedRoute, { AdminRoute } from './components/layout/ProtectedRoute';
 import ErrorBoundary from './components/layout/ErrorBoundary';
-import TermsModal from './components/layout/TermsModal';
 import { ExploreIcon } from './components/ui/Icons';
 import { Toaster } from 'react-hot-toast';
 import React from 'react';
-import OwnerLayout from './components/owner/OwnerLayout';
-const OwnerDashboard = React.lazy(() => import('./pages/owner/Dashboard'));
-const OwnerFleet = React.lazy(() => import('./pages/owner/Fleet'));
-const OwnerBookings = React.lazy(() => import('./pages/owner/Bookings'));
-const OwnerCustomers = React.lazy(() => import('./pages/owner/Customers'));
-const OwnerAnalytics = React.lazy(() => import('./pages/owner/Analytics'));
-const OwnerSettings = React.lazy(() => import('./pages/owner/Settings'));
-const OwnerEvents    = React.lazy(() => import('./pages/owner/EventManagement'));
-const OwnerVenues    = React.lazy(() => import('./pages/owner/VenueManagement'));
-const OwnerSchedules = React.lazy(() => import('./pages/owner/ScheduleManagement'));
-const OwnerPromos    = React.lazy(() => import('./pages/owner/Promos'));
-const OwnerAuth      = React.lazy(() => import('./pages/owner/OwnerAuth'));
-const VehicleProfile = React.lazy(() => import('./pages/owner/VehicleProfile'));
+import { AuthProvider } from './context/AuthContext';
+import { CustomerAuthProvider } from './context/CustomerAuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
-// Lazy-loaded pages — all page-level code-split for optimal bundle
+// Lazy-loaded pages — public facing
 const Home              = React.lazy(() => import('./pages/Home'));
-const Auth              = React.lazy(() => import('./pages/Auth'));
 const Cars              = React.lazy(() => import('./pages/Cars'));
 const CarDetail         = React.lazy(() => import('./pages/CarDetail'));
 const DestinationDetail = React.lazy(() => import('./pages/DestinationDetail'));
-const Profile           = React.lazy(() => import('./pages/Profile'));
 const Terms             = React.lazy(() => import('./pages/Terms'));
 const Privacy           = React.lazy(() => import('./pages/Privacy'));
 const Contact           = React.lazy(() => import('./pages/Contact'));
+const Profile           = React.lazy(() => import('./pages/Profile'));
+const MyBookings        = React.lazy(() => import('./pages/MyBookings'));
+const CustomerSignIn    = React.lazy(() => import('./pages/customer/SignIn'));
+const CustomerSignUp    = React.lazy(() => import('./pages/customer/SignUp'));
 
-// Routes where the Navbar and Footer should be completely hidden
-// (full-screen flows, auth page, owner CRM which has its own sidebar)
-const SHELL_HIDDEN_PREFIXES = ['/auth', '/owner'];
-
-function useShellHidden() {
-  const { pathname } = useLocation();
-  return SHELL_HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
+// Lazy-loaded pages — owner CRM portal
+const OwnerLayout    = React.lazy(() => import('./components/owner/OwnerLayout'));
+const Dashboard      = React.lazy(() => import('./pages/owner/Dashboard'));
+const Fleet          = React.lazy(() => import('./pages/owner/Fleet'));
+const Bookings       = React.lazy(() => import('./pages/owner/Bookings'));
+const AddCar         = React.lazy(() => import('./pages/owner/AddCar'));
+const FleetDetail     = React.lazy(() => import('./pages/owner/FleetDetail'));
+const Clients        = React.lazy(() => import('./pages/owner/Clients'));
+const SignIn         = React.lazy(() => import('./pages/owner/SignIn'));
+const SignUp         = React.lazy(() => import('./pages/owner/SignUp'));
+const OwnerNotFound  = React.lazy(() => import('./pages/owner/NotFound'));
 
 function ScrollRestoration() {
   const { hash, pathname } = useLocation();
@@ -56,25 +48,6 @@ function ScrollRestoration() {
   return null;
 }
 
-function ConditionalNavbar() {
-  const hidden = useShellHidden();
-  const { pathname } = useLocation();
-  if (hidden) return null;
-  if (pathname.startsWith('/admin')) return null;
-  return <Navbar />;
-}
-
-function ConditionalFooter() {
-  const { pathname } = useLocation();
-  // Hide footer on auth page, profile (has its own layout), and admin flows
-  const hidden =
-    SHELL_HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) ||
-    pathname.startsWith('/profile') ||
-    pathname.startsWith('/admin');
-  if (hidden) return null;
-  return <Footer />;
-}
-
 function PageLoader() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -84,60 +57,39 @@ function PageLoader() {
   );
 }
 
-function AppShell() {
-  const shellHidden = useShellHidden();
-  const { pathname } = useLocation();
-  // Profile page = full-screen, no top padding (has its own header)
-  const isFullScreen = pathname.startsWith('/profile') || pathname.startsWith('/admin');
+function OwnerPageLoader() {
+  return (
+    <div className="min-h-screen bg-surface flex items-center justify-center" style={{ fontFamily: "'Manrope', sans-serif" }}>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-lg">M</div>
+        <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
+      </div>
+    </div>
+  );
+}
 
+function PublicShell() {
   return (
     <>
-      <ScrollRestoration />
-
-      {/* Accessibility skip link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-dark focus:rounded focus:shadow-lg focus:font-semibold focus:text-sm"
-      >
-        Skip to main content
-      </a>
-
-      <ConditionalNavbar />
-      <TermsModal />
+      <Navbar />
       <Toaster position="top-right" />
 
-      {/* Only add navbar top-padding offset when navbar is visible and not full-screen */}
-      <div className={!shellHidden && !isFullScreen ? 'pt-[72px]' : ''}>
+      {/* Standard top padding for navbar offset */}
+      <div className="pt-[72px]">
         <main id="main-content">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/"                   element={<Home />} />
-              <Route path="/auth"               element={<Auth />} />
               <Route path="/cars"               element={<Cars />} />
               <Route path="/cars/:id"           element={<CarDetail />} />
               <Route path="/contact"            element={<Contact />} />
               <Route path="/destinations/:slug" element={<DestinationDetail />} />
               <Route path="/terms"              element={<Terms />} />
               <Route path="/privacy"            element={<Privacy />} />
-              <Route
-                path="/profile"
-                element={<ProtectedRoute><Profile /></ProtectedRoute>}
-              />
-              {/* Owner CRM Routes */}
-              <Route path="/owner/login" element={<OwnerAuth />} />
-              <Route path="/owner" element={<AdminRoute><OwnerLayout /></AdminRoute>}>
-                <Route index element={<OwnerDashboard />} />
-                <Route path="fleet" element={<OwnerFleet />} />
-                <Route path="fleet/:id" element={<VehicleProfile />} />
-                <Route path="bookings" element={<OwnerBookings />} />
-                <Route path="customers" element={<OwnerCustomers />} />
-                <Route path="analytics" element={<OwnerAnalytics />} />
-                <Route path="settings" element={<OwnerSettings />} />
-                <Route path="promos" element={<OwnerPromos />} />
-                <Route path="events" element={<OwnerEvents />} />
-                <Route path="venues" element={<OwnerVenues />} />
-                <Route path="schedules" element={<OwnerSchedules />} />
-              </Route>
+              <Route path="/signin"             element={<CustomerSignIn />} />
+              <Route path="/signup"            element={<CustomerSignUp />} />
+              <Route path="/profile"            element={<Profile />} />
+              <Route path="/my-bookings"        element={<MyBookings />} />
               <Route
                 path="*"
                 element={
@@ -170,8 +122,47 @@ function AppShell() {
             </Routes>
           </Suspense>
         </main>
-        <ConditionalFooter />
+        <Footer />
       </div>
+    </>
+  );
+}
+
+function AppShell() {
+  return (
+    <>
+      <ScrollRestoration />
+
+      {/* Accessibility skip link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-dark focus:rounded focus:shadow-lg focus:font-semibold focus:text-sm"
+      >
+        Skip to main content
+      </a>
+
+      <Suspense fallback={<OwnerPageLoader />}>
+        <Routes>
+          {/* ── Owner CRM Portal (standalone auth pages) ── */}
+          <Route path="/owner/signin" element={<SignIn />} />
+          <Route path="/owner/signup" element={<SignUp />} />
+
+          {/* ── Owner CRM Portal (layout-wrapped pages) ── */}
+          <Route path="/owner" element={<ProtectedRoute requireOwner><OwnerLayout /></ProtectedRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="fleet" element={<Fleet />} />
+            <Route path="fleet/:id" element={<FleetDetail />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route path="add-car" element={<AddCar />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="*" element={<OwnerNotFound />} />
+          </Route>
+
+          {/* ── Public site (Navbar + Footer shell) ── */}
+          <Route path="/*" element={<PublicShell />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
@@ -181,7 +172,9 @@ export default function App() {
     <Router>
       <ErrorBoundary>
         <AuthProvider>
-          <AppShell />
+          <CustomerAuthProvider>
+            <AppShell />
+          </CustomerAuthProvider>
         </AuthProvider>
       </ErrorBoundary>
     </Router>

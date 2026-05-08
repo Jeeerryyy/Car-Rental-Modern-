@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import axiosInstance from '../../api/axiosInstance';
 import { LocationIcon, MailIcon, PhoneIcon, ArrowRightIcon } from '../ui/Icons';
 
 function Footer() {
@@ -11,7 +11,7 @@ function Footer() {
     e.preventDefault();
     setStatus('loading');
     try {
-      await api.post('/api/newsletter/subscribe', { email });
+      await axiosInstance.post('/newsletter/subscribe', { email });
       setStatus('done');
       setEmail('');
       setTimeout(() => setStatus('idle'), 4000);

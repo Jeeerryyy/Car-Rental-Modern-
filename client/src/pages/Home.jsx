@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchWidget from '../components/ui/SearchWidget';
 import CarCard from '../components/ui/CarCard';
-import api from '../services/api';
+import SEO from '../components/SEO';
+import axiosInstance from '../api/axiosInstance';
 import { 
   CarIcon, 
   LocationIcon, 
@@ -82,14 +83,14 @@ function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    api.get('/api/cars?isPopular=true&limit=3')
+    axiosInstance.get('/cars?isPopular=true&limit=3')
       .then(async (res) => {
         if (cancelled) return;
         let list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
         
         // Fallback: if no popular cars, just get any 3 cars
         if (list.length === 0) {
-          const fallbackRes = await api.get('/api/cars?limit=3');
+          const fallbackRes = await axiosInstance.get('/cars?limit=3');
           list = Array.isArray(fallbackRes.data) ? fallbackRes.data : (fallbackRes.data?.data ?? []);
         }
         
@@ -98,7 +99,7 @@ function Home() {
       .catch(() => { if (!cancelled) setCars([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
-    api.get('/api/reviews/featured')
+    axiosInstance.get('/reviews/featured')
       .then((res) => {
         if (cancelled) return;
         const list = res.data?.data ?? [];

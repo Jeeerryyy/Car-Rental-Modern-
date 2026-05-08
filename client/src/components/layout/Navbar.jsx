@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import {
   PhoneIcon,
-  PersonIcon,
   MenuIcon,
   XIcon,
-  LogOutIcon,
   WhatsAppIcon,
 } from '../ui/Icons';
 
@@ -18,7 +15,6 @@ const NAV_LINKS = [
 ];
 
 function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const drawerRef = useRef(null);
@@ -59,7 +55,6 @@ function Navbar() {
           aria-label="Main navigation"
           className="max-w-[1320px] mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between gap-8"
         >
-          {/* BUG 5 FIX: Clean text-mark logo, no icons, no decoration */}
           <Link to="/" className="no-underline group" aria-label="Modern Selfdrive Car home">
             <span className="text-[17px] font-bold tracking-tight text-dark leading-none">
               Modern Selfdrive Car
@@ -105,28 +100,6 @@ function Navbar() {
                 <WhatsAppIcon className="w-[18px] h-[18px]" />
               </a>
             </div>
-
-            {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <Link
-                  to="/profile"
-                  className="font-semibold text-[14px] text-dark hover:opacity-70 flex items-center gap-1 no-underline"
-                >
-                  <PersonIcon className="w-[18px] h-[18px]" />
-                  {user?.name?.split(' ')[0]}
-                </Link>
-                <button onClick={logout} className="btn-outline !px-4 !py-2 !text-[13px]">
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/auth"
-                className="bg-dark text-white border-none rounded-sm px-6 py-2.5 font-body text-[14px] font-semibold cursor-pointer hover:opacity-85 no-underline"
-              >
-                Sign In
-              </Link>
-            )}
           </div>
 
           {/* Hamburger */}
@@ -199,36 +172,6 @@ function Navbar() {
             <WhatsAppIcon className="w-5 h-5" />
             Chat on WhatsApp
           </a>
-
-          <hr className="border-border my-3" />
-
-          {isAuthenticated ? (
-            <>
-              <Link
-                to="/profile"
-                onClick={close}
-                className="flex items-center gap-3 px-4 py-3 rounded-md text-[15px] font-semibold text-dark hover:bg-off transition-colors no-underline"
-              >
-                <PersonIcon className="w-[18px] h-[18px]" />
-                My Profile
-              </Link>
-              <button
-                onClick={() => { logout(); close(); }}
-                className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-md text-[15px] font-semibold text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOutIcon className="w-[18px] h-[18px]" />
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link
-              to="/auth"
-              onClick={close}
-              className="bg-dark text-white text-center py-3 rounded-md font-semibold text-[15px] no-underline hover:opacity-90 transition-opacity mx-4"
-            >
-              Sign In / Create Account
-            </Link>
-          )}
         </nav>
       </div>
     </>

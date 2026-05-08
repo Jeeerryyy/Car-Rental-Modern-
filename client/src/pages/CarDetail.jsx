@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { 
   ChevronRightIcon, 
   CheckCircleIcon, 
@@ -18,16 +17,18 @@ import {
   StarIcon,
   TransmissionIcon
 } from '../components/ui/Icons';
-import BookingFlow from '../components/booking/BookingFlow';
 
 const CarDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showBookingFlow, setShowBookingFlow] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [bookingData, setBookingData] = useState({
+    startDate: '',
+    endDate: '',
+    notes: ''
+  });
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -36,7 +37,7 @@ const CarDetail = () => {
         const res = await api.get(`/api/cars/${id}`);
         setCar(res.data);
       } catch {
-        // silent fail — !car state handled in render with not-found UI
+        // silent fail
       } finally {
         setLoading(false);
       }
@@ -72,11 +73,36 @@ const CarDetail = () => {
     { label: 'Sanitized Car', icon: CheckCircleIcon, desc: 'Deep cleaned before every delivery' }
   ];
 
+  const handleBookNow = async () => {
+    if (!bookingData.startDate || !bookingData.endDate) {
+      alert('Please select start and end dates');
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      const res = await api.post('/bookings', {
+        carId: car._id,
+        startDate: bookingData.startDate,
+        endDate: bookingData.endDate,
+        notes: bookingData.notes
+      });
+      
+      if (res.success) {
+        alert('Booking created successfully! Redirecting to payment...');
+        // Here we would integrate Razorpay using res.data.razorpayOrder
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-off pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted mb-8">
           <Link to="/" className="hover:text-dark transition-colors">Home</Link>
           <ChevronRightIcon className="w-3 h-3" />
@@ -86,11 +112,7 @@ const CarDetail = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          
-          {/* Left Column: Visuals & Info */}
           <div className="lg:col-span-8 space-y-12">
-            
-            {/* Image Gallery */}
             <section className="bg-white rounded-[var(--radius-xl)] p-4 border border-border shadow-sm">
               <div className="aspect-[16/9] rounded-lg overflow-hidden bg-off relative group">
                 <img 
@@ -98,28 +120,9 @@ const CarDetail = () => {
                   className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" 
                   alt={car.model} 
                 />
-                <div className="absolute top-6 left-6 flex gap-2">
-                  <span className="bg-dark/90 text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Verified</span>
-                  {car.isPopular && <span className="bg-dark text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Popular Choice</span>}
-                </div>
               </div>
-              
-              {car.images?.length > 1 && (
-                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
-                  {car.images.map((img, i) => (
-                    <button 
-                      key={i} 
-                      onClick={() => setActiveImage(i)}
-                      className={`relative w-24 aspect-square rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImage === i ? 'border-accent shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                    >
-                      <img src={img} className="w-full h-full object-cover" alt="" />
-                    </button>
-                  ))}
-                </div>
-              )}
             </section>
 
-            {/* Title & Stats */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-border">
               <div>
                 <h1 className="text-4xl md:text-5xl font-display font-bold text-dark mb-4">{car.make} {car.model}</h1>
@@ -137,7 +140,6 @@ const CarDetail = () => {
               </div>
             </div>
 
-            {/* Quick Specs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { label: 'Transmission', value: car.transmission, icon: TransmissionIcon },
@@ -153,13 +155,11 @@ const CarDetail = () => {
               ))}
             </div>
 
-            {/* Description */}
             <section>
               <h2 className="text-2xl font-display font-bold text-dark mb-6">About this Vehicle</h2>
               <p className="text-muted leading-relaxed mb-8">
                 The {car.make} {car.model} offers an exceptional blend of performance, comfort, and state-of-the-art technology. 
-                Perfect for both urban navigation and long-distance cruising, this vehicle is meticulously maintained by our 
-                in-house technicians to ensure the highest standards of safety and reliability for your journey.
+                Perfect for both urban navigation and long-distance cruising, this vehicle is meticulously maintained.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {features.map((f, i) => (
@@ -177,97 +177,65 @@ const CarDetail = () => {
             </section>
           </div>
 
-          {/* Right Column: Sticky Booking Sidebar */}
           <div className="lg:col-span-4 sticky top-32">
             <div className="bg-white rounded-[var(--radius-xl)] border border-border p-8 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
-                <CalendarIcon className="w-32 h-32" />
-              </div>
-
               <div className="relative z-10">
-                <h3 className="text-xl font-display font-bold text-dark mb-6">Reserve Now</h3>
-                
+                <h3 className="text-xl font-display font-bold text-dark mb-6">Inquiry & Booking</h3>
                 <div className="space-y-6 mb-8">
-                  <div className="p-4 bg-off rounded-xl border border-border">
-                    <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted mb-2">
-                      <span>Rent Type</span>
-                      <span className="text-accent">{car.driveOption}</span>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted mb-2 block">Start Date</label>
+                      <input 
+                        type="date" 
+                        value={bookingData.startDate}
+                        onChange={e => setBookingData({...bookingData, startDate: e.target.value})}
+                        className="w-full bg-off border border-border rounded-lg px-4 py-3 font-bold text-dark focus:border-dark outline-none transition-colors"
+                      />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-bold text-dark">{car.category} Series</p>
-                      <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted mb-2 block">End Date</label>
+                      <input 
+                        type="date" 
+                        value={bookingData.endDate}
+                        onChange={e => setBookingData({...bookingData, endDate: e.target.value})}
+                        className="w-full bg-off border border-border rounded-lg px-4 py-3 font-bold text-dark focus:border-dark outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted mb-2 block">Notes (Optional)</label>
+                      <textarea 
+                        value={bookingData.notes}
+                        onChange={e => setBookingData({...bookingData, notes: e.target.value})}
+                        className="w-full bg-off border border-border rounded-lg px-4 py-3 font-bold text-dark focus:border-dark outline-none transition-colors resize-none"
+                        rows="2"
+                        placeholder="Any special requests?"
+                      ></textarea>
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted">Security Deposit</span>
-                      <span className="font-bold">₹{Number(car.securityDeposit || 5000).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted">Rental Charge</span>
-                      <span className="font-bold">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted">GST (Included)</span>
-                      <span className="font-bold text-emerald-600">0%</span>
-                    </div>
-                    <div className="pt-4 border-t border-border flex justify-between items-end">
-                      <span className="text-dark font-bold">Total Estimate</span>
-                      <span className="text-2xl font-display font-bold text-dark">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
-                    </div>
+                  <div className="pt-4 border-t border-border flex justify-between items-end">
+                    <span className="text-dark font-bold">Daily Estimate</span>
+                    <span className="text-2xl font-display font-bold text-dark">₹{Number(car.pricePerDay).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 <button 
-                  onClick={() => isAuthenticated ? setShowBookingFlow(true) : navigate('/auth')}
-                  className="w-full btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10"
+                  onClick={handleBookNow}
+                  disabled={isBooking}
+                  className="w-full btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10 disabled:opacity-50"
                 >
-                  <span className="text-lg font-bold">Proceed to Booking</span>
+                  <LockIcon className="w-5 h-5" />
+                  <span className="text-lg font-bold">{isBooking ? 'Processing...' : 'Proceed to Checkout'}</span>
                   <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
                 <p className="text-[10px] text-center text-muted mt-6 font-bold uppercase tracking-widest leading-relaxed">
-                  Instant confirmation • No hidden fees • Verified documents required
+                  Fast confirmation • No hidden fees • Premium service
                 </p>
-
-                <div className="mt-8 pt-8 border-t border-border space-y-4">
-                  <p className="text-xs font-bold text-muted uppercase tracking-wider">Assistance Required?</p>
-                  <div className="flex gap-4">
-                    <a href="tel:+918792492717" className="flex-1 bg-off hover:bg-dark hover:text-white border border-border rounded-lg p-3 flex flex-col items-center gap-1 transition-all group">
-                      <PhoneIcon className="w-4 h-4 text-muted group-hover:text-white" />
-                      <span className="text-[10px] font-bold uppercase tracking-tighter">Call Hub</span>
-                    </a>
-                    <a href="https://wa.me/918792492717" className="flex-1 bg-off hover:bg-emerald-500 hover:text-white border border-border rounded-lg p-3 flex flex-col items-center gap-1 transition-all group">
-                      <WhatsAppIcon className="w-4 h-4 text-muted group-hover:text-white" />
-                      <span className="text-[10px] font-bold uppercase tracking-tighter">WhatsApp</span>
-                    </a>
-                  </div>
-                </div>
               </div>
-            </div>
-
-            <div className="mt-8 flex items-center gap-4 px-4 text-muted">
-              <ShieldCheckIcon className="w-8 h-8 opacity-40" />
-              <p className="text-[11px] leading-snug font-medium italic">
-                "Your safety is our priority. All Modern Selfdrive vehicles are GPS tracked and come with emergency assistance."
-              </p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Booking Flow Modal */}
-      {showBookingFlow && (
-        <BookingFlow 
-          car={car} 
-          onClose={() => setShowBookingFlow(false)} 
-          onComplete={(booking) => {
-            setShowBookingFlow(false);
-            navigate('/profile', { state: { newBooking: booking } });
-          }}
-        />
-      )}
     </div>
   );
 };

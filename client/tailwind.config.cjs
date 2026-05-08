@@ -1,0 +1,126 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // ── Existing public site tokens ──
+        dark:    'var(--clr-dark)',
+        'dark-2':'var(--clr-dark-2)',
+        'dark-3':'var(--clr-dark-3)',
+        accent:  'var(--clr-accent)',
+        white:   'var(--clr-white)',
+        off:     'var(--clr-off)',
+        'off-2': 'var(--clr-off-2)',
+        border:  'var(--clr-border)',
+        muted:   'var(--clr-muted)',
+        text:    'var(--clr-text)',
+
+        // ── Owner CRM Design System (Luxury Minimal) ──
+        'primary':              '#111111',
+        'primary-container':    '#262626',
+        'on-primary':           '#ffffff',
+        'on-primary-container': '#8e8d8c',
+        'on-primary-fixed':     '#1b1c1c',
+        'on-primary-fixed-variant': '#474746',
+        'primary-fixed':        '#e4e2e1',
+        'primary-fixed-dim':    '#c8c6c5',
+        'inverse-primary':      '#c8c6c5',
+
+        'secondary':            '#615e54',
+        'secondary-container':  '#e4dfd2',
+        'secondary-fixed':      '#e7e2d5',
+        'secondary-fixed-dim':  '#cbc6b9',
+        'on-secondary':         '#ffffff',
+        'on-secondary-container': '#656358',
+        'on-secondary-fixed':   '#1d1c14',
+        'on-secondary-fixed-variant': '#49473d',
+
+        'tertiary':             '#000d3a',
+        'tertiary-container':   '#001e69',
+        'tertiary-fixed':       '#dce1ff',
+        'tertiary-fixed-dim':   '#b6c4ff',
+        'on-tertiary':          '#ffffff',
+        'on-tertiary-container':'#6385ff',
+        'on-tertiary-fixed':    '#001551',
+        'on-tertiary-fixed-variant': '#0039b3',
+
+        'surface':              '#fcf9f3',
+        'surface-dim':          '#dcdad4',
+        'surface-bright':       '#fcf9f3',
+        'surface-variant':      '#e5e2dc',
+        'surface-tint':         '#5f5e5e',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low':'#f6f3ed',
+        'surface-container':    '#f0eee8',
+        'surface-container-high':'#ebe8e2',
+        'surface-container-highest':'#e5e2dc',
+
+        'on-surface':           '#1c1c18',
+        'on-surface-variant':   '#444748',
+        'inverse-surface':      '#31312d',
+        'inverse-on-surface':   '#f3f0ea',
+
+        'background':           '#fcf9f3',
+        'on-background':        '#1c1c18',
+
+        'outline':              '#747878',
+        'outline-variant':      '#c4c7c7',
+
+        'error':                '#ba1a1a',
+        'error-container':      '#ffdad6',
+        'on-error':             '#ffffff',
+        'on-error-container':   '#93000a',
+      },
+      fontFamily: {
+        body:    'var(--font-body)',
+        display: 'var(--font-display)',
+        // CRM typography families
+        'body-md':     ['Manrope', 'sans-serif'],
+        'body-sm':     ['Manrope', 'sans-serif'],
+        'headline-lg': ['Manrope', 'sans-serif'],
+        'headline-xl': ['Manrope', 'sans-serif'],
+        'label-caps':  ['Manrope', 'sans-serif'],
+        'data-tabular':['Manrope', 'sans-serif'],
+      },
+      fontSize: {
+        'body-md':     ['16px', { lineHeight: '24px', letterSpacing: '0', fontWeight: '400' }],
+        'body-sm':     ['14px', { lineHeight: '20px', letterSpacing: '0', fontWeight: '400' }],
+        'headline-lg': ['24px', { lineHeight: '32px', letterSpacing: '-0.01em', fontWeight: '500' }],
+        'headline-xl': ['40px', { lineHeight: '48px', letterSpacing: '-0.02em', fontWeight: '300' }],
+        'label-caps':  ['12px', { lineHeight: '16px', letterSpacing: '0.08em', fontWeight: '600' }],
+        'data-tabular':['14px', { lineHeight: '20px', letterSpacing: '-0.01em', fontWeight: '500' }],
+      },
+      spacing: {
+        'gutter':            '24px',
+        'section-gap':       '64px',
+        'container-padding': '48px',
+        'card-inner':        '24px',
+        'unit':              '4px',
+      },
+      borderRadius: {
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: '0.5rem',
+        xl: '0.75rem',
+        '2xl': '12px',
+        '3xl': '14px',
+        full: '9999px',
+      },
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+      },
+      transitionDuration: {
+        fast:   '150ms',
+        normal: '250ms',
+        slow:   '400ms',
+      },
+    },
+  },
+  plugins: [],
+}
