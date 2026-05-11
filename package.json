@@ -1,27 +1,18 @@
 {
-  "name": "coming-soon-temp",
+  "name": "modern-selfdrive-frontend",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Modern Selfdrive Car — public website and owner portal",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "dev": "concurrently -n backend,public,portal -c yellow,blue,magenta \"npm run dev:backend\" \"npm run dev:public\" \"npm run dev:portal\"",
+    "dev:backend": "cd server && npm run dev",
+    "dev:public": "cd apps/public && npm run dev",
+    "dev:portal": "cd apps/portal && npm run dev",
+    "build:public": "cd apps/public && npm run build",
+    "build:portal": "cd apps/portal && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../apps/public && npm install && cd ../portal && npm install"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "vite": "^8.0.10"
+    "concurrently": "^9.1.3"
   }
 }

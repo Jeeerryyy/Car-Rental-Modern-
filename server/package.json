@@ -1,72 +1,47 @@
 {
-  "name": "modern-selfdrive-server",
-  "version": "1.0.0",
-  "private": true,
-  "main": "server.js",
+  "name": "modern-selfdrive-api",
+  "version": "2.0.0",
+  "description": "Modern Selfdrive Car Rental API - Production Backend",
+  "main": "src/server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "seed": "node seed.js",
-    "test": "jest --coverage",
-    "test:watch": "jest --watch"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "routes/**/*.js",
-      "services/**/*.js",
-      "middleware/**/*.js",
-      "../tests/**/*.js"
-    ],
-    "testMatch": [
-      "**/../tests/**/*.test.js"
-    ],
-    "rootDir": ".."
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.74.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.216.0",
-    "@opentelemetry/sdk-node": "^0.216.0",
-    "@socket.io/redis-adapter": "^8.3.0",
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.10.0",
-    "compression": "^1.8.1",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "express-mongo-sanitize": "^2.2.0",
-    "express-rate-limit": "^8.4.1",
-    "express-validator": "^7.3.2",
-    "google-auth-library": "^10.6.2",
-    "helmet": "^8.1.0",
-    "hpp": "^0.2.3",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.1",
-    "morgan": "^1.10.1",
-    "multer": "^2.1.1",
-    "multer-storage-cloudinary": "^2.2.1",
-    "newrelic": "^10.2.0",
-    "opossum": "^9.0.0",
-    "pdfkit": "^0.18.0",
-    "rate-limit-redis": "^4.3.1",
-    "razorpay": "^2.9.6",
-    "redis": "^5.12.1",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "express-winston": "^4.2.0",
+    "helmet": "^7.1.0",
+    "joi": "^18.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.3",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^6.9.7",
+    "razorpay": "^2.9.2",
     "socket.io": "^4.8.3",
-    "stripe": "^22.1.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "winston": "^3.19.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "jest": "^29.7.0",
-    "mongodb-memory-server": "^9.1.0",
-    "supertest": "^6.3.3"
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

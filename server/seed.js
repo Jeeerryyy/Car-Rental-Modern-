@@ -1,160 +1,207 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const Car = require('./models/Car');
+import mongoose from 'mongoose';
+import 'dotenv/config';
+import Owner from './src/models/Owner.js';
+import Customer from './src/models/Customer.js';
+import Car from './src/models/Car.js';
+import Booking from './src/models/Booking.js';
+import Review from './src/models/Review.js';
 
-const seedCars = [
-  {
-    make: 'Maruti Suzuki',
-    model: 'Swift',
-    year: 2023,
-    category: 'Hatchback',
-    transmission: 'Manual',
-    seats: 5,
-    fuelType: 'Petrol',
-    driveOption: 'Self Drive',
-    securityDeposit: 2000,
-    pricePerDay: 1200,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-AA-1234',
-    features: ['AC', 'Bluetooth', 'Power Steering']
-  },
-  {
-    make: 'Hyundai',
-    model: 'Grand i10 Nios',
-    year: 2022,
-    category: 'Hatchback',
-    transmission: 'Manual',
-    seats: 5,
-    fuelType: 'Petrol',
-    driveOption: 'Self Drive',
-    securityDeposit: 2000,
-    pricePerDay: 1100,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-BB-5678',
-    features: ['AC', 'Bluetooth', 'Touchscreen']
-  },
-  {
-    make: 'Honda',
-    model: 'City',
-    year: 2023,
-    category: 'Sedan',
-    transmission: 'Manual',
-    seats: 5,
-    fuelType: 'Petrol',
-    driveOption: 'Both',
-    securityDeposit: 3000,
-    pricePerDay: 1800,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1503376760356-a0a688ddb435?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-CC-9012',
-    features: ['AC', 'Sunroof', 'Leather Seats', 'Reverse Camera']
-  },
-  {
-    make: 'Hyundai',
-    model: 'Verna',
-    year: 2022,
-    category: 'Sedan',
-    transmission: 'Automatic',
-    seats: 5,
-    fuelType: 'Petrol',
-    driveOption: 'Both',
-    securityDeposit: 3000,
-    pricePerDay: 2000,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1503376760356-a0a688ddb435?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-DD-3456',
-    features: ['AC', 'Ventilated Seats', 'Touchscreen', 'ADAS']
-  },
-  {
-    make: 'Mahindra',
-    model: 'Thar',
-    year: 2023,
-    category: 'SUV',
-    transmission: 'Manual',
-    seats: 4,
-    fuelType: 'Diesel',
-    driveOption: 'Self Drive',
-    securityDeposit: 5000,
-    pricePerDay: 3500,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-EE-7890',
-    features: ['4x4', 'Hard Top', 'Offroad Tyres']
-  },
-  {
-    make: 'Mahindra',
-    model: 'Scorpio-N',
-    year: 2023,
-    category: 'SUV',
-    transmission: 'Automatic',
-    seats: 7,
-    fuelType: 'Diesel',
-    driveOption: 'With Driver',
-    securityDeposit: 0,
-    pricePerDay: 3000,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-FF-1234',
-    features: ['AC', '7 Seater', 'Sunroof', 'Captain Seats']
-  },
-  {
-    make: 'Toyota',
-    model: 'Innova Crysta',
-    year: 2022,
-    category: 'SUV',
-    transmission: 'Manual',
-    seats: 7,
-    fuelType: 'Diesel',
-    driveOption: 'With Driver',
-    securityDeposit: 0,
-    pricePerDay: 4000,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-GG-5678',
-    features: ['AC', 'Premium Sound', 'Spacious Boot']
-  },
-  {
-    make: 'Royal Enfield',
-    model: 'Classic 350',
-    year: 2021,
-    category: 'Bike',
-    transmission: 'Manual',
-    seats: 2,
-    fuelType: 'Petrol',
-    driveOption: 'Self Drive',
-    securityDeposit: 1000,
-    pricePerDay: 800,
-    status: 'Available',
-    images: ['https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80'],
-    licensePlate: 'GJ-11-HH-9012',
-    features: ['Helmet Included', 'Disk Brakes']
-  }
-];
+const MONGODB_URI = process.env.MONGO_URI;
 
-const Booking = require('./models/Booking');
+if (process.env.NODE_ENV === 'production') {
+  console.error('ERROR: Seed script cannot be run in production environment.');
+  process.exit(1);
+}
 
-const seedDB = async () => {
+const seedDatabase = async () => {
   try {
-    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/moderndrive';
-    await mongoose.connect(mongoURI);
-    console.log('MongoDB Connected for Seeding');
+    await mongoose.connect(MONGODB_URI);
+    console.log('Connected to MongoDB');
 
-    await Car.deleteMany();
-    await Booking.deleteMany();
-    console.log('Cleared existing cars and bookings');
+    // Clear existing data
+    await Owner.deleteMany({});
+    await Customer.deleteMany({});
+    await Car.deleteMany({});
+    await Booking.deleteMany({});
+    await Review.deleteMany({});
+    console.log('Database cleared');
 
-    const createdCars = await Car.insertMany(seedCars);
-    console.log(`Added ${createdCars.length} Modern Selfdrive Cars`);
+    // Create the single owner
+    const owner = await Owner.create({
+      name: 'Modern Drive Admin',
+      email: 'admin@moderndrive.in',
+      password: 'Password123!',
+      phone: '9876543210',
+      businessName: 'Modern Selfdrive',
+      isActive: true,
+      emailVerified: true
+    });
+    console.log('Owner created:', owner.email);
 
-    console.log('Added ' + createdCars.length + ' cars. Create bookings via API or admin panel.');
+    // Create 8 realistic cars
+    const carsData = [
+      {
+        make: 'Mahindra',
+        model: 'Thar',
+        year: 2023,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Automatic',
+        fuelType: 'Diesel',
+        seats: 4,
+        pricePerDay: 4500,
+        pricePerHour: 450,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['4x4', 'Bluetooth', 'Backup Camera', 'Convertible Top'],
+        description: 'Experience the ultimate off-road adventure with the Mahindra Thar. Perfect for weekend getaways and exploring rough terrains around Junagadh.',
+        licensePlate: 'GJ11XX1234',
+        images: [{ url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800', publicId: 'thar_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Toyota',
+        model: 'Innova Crysta',
+        year: 2022,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Manual',
+        fuelType: 'Diesel',
+        seats: 7,
+        pricePerDay: 3500,
+        pricePerHour: 350,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['AC', 'Airbags', 'Music System', 'Spacious Legroom'],
+        description: 'The ultimate family car. Spacious, comfortable, and highly reliable for long trips.',
+        licensePlate: 'GJ11YY5678',
+        images: [{ url: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800', publicId: 'innova_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Hyundai',
+        model: 'Creta',
+        year: 2023,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Automatic',
+        fuelType: 'Petrol',
+        seats: 5,
+        pricePerDay: 3000,
+        pricePerHour: 300,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['Sunroof', 'Touchscreen Navigation', 'Cruise Control'],
+        description: 'A premium compact SUV with loaded features and a very smooth automatic transmission.',
+        licensePlate: 'GJ11ZZ9012',
+        images: [{ url: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800', publicId: 'creta_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Maruti Suzuki',
+        model: 'Swift',
+        year: 2022,
+        type: 'Hatchback',
+        category: 'sedan',
+        transmission: 'Manual',
+        fuelType: 'Petrol',
+        seats: 5,
+        pricePerDay: 1800,
+        pricePerHour: 180,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['High Mileage', 'Compact', 'AC', 'Bluetooth'],
+        description: 'Perfect for city driving. Highly maneuverable, great fuel economy, and zippy performance.',
+        licensePlate: 'GJ11AA1111',
+        images: [{ url: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800', publicId: 'swift_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Honda',
+        model: 'City',
+        year: 2021,
+        type: 'Sedan',
+        category: 'sedan',
+        transmission: 'Automatic',
+        fuelType: 'Petrol',
+        seats: 5,
+        pricePerDay: 2500,
+        pricePerHour: 250,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['Premium Audio', 'Spacious Trunk', 'Comfortable Ride'],
+        description: 'The standard for premium sedans. Extremely comfortable ride for business or leisure.',
+        licensePlate: 'GJ11BB2222',
+        images: [{ url: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800', publicId: 'city_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Kia',
+        model: 'Seltos',
+        year: 2023,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Automatic',
+        fuelType: 'Diesel',
+        seats: 5,
+        pricePerDay: 3200,
+        pricePerHour: 320,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['Ventilated Seats', 'Bose Speakers', 'Heads-up Display'],
+        description: 'Modern, feature-packed, and stylish. The Kia Seltos turns heads wherever it goes.',
+        licensePlate: 'GJ11CC3333',
+        images: [{ url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800', publicId: 'seltos_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Tata',
+        model: 'Nexon EV',
+        year: 2023,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Automatic',
+        fuelType: 'Electric',
+        seats: 5,
+        pricePerDay: 2800,
+        pricePerHour: 280,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['Zero Emissions', 'Fast Charging', 'Silent Cabin'],
+        description: 'Experience the future of driving. No engine noise, zero tailpipe emissions, and instant torque.',
+        licensePlate: 'GJ11DD4444',
+        images: [{ url: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800', publicId: 'nexon_seed' }],
+        owner: owner._id,
+        isActive: true
+      },
+      {
+        make: 'Mahindra',
+        model: 'Scorpio-N',
+        year: 2024,
+        type: 'SUV',
+        category: 'suv',
+        transmission: 'Manual',
+        fuelType: 'Diesel',
+        seats: 7,
+        pricePerDay: 4000,
+        pricePerHour: 400,
+        location: 'Main Office, Junagadh, Gujarat, 362001',
+        features: ['Sunroof', '4x4', 'Captain Seats'],
+        description: 'The Big Daddy of SUVs. Imposing road presence and exceptionally comfortable for large groups.',
+        licensePlate: 'GJ11EE5555',
+        images: [{ url: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800', publicId: 'scorpio_seed' }],
+        owner: owner._id,
+        isActive: true
+      }
+    ];
+
+    await Car.insertMany(carsData);
+    console.log('8 cars seeded successfully.');
 
     process.exit(0);
-  } catch (error) {
-    console.error('Error seeding data:', error);
+  } catch (err) {
+    console.error('Seeding failed:', err);
     process.exit(1);
   }
 };
 
-seedDB();
+seedDatabase();
