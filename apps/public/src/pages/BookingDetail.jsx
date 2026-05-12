@@ -4,8 +4,10 @@ import { bookingAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import SEO from '../components/SEO';
+import { getInvoiceHtml } from '../utils/invoiceTemplate';
+import html2canvas from 'html2canvas';
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -30,96 +32,79 @@ export default function BookingDetail() {
     fetch();
   }, [id, customer, navigate]);
 
-  const generateInvoice = () => {
+  const generateInvoice = async () => {
     if (!booking) return;
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const toastId = toast.loading('Preparing your invoice...');
+    try {
+      // 1. Create a visible but off-screen container
+      const container = document.createElement('div');
+      container.innerHTML = getInvoiceHtml(booking);
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '5000px'; // Move way off-screen but keep it rendered
+      container.style.width = '800px';
+      container.style.zIndex = '-9999';
+      document.body.appendChild(container);
 
-    // Premium Header
-    doc.setFillColor(33, 33, 33);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MODERN SELFDRIVE', 20, 25);
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('INVOICE', pageWidth - 40, 25);
+      // 2. Give it time to render and load the logo
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Metadata Section
-    doc.setTextColor(40);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE TO:', 20, 55);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.text(booking.customer?.name || 'Customer Name', 20, 62);
-    doc.text(booking.customer?.phone || '+91 XXXXX XXXXX', 20, 67);
-    doc.text(booking.customer?.email || 'customer@example.com', 20, 72);
+      const page1 = container.querySelector('#page-1');
+      const page2 = container.querySelector('#page-2');
+      
+      // 3. Capture with html2canvas (both pages)
+      const canvas1 = await html2canvas(page1, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE DETAILS:', pageWidth - 80, 55);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Invoice No: INV-${booking._id.slice(-8).toUpperCase()}`, pageWidth - 80, 62);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, pageWidth - 80, 67);
-    doc.text(`Status: ${booking.status.toUpperCase()}`, pageWidth - 80, 72);
+      const canvas2 = await html2canvas(page2, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
 
-    // Vehicle Details Sub-header
-    doc.setDrawColor(230);
-    doc.line(20, 80, pageWidth - 20, 80);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('VEHICLE DETAILS', 20, 90);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${booking.car?.make} ${booking.car?.model} (${booking.car?.transmission} · ${booking.car?.fuelType})`, 20, 97);
-    doc.text(`Category: ${booking.car?.category}`, 20, 103);
+      // 4. Convert to PDF
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+      });
 
-    // Table
-    const tableData = [
-      ['Description', 'Quantity', 'Rate', 'Amount'],
-      [
-        `Car Rental (${new Date(booking.startDate).toLocaleDateString()} - ${new Date(booking.endDate).toLocaleDateString()})`,
-        `${booking.totalDays || 1} Day(s)`,
-        `₹${booking.car?.pricePerDay}`,
-        `₹${(booking.car?.pricePerDay * (booking.totalDays || 1)).toLocaleString('en-IN')}`
-      ],
-      ['Discount Applied', '', '', `-₹${(booking.discountAmount || 0).toLocaleString('en-IN')}`],
-    ];
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Add Page 1
+      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
 
-    doc.autoTable({
-      startY: 115,
-      head: [tableData[0]],
-      body: tableData.slice(1),
-      theme: 'striped',
-      headStyles: { fillColor: [33, 33, 33], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { cellPadding: 5, fontSize: 9 },
-      columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } }
-    });
+      // Add Page 2
+      pdf.addPage();
+      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
+      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
 
-    // Totals
-    const finalY = doc.lastAutoTable.finalY || 150;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total Paid:', pageWidth - 80, finalY + 15);
-    doc.setFontSize(16);
-    doc.text(`₹${booking.totalPrice.toLocaleString('en-IN')}`, pageWidth - 80, finalY + 25);
+      pdf.save(`ModernDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
 
-    // Footer
-    doc.setDrawColor(240);
-    doc.line(20, finalY + 40, pageWidth - 20, finalY + 40);
-    doc.setTextColor(150);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Terms & Conditions:', 20, finalY + 50);
-    doc.text('1. Vehicle should be returned in the same condition as received.', 20, finalY + 55);
-    doc.text('2. Security deposit is refundable after 24 hours of car return.', 20, finalY + 60);
-    doc.text('For support, call +91 87924 92717 or email support@modernselfdrive.in', 20, finalY + 70);
-
-    doc.save(`Modern_Selfdrive_Invoice_${booking._id.slice(-8).toUpperCase()}.pdf`);
-    toast.success('Premium Invoice downloaded!');
+      // 5. Cleanup
+      document.body.removeChild(container);
+      toast.success('Invoice downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      toast.error('Failed to generate invoice', { id: toastId });
+    }
   };
 
   const handleCancel = async () => {

@@ -106,3 +106,48 @@ export const changeOwnerPassword = async (ownerId, currentPassword, newPassword)
 
   return { message: 'Password changed successfully' };
 };
+
+export const requestOwnerPasswordReset = async (email) => {
+  const owner = await Owner.findOne({ email });
+
+  if (!owner) {
+    return { message: 'If the email exists, a reset link will be sent' };
+  }
+
+  const resetToken = jwt.sign(
+    { id: owner._id, type: 'owner-password-reset' },
+    config.jwt.secret,
+    { expiresIn: '15m' }
+  );
+
+  owner.passwordResetToken = resetToken;
+  owner.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await owner.save();
+
+  return { resetToken, owner };
+};
+
+export const resetOwnerPassword = async (resetToken, newPassword) => {
+  const decoded = jwt.verify(resetToken, config.jwt.secret);
+
+  if (decoded.type !== 'owner-password-reset') {
+    throw new AppError('Invalid reset token', 400);
+  }
+
+  const owner = await Owner.findById(decoded.id);
+
+  if (!owner || !owner.passwordResetToken) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  if (owner.passwordResetExpires < Date.now()) {
+    throw new AppError('Reset token has expired', 400);
+  }
+
+  owner.password = newPassword;
+  owner.passwordResetToken = undefined;
+  owner.passwordResetExpires = undefined;
+  await owner.save();
+
+  return { message: 'Password reset successful' };
+};

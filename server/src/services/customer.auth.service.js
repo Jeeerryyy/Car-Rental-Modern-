@@ -1,9 +1,13 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import Customer from '../models/Customer.js';
 import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { USER_ROLES } from '../utils/constants.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const signToken = (id) => {
   return jwt.sign(
@@ -107,4 +111,84 @@ export const changeCustomerPassword = async (customerId, currentPassword, newPas
   await customer.save();
 
   return { message: 'Password changed successfully' };
+};
+
+export const requestPasswordReset = async (email) => {
+  const customer = await Customer.findOne({ email });
+
+  if (!customer) {
+    return { message: 'If the email exists, a reset link will be sent' };
+  }
+
+  const resetToken = jwt.sign(
+    { id: customer._id, type: 'password-reset' },
+    config.jwt.secret,
+    { expiresIn: '15m' }
+  );
+
+  customer.passwordResetToken = resetToken;
+  customer.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await customer.save();
+
+  return { resetToken, customer };
+};
+
+export const resetCustomerPassword = async (resetToken, newPassword) => {
+  const decoded = jwt.verify(resetToken, config.jwt.secret);
+
+  if (decoded.type !== 'password-reset') {
+    throw new AppError('Invalid reset token', 400);
+  }
+
+  const customer = await Customer.findById(decoded.id);
+
+  if (!customer || !customer.passwordResetToken) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  if (customer.passwordResetExpires < Date.now()) {
+    throw new AppError('Reset token has expired', 400);
+  }
+
+  customer.password = newPassword;
+  customer.passwordResetToken = undefined;
+  customer.passwordResetExpires = undefined;
+  await customer.save();
+
+  return { message: 'Password reset successful' };
+};
+
+export const googleLoginCustomer = async (credential) => {
+  if (!credential) {
+    throw new AppError('Google credential is required', 400);
+  }
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  const { email, name, picture } = payload;
+
+  let customer = await Customer.findOne({ email });
+
+  if (!customer) {
+    // Create new customer with random secure password
+    const randomPassword = crypto.randomBytes(16).toString('hex') + 'A1!';
+    customer = await Customer.create({
+      name,
+      email,
+      password: randomPassword,
+      phone: 'Not provided', // Or optional
+      isEmailVerified: true, // Trusted from Google
+      profileImage: picture,
+    });
+  }
+
+  const token = signToken(customer._id);
+  const userObj = customer.toObject();
+  delete userObj.password;
+
+  return { token, customer: userObj };
 };

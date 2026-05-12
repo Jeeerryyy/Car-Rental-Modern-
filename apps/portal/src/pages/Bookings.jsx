@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getBookings, updateBookingStatus } from '../api/bookings.js';
 import toast from 'react-hot-toast';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { getInvoiceHtml } from '../utils/invoiceTemplate.js';
+import * as XLSX from 'xlsx';
 
 const STATUS_OPTIONS = ['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'];
 
@@ -56,11 +60,145 @@ export default function Bookings() {
     active: 'completed',
   };
 
+  const generateInvoice = async (booking) => {
+    const toastId = toast.loading('Generating invoice...');
+    try {
+      // 1. Create a hidden container for rendering
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.innerHTML = getInvoiceHtml(booking);
+      document.body.appendChild(container);
+
+      // 2. Give it time to render and load the logo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const page1 = container.querySelector('#page-1');
+      const page2 = container.querySelector('#page-2');
+      
+      // 3. Capture with html2canvas (both pages)
+      const canvas1 = await html2canvas(page1, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
+
+      const canvas2 = await html2canvas(page2, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
+
+      // 4. Convert to PDF
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Add Page 1
+      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
+
+      // Add Page 2
+      pdf.addPage();
+      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
+      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
+
+      pdf.save(`ModernDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
+
+      // 5. Cleanup
+      document.body.removeChild(container);
+      toast.success('Invoice downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      toast.error('Failed to generate invoice', { id: toastId });
+    }
+  };
+
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing export...');
+    try {
+      // Fetch all bookings (limited to 1000 for safety) matching current filter
+      const params = { limit: 1000 };
+      if (filter !== 'all') params.status = filter;
+      const res = await getBookings(params);
+      const allBookings = res.data.data || [];
+
+      const exportData = allBookings.map(b => {
+        const getLink = (url) => url ? { f: `HYPERLINK("${url}", "View Photo")` } : 'N/A';
+        
+        return {
+          'Booking ID': b._id,
+          'Status': b.status?.toUpperCase(),
+          'Payment': b.paymentStatus?.toUpperCase(),
+          'Customer Name': b.customer?.name || 'N/A',
+          'Phone': b.customer?.phone || 'N/A',
+          'Email': b.customer?.email || 'N/A',
+          'Car': `${b.car?.make || ''} ${b.car?.model || ''}`,
+          'Registration': b.car?.registrationNumber || 'N/A',
+          'Pickup Date': b.startDate ? new Date(b.startDate).toLocaleDateString('en-IN') : 'N/A',
+          'Dropoff Date': b.endDate ? new Date(b.endDate).toLocaleDateString('en-IN') : 'N/A',
+          'Total Days': b.totalDays || 0,
+          'Base Price': b.totalPrice + (b.discountAmount || 0),
+          'Discount': b.discountAmount || 0,
+          'Total Paid': b.totalPrice,
+          'Aadhaar Front': getLink(b.documents?.aadhaar?.front?.url || b.customer?.documents?.aadhaar?.front?.url),
+          'Aadhaar Back': getLink(b.documents?.aadhaar?.back?.url || b.customer?.documents?.aadhaar?.back?.url),
+          'License Front': getLink(b.documents?.license?.front?.url || b.customer?.documents?.license?.front?.url),
+          'License Back': getLink(b.documents?.license?.back?.url || b.customer?.documents?.license?.back?.url),
+          'Signature': getLink(b.signature?.url),
+          'Booking Date': new Date(b.createdAt).toLocaleString('en-IN')
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
+      
+      // Auto-size columns
+      const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+        wch: Math.max(key.length, ...exportData.map(row => String(row[key]).length)) + 2
+      }));
+      ws['!cols'] = colWidths;
+
+      XLSX.writeFile(wb, `ModernDrive_Bookings_${filter}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel exported successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export Excel', { id: toastId });
+    }
+  };
+
   return (
     <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6 relative">
-      <div>
-        <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
-        <p className="font-body-md text-body-md text-on-surface-variant">Manage all your car rental bookings</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant">Manage all your car rental bookings</p>
+        </div>
+        <button 
+          onClick={handleExportExcel}
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-dark rounded-xl text-xs font-bold hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[18px] text-muted">description</span>
+          Export to Excel
+        </button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -272,10 +410,18 @@ export default function Bookings() {
                       {selectedBooking.paymentStatus}
                     </span>
                   </div>
-                  <div className="pt-4 border-t border-outline-variant flex justify-between items-center">
+                  <div className="pt-4 border-t border-outline-variant flex justify-between items-center mb-4">
                     <span className="font-bold text-lg">Total Amount</span>
                     <span className="font-black text-2xl text-primary">₹{Number(selectedBooking.totalPrice).toLocaleString('en-IN')}</span>
                   </div>
+                  
+                  <button 
+                    onClick={() => generateInvoice(selectedBooking)}
+                    className="w-full py-4 bg-dark text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">download</span>
+                    Download Invoice
+                  </button>
                 </div>
               </section>
 

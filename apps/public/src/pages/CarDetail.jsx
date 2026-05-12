@@ -109,7 +109,7 @@ function CarDetail() {
             <div className="bg-white rounded-xl p-8 border border-border shadow-sm">
               <h2 className="text-xl font-bold text-dark mb-4">About This Vehicle</h2>
               <p className="text-muted leading-relaxed whitespace-pre-line">{car.description}</p>
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-off rounded-lg">
                   <p className="text-xs text-muted font-medium uppercase tracking-wider mb-1">Category</p>
                   <p className="font-bold text-dark capitalize">{car.category}</p>
@@ -118,10 +118,7 @@ function CarDetail() {
                   <p className="text-xs text-muted font-medium uppercase tracking-wider mb-1">Year</p>
                   <p className="font-bold text-dark">{car.year}</p>
                 </div>
-                <div className="text-center p-4 bg-off rounded-lg">
-                  <p className="text-xs text-muted font-medium uppercase tracking-wider mb-1">Rating</p>
-                  <p className="font-bold text-dark">★ {Number(car.averageRating || 0).toFixed(1)}</p>
-                </div>
+
                 <div className="text-center p-4 bg-off rounded-lg">
                   <p className="text-xs text-muted font-medium uppercase tracking-wider mb-1">Location</p>
                   <p className="font-bold text-dark">{car.location}</p>

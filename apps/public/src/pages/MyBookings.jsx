@@ -5,7 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import SEO from '../components/SEO';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import { getInvoiceHtml } from '../utils/invoiceTemplate';
+import html2canvas from 'html2canvas';
 
 function MyBookings() {
   const { customer } = useAuth();
@@ -32,56 +34,104 @@ function MyBookings() {
 
   const filteredBookings = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
 
-  const generateDemoInvoice = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFillColor(33, 33, 33);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MODERN SELFDRIVE', 20, 25);
-    doc.setFontSize(10);
-    doc.text('DEMO INVOICE', pageWidth - 50, 25);
+  const generateDemoInvoice = async () => {
+    const toastId = toast.loading('Generating demo invoice...');
+    
+    // Create a mock booking for the demo
+    const mockBooking = {
+      _id: '663f1a2b3c4d5e6f7a8b9c0d',
+      startDate: '2026-05-15T10:00:00Z',
+      endDate: '2026-05-18T10:00:00Z',
+      totalPrice: 9450,
+      discountAmount: 1050,
+      status: 'completed',
+      totalDays: 3,
+      car: {
+        make: 'Toyota',
+        model: 'Innova Crysta',
+        year: 2024,
+        category: 'Luxury MUV',
+        pricePerDay: 3500,
+        fuelType: 'Diesel',
+        transmission: 'Automatic',
+        registrationNumber: 'GJ-01-MD-1234'
+      },
+      customer: {
+        name: 'John Doe',
+        phone: '+91 98765 43210',
+        email: 'john.doe@example.com'
+      }
+    };
 
-    doc.setTextColor(40);
-    doc.setFontSize(10);
-    doc.text('INVOICE TO:', 20, 55);
-    doc.setFont('helvetica', 'normal');
-    doc.text('John Doe', 20, 62);
-    doc.text('+91 98765 43210', 20, 67);
-    doc.text('john.doe@example.com', 20, 72);
+    try {
+      // 1. Create a visible but off-screen container
+      const container = document.createElement('div');
+      container.innerHTML = getInvoiceHtml(mockBooking);
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '5000px'; 
+      container.style.width = '800px';
+      container.style.zIndex = '-9999';
+      document.body.appendChild(container);
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE DETAILS:', pageWidth - 80, 55);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Invoice No: INV-DEMO123', pageWidth - 80, 62);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, pageWidth - 80, 67);
+      // 2. Give it time to render and load the logo
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('VEHICLE DETAILS', 20, 90);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Toyota Innova Crysta (Automatic · Diesel)', 20, 97);
-    doc.text('Category: Luxury MUV', 20, 103);
+      const page1 = container.querySelector('#page-1');
+      const page2 = container.querySelector('#page-2');
+      
+      // 3. Capture with html2canvas (both pages)
+      const canvas1 = await html2canvas(page1, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
 
-    doc.autoTable({
-      startY: 115,
-      head: [['Description', 'Quantity', 'Rate', 'Amount']],
-      body: [
-        ['Car Rental (15/05/2026 - 18/05/2026)', '3 Day(s)', '₹3,500', '₹10,500'],
-        ['Promo Discount (WELCOME10)', '', '', '-₹1,050'],
-      ],
-      theme: 'striped',
-      headStyles: { fillColor: [33, 33, 33] },
-      columnStyles: { 3: { halign: 'right' } }
-    });
+      const canvas2 = await html2canvas(page2, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
 
-    const finalY = doc.lastAutoTable.finalY || 150;
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total Paid: ₹9,450`, pageWidth - 80, finalY + 25);
-    doc.save('Modern_Selfdrive_Demo_Invoice.pdf');
-    toast.success('Demo Invoice generated!');
+      // 4. Convert to PDF
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Add Page 1
+      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
+
+      // Add Page 2
+      pdf.addPage();
+      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
+      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
+
+      pdf.save('ModernDrive_Demo_Invoice.pdf');
+
+      // 5. Cleanup
+      document.body.removeChild(container);
+      toast.success('Demo invoice downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      toast.error('Failed to generate demo invoice', { id: toastId });
+    }
   };
 
   const handleCancel = async (e, id) => {
@@ -111,6 +161,10 @@ function MyBookings() {
       <div className="max-w-[800px] mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
+            <div className="mb-6 flex flex-col leading-tight">
+              <span className="text-2xl font-black tracking-tighter text-dark uppercase leading-none">Modern</span>
+              <span className="text-base font-bold tracking-[0.2em] text-accent uppercase leading-none ml-0.5">Selfdrive</span>
+            </div>
             <h1 className="text-3xl font-bold text-dark mb-2">My Bookings</h1>
             <p className="text-sm text-muted">Manage and track your car rental history.</p>
           </div>

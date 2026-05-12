@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { CAR_CATEGORIES } from '../utils/constants.js';
+import { CAR_CATEGORIES, VEHICLE_TYPES } from '../utils/constants.js';
 
 const unavailableDateSchema = new mongoose.Schema({
   startDate: {
@@ -20,6 +20,12 @@ const unavailableDateSchema = new mongoose.Schema({
 });
 
 const carSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: Object.values(VEHICLE_TYPES),
+    default: VEHICLE_TYPES.CAR,
+    required: true
+  },
   make: {
     type: String,
     required: [true, 'Car make is required'],
@@ -40,6 +46,18 @@ const carSchema = new mongoose.Schema({
     type: String,
     enum: CAR_CATEGORIES,
     required: [true, 'Category is required']
+  },
+  fuelType: {
+    type: String,
+    trim: true
+  },
+  transmission: {
+    type: String,
+    trim: true
+  },
+  registrationNumber: {
+    type: String,
+    trim: true
   },
   pricePerDay: {
     type: Number,
@@ -97,6 +115,7 @@ carSchema.pre(/^find/, function(next) {
   next();
 });
 
+carSchema.index({ type: 1 });
 carSchema.index({ category: 1 });
 carSchema.index({ isActive: 1 });
 carSchema.index({ isDeleted: 1 });

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getNotifications, markAsRead as markOneRead, markAllAsRead as markAllReadApi } from '../api/notifications.js';
-import { useSocket } from '../context/SocketContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const NOTIFICATION_ICONS = {
   new_booking: 'calendar_today',
@@ -14,43 +13,7 @@ const NOTIFICATION_ICONS = {
 };
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const socket = useSocket();
-
-  useEffect(() => {
-    if (socket) {
-      socket.on('notification:received', (newNotif) => {
-        setNotifications(prev => [newNotif, ...prev]);
-      });
-
-      return () => socket.off('notification:received');
-    }
-  }, [socket]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await getNotifications();
-        setNotifications(res.data.data?.notifications || []);
-      } catch {} finally { setLoading(false); }
-    };
-    load();
-  }, []);
-
-  const handleMarkAsRead = useCallback(async (id) => {
-    try {
-      await markOneRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
-    } catch {}
-  }, []);
-
-  const handleMarkAllAsRead = useCallback(async () => {
-    try {
-      await markAllReadApi();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    } catch {}
-  }, []);
+  const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
 
   const hasUnread = notifications.some(n => !n.read);
 
@@ -71,11 +34,20 @@ export default function Notifications() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-display font-black text-dark tracking-tight">Activity Log</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-display font-black text-dark tracking-tight">Activity Log</h1>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 rounded-full border border-green-100">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Live</span>
+            </div>
+          </div>
           <p className="text-muted font-medium mt-2">Real-time updates from your fleet and operations.</p>
         </div>
         {hasUnread && (
-          <button onClick={handleMarkAllAsRead}
+          <button onClick={markAllAsRead}
             className="text-[10px] font-black uppercase tracking-[0.2em] text-muted hover:text-dark transition-colors border-b-2 border-transparent hover:border-dark pb-1">
             Acknowledge All
           </button>
@@ -94,7 +66,7 @@ export default function Notifications() {
         <div className="space-y-3 max-w-4xl">
           {notifications.map(n => (
             <div key={n._id}
-              onClick={() => !n.read && handleMarkAsRead(n._id)}
+              onClick={() => !n.read && markAsRead(n._id)}
               className={`group bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 border transition-all duration-300 relative overflow-hidden cursor-pointer ${
                 n.read ? 'border-border opacity-70 hover:opacity-100' : 'border-dark shadow-xl shadow-dark/5 ring-4 ring-dark/5'
               }`}>

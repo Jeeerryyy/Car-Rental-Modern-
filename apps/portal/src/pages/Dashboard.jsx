@@ -103,11 +103,11 @@ export default function Dashboard() {
               <p className="text-2xl font-bold text-primary mt-1">{stats?.activeBookings || 0}</p>
             </div>
             <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
-              <p className="text-on-surface-variant text-sm font-medium">Total Cars</p>
+              <p className="text-on-surface-variant text-sm font-medium">Total Vehicles</p>
               <p className="text-2xl font-bold text-primary mt-1">{stats?.totalCars || 0}</p>
             </div>
             <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
-              <p className="text-on-surface-variant text-sm font-medium">Available Cars</p>
+              <p className="text-on-surface-variant text-sm font-medium">Available Vehicles</p>
               <p className="text-2xl font-bold text-primary mt-1">{stats?.availableCars || 0}</p>
             </div>
           </>

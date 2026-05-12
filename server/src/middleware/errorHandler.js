@@ -3,7 +3,7 @@ import { AppError } from '../utils/AppError.js';
 import { logger } from '../utils/logger.js';
 
 export const notFoundHandler = (req, res, next) => {
-  const error = new AppError(`Cannot find ${req.originalUrl} on this server`, 404);
+  const error = new AppError(`Cannot find ${req.method} ${req.originalUrl} on this server`, 404);
   next(error);
 };
 
@@ -18,8 +18,8 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map(e => ({
+  if (err.name === 'ValidationError' && err.errors) {
+    const errors = Object.values(err.errors).map((e) => ({
       field: e.path,
       message: e.message
     }));
@@ -37,7 +37,7 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  if (err.code === 11000) {
+  if (err.code === 11000 && err.keyValue) {
     const field = Object.keys(err.keyValue)[0];
     return res.status(409).json({
       success: false,

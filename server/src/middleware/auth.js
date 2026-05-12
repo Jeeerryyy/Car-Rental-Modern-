@@ -13,7 +13,6 @@ export const protect = catchAsync(async (req, res, next) => {
   if (isOwnerRoute) {
     token = req.cookies?.ownerToken;
   } else {
-    // For public routes, prefer customerToken but allow ownerToken
     token = req.cookies?.customerToken || req.cookies?.ownerToken;
   }
 
@@ -40,7 +39,7 @@ export const protect = catchAsync(async (req, res, next) => {
     throw new AppError('User belonging to this token does no longer exist.', 404);
   }
 
-  if (user.lockUntil && user.lockUntil > Date.now()) {
+  if (user.lockUntil && user.lockUntil > new Date()) {
     throw new AppError('Account is locked. Please try again later.', 403);
   }
 
@@ -49,9 +48,8 @@ export const protect = catchAsync(async (req, res, next) => {
   }
 
   req.user = user;
-  req.role = decoded.role; // Use req.role to avoid conflicts with Mongoose model fields
+  req.role = decoded.role;
   
-  // Keep legacy properties for existing routes until they are refactored
   if (decoded.role === USER_ROLES.OWNER) req.owner = user;
   if (decoded.role === USER_ROLES.CUSTOMER) req.customer = user;
 
@@ -60,7 +58,9 @@ export const protect = catchAsync(async (req, res, next) => {
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
-    // TEMPORARY BYPASS FOR DEBUGGING
+    if (!req.role || !roles.includes(req.role)) {
+      throw new AppError('You do not have permission to perform this action', 403);
+    }
     next();
   };
 };

@@ -3,8 +3,9 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/fleet/add', label: 'Add Car', icon: 'add_circle' },
-  { path: '/fleet', label: 'Manage Fleet', icon: 'directions_car' },
+  { path: '/fleet/add', label: 'Add Car', icon: 'directions_car' },
+  { path: '/fleet/add-bike', label: 'Add Bike', icon: 'two_wheeler' },
+  { path: '/fleet', label: 'Manage Fleet', icon: 'view_list' },
   { path: '/bookings', label: 'Bookings', icon: 'list_alt' },
   { path: '/calendar', label: 'Calendar', icon: 'calendar_today' },
   { path: '/clients', label: 'Clients', icon: 'group' },
@@ -50,9 +51,9 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
         {/* New Booking CTA */}
         <Link 
           to="/bookings/new"
-          className="bg-primary-container text-on-primary font-body-md text-body-md rounded-full py-3 px-6 w-full flex items-center justify-center gap-2 hover:bg-[#333] transition-colors mb-2"
+          className="bg-white border border-gray-200 text-dark rounded-xl py-3 px-6 w-full flex items-center justify-center gap-2 hover:bg-gray-50 transition-all mb-4 text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95"
         >
-          <span className="material-symbols-outlined text-[20px]">add</span>
+          <span className="material-symbols-outlined text-[18px] text-muted">add</span>
           New Booking
         </Link>
 

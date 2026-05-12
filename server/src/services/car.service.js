@@ -8,8 +8,20 @@ import { logger } from '../utils/logger.js';
 export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10 }) => {
   const query = { isActive: true, isDeleted: false };
 
+  if (filters.type) {
+    query.type = filters.type;
+  }
+
   if (filters.category) {
-    query.category = filters.category;
+    query.category = { $in: filters.category.split(',') };
+  }
+
+  if (filters.fuelType) {
+    query.fuelType = filters.fuelType;
+  }
+
+  if (filters.transmission) {
+    query.transmission = filters.transmission;
   }
 
   if (filters.minPrice || filters.maxPrice) {
@@ -197,6 +209,7 @@ export const getOwnerCars = async (ownerId, filters = {}, pagination = { page: 1
 
   if (filters.status === 'active') query.isActive = true;
   if (filters.status === 'inactive') query.isActive = false;
+  if (filters.type) query.type = filters.type;
 
   const skip = (pagination.page - 1) * pagination.limit;
   const total = await Car.countDocuments(query);

@@ -163,7 +163,7 @@ export const getCustomerBookings = async (customerId, filters = {}, pagination =
   const total = await Booking.countDocuments(query);
 
   const bookings = await Booking.find(query)
-    .populate('car', 'make model images pricePerDay')
+    .populate('car', 'make model images pricePerDay category fuelType transmission year registrationNumber')
     .skip(skip)
     .limit(pagination.limit)
     .sort({ createdAt: -1 });
@@ -348,7 +348,7 @@ export const getBookingById = async (bookingId, userId) => {
     _id: bookingId,
     $or: [{ customer: userId }, { owner: userId }]
   })
-    .populate('car', 'make model images pricePerDay category fuelType transmission seats')
+    .populate('car', 'make model images pricePerDay category fuelType transmission seats year registrationNumber')
     .populate('customer', 'name email phone');
 
   if (!booking) {

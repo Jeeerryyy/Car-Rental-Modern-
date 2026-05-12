@@ -8,6 +8,7 @@ const Dashboard  = React.lazy(() => import('./pages/Dashboard'));
 const Fleet      = React.lazy(() => import('./pages/Fleet'));
 const FleetDetail = React.lazy(() => import('./pages/FleetDetail'));
 const AddCar     = React.lazy(() => import('./pages/AddCar'));
+const AddBike    = React.lazy(() => import('./pages/AddBike'));
 const Bookings   = React.lazy(() => import('./pages/Bookings'));
 const AddBooking = React.lazy(() => import('./pages/AddBooking'));
 const Clients    = React.lazy(() => import('./pages/Clients'));
@@ -22,23 +23,10 @@ const BookingCalendar = React.lazy(() => import('./pages/BookingCalendar'));
 const NotFound   = React.lazy(() => import('./pages/NotFound'));
 const OwnerLayout = React.lazy(() => import('./components/layout/OwnerLayout'));
 
-import { connectSocket, disconnectSocket } from './lib/socket.js';
-import { SOCKET_EVENTS } from './lib/socket.events.js';
 
 function RequireAuth({ children }) {
   const { isAuthenticated, isLoading } = useOwnerAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      const token = localStorage.getItem('ownerToken');
-      if (token) {
-        connectSocket(token);
-      }
-    }
-    return () => {
-      disconnectSocket();
-    };
-  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -90,6 +78,7 @@ export default function App() {
             <Route path="/dashboard"      element={<Dashboard />} />
             <Route path="/fleet"          element={<Fleet />} />
             <Route path="/fleet/add"      element={<AddCar />} />
+            <Route path="/fleet/add-bike" element={<AddBike />} />
             <Route path="/fleet/:id"      element={<FleetDetail />} />
             <Route path="/bookings"       element={<Bookings />} />
             <Route path="/bookings/new"   element={<AddBooking />} />

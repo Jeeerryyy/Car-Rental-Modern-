@@ -1,16 +1,18 @@
 {
-  "name": "modern-selfdrive-frontend",
-  "version": "1.0.0",
+  "name": "modern-selfdrive",
+  "version": "2.0.0",
   "private": true,
-  "description": "Modern Selfdrive Car — public website and owner portal",
+  "description": "Modern Selfdrive Car — Full-stack car rental platform (Vercel + Render)",
   "scripts": {
-    "dev": "concurrently -n backend,public,portal -c yellow,blue,magenta \"npm run dev:backend\" \"npm run dev:public\" \"npm run dev:portal\"",
-    "dev:backend": "cd server && npm run dev",
+    "dev": "concurrently -n api,public,portal -c yellow,blue,magenta \"npm run dev:api\" \"npm run dev:public\" \"npm run dev:portal\"",
+    "dev:api": "cd server && npm run dev",
     "dev:public": "cd apps/public && npm run dev",
     "dev:portal": "cd apps/portal && npm run dev",
     "build:public": "cd apps/public && npm run build",
     "build:portal": "cd apps/portal && npm run build",
-    "install:all": "npm install && cd server && npm install && cd ../apps/public && npm install && cd ../portal && npm install"
+    "build:all": "concurrently \"npm run build:public\" \"npm run build:portal\"",
+    "install:all": "npm install && cd server && npm install && cd ../apps/public && npm install && cd ../portal && npm install",
+    "lint:all": "concurrently \"cd server && npm run lint\" \"cd apps/public && npm run lint\" \"cd apps/portal && npm run lint\""
   },
   "devDependencies": {
     "concurrently": "^9.1.3"

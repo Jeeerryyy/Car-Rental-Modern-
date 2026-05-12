@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 
 export default function CustomerSignUp() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
@@ -63,7 +64,7 @@ export default function CustomerSignUp() {
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 h-full overflow-y-auto lg:overflow-hidden bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 h-full overflow-y-auto bg-white">
         <div className="w-full max-w-[380px] flex flex-col my-auto py-4">
           <div className="mb-6 text-center lg:text-left">
             <div className="lg:hidden flex justify-center mb-6">
@@ -74,6 +75,37 @@ export default function CustomerSignUp() {
             </div>
             <h1 className="text-3xl font-bold text-black tracking-tight mb-1">Create Account</h1>
             <p className="text-[14px] text-[#888] font-medium">Start your journey today</p>
+          </div>
+
+          <div className="flex justify-center w-full mb-6">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                setLoading(true);
+                try {
+                  await loginWithGoogle(credentialResponse.credential);
+                  toast.success('Account created & Signed in with Google!');
+                  navigate('/');
+                } catch (err) {
+                  toast.error(err.response?.data?.message || 'Google Login failed');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onError={() => {
+                toast.error('Google Login Failed');
+              }}
+              theme="outline"
+              size="large"
+              width="380"
+              text="signup_with"
+              shape="rectangular"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Or register with email</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">

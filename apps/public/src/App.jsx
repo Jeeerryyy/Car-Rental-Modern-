@@ -55,10 +55,7 @@ function PublicShell() {
 
   useEffect(() => {
     if (customer) {
-      const token = localStorage.getItem('customerToken');
-      if (token) {
-        connectSocket(token);
-      }
+      connectSocket();
     }
     return () => {
       disconnectSocket();

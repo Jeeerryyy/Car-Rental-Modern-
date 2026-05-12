@@ -49,13 +49,11 @@ function Navbar() {
       <header className="fixed top-0 left-0 right-0 z-[100] bg-white border-b border-border shadow-sm">
         <nav aria-label="Main navigation"
           className="max-w-7xl mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between gap-8">
-          <Link to="/" className="no-underline group flex flex-col -space-y-1.5" aria-label={`${BUSINESS_NAME} home`}>
-            <span className="text-[20px] font-black tracking-tight text-text leading-tight group-hover:text-accent transition-colors uppercase">
-              Modern
-            </span>
-            <span className="text-[10px] font-bold tracking-[0.25em] text-muted uppercase">
-              Selfdrive Car
-            </span>
+          <Link to="/" className="flex items-center gap-0 no-underline group leading-tight" aria-label={`${BUSINESS_NAME} home`}>
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tighter text-dark uppercase leading-none">Modern</span>
+              <span className="text-sm font-bold tracking-[0.2em] text-accent uppercase leading-none ml-0.5">Selfdrive</span>
+            </div>
           </Link>
 
           <ul className="hidden lg:flex gap-9 list-none m-0 p-0">

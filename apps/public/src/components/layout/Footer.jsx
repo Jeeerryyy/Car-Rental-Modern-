@@ -15,13 +15,11 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr] gap-12 lg:gap-24 mb-20">
 
           <div className="max-w-xs">
-            <Link to="/" className="no-underline group flex flex-col -space-y-1.5 mb-8 text-left" aria-label={`${BUSINESS_NAME} home`}>
-              <span className="text-[24px] font-black tracking-tight text-white leading-tight group-hover:text-accent transition-colors uppercase">
-                Modern
-              </span>
-              <span className="text-[11px] font-bold tracking-[0.25em] text-gray-400 uppercase">
-                Selfdrive Car
-              </span>
+            <Link to="/" className="flex items-center gap-0 no-underline group leading-tight mb-8" aria-label={`${BUSINESS_NAME} home`}>
+              <div className="flex flex-col">
+                <span className="text-xl font-black tracking-tighter text-white uppercase leading-none">Modern</span>
+                <span className="text-sm font-bold tracking-[0.2em] text-accent uppercase leading-none ml-0.5">Selfdrive</span>
+              </div>
             </Link>
             <p className="text-[15px] text-gray-400 leading-relaxed font-medium">
               Junagadh's most trusted vehicle rental platform since 2017. Luxury, comfort, and reliability in every journey.

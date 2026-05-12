@@ -11,11 +11,12 @@ export default function Fleet() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [typeTab, setTypeTab] = useState('car');
 
   const fetchCars = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 10 };
+      const params = { page, limit: 100, type: typeTab };
       if (filter !== 'all') params.status = filter;
       const res = await getCars(params);
       setCars(res.data.data || []);
@@ -26,7 +27,7 @@ export default function Fleet() {
     }
   };
 
-  useEffect(() => { fetchCars(); }, [filter, page]);
+  useEffect(() => { fetchCars(); }, [filter, page, typeTab]);
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this car? This action cannot be undone.')) return;
@@ -58,12 +59,33 @@ export default function Fleet() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Fleet</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">{filtered.length} vehicles in your fleet</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">{filtered.length} {typeTab === 'car' ? 'cars' : 'bikes'} in your fleet</p>
         </div>
-        <Link to="/fleet/add" className="bg-primary-container text-on-primary px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-          Add New Car
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link to="/fleet/add" className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+            Add Car
+          </Link>
+          <Link to="/fleet/add-bike" className="bg-primary-container text-on-primary px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>two_wheeler</span>
+            Add Bike
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex gap-4 border-b border-outline-variant">
+        <button 
+          onClick={() => setTypeTab('car')} 
+          className={`px-4 py-2 font-bold ${typeTab === 'car' ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+        >
+          Cars
+        </button>
+        <button 
+          onClick={() => setTypeTab('bike')} 
+          className={`px-4 py-2 font-bold ${typeTab === 'bike' ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+        >
+          Bikes
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -84,8 +106,8 @@ export default function Fleet() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
-          <p className="text-on-surface-variant mb-4">No vehicles in fleet</p>
-          <Link to="/fleet/add" className="btn-primary inline-block">Add Your First Car</Link>
+          <p className="text-on-surface-variant mb-4">No {typeTab}s in fleet</p>
+          <Link to={typeTab === 'car' ? "/fleet/add" : "/fleet/add-bike"} className="btn-primary inline-block">Add Your First {typeTab === 'car' ? 'Car' : 'Bike'}</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
@@ -101,7 +123,7 @@ export default function Fleet() {
                     {car.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <p className="text-sm text-on-surface-variant capitalize">{car.category} · {car.year} · {car.location}</p>
+                <p className="text-sm text-on-surface-variant capitalize">{car.fuelType || car.category} · {car.year} · {car.location}</p>
                 <p className="font-black text-primary mt-1 sm:hidden text-lg">₹{Number(car.pricePerDay).toLocaleString('en-IN')}/day</p>
               </div>
               <div className="hidden sm:block text-right flex-shrink-0">

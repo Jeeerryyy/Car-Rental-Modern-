@@ -4,7 +4,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const getAll = catchAsync(async (req, res) => {
-  const filters = { category: req.query.category, minPrice: req.query.minPrice, maxPrice: req.query.maxPrice, search: req.query.search };
+  const filters = { category: req.query.category, type: req.query.type, minPrice: req.query.minPrice, maxPrice: req.query.maxPrice, search: req.query.search, fuelType: req.query.fuelType, transmission: req.query.transmission };
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
   const result = await getAllCars(filters, pagination);
   return ApiResponse.success(res, 200, 'Cars retrieved', result.cars, result.pagination);
@@ -18,7 +18,8 @@ export const getOne = catchAsync(async (req, res) => {
 export const create = catchAsync(async (req, res) => {
   let imageData = [];
   if (req.files?.length > 0) {
-    imageData = await uploadToCloudinary(req.files);
+    const type = req.body.type || 'car';
+    imageData = await uploadToCloudinary(req.files, type);
   }
   const car = await createCar(req.body, req.owner._id, imageData);
   return ApiResponse.success(res, 201, 'Car created', { car });
@@ -27,7 +28,9 @@ export const create = catchAsync(async (req, res) => {
 export const update = catchAsync(async (req, res) => {
   let newImages = [];
   if (req.files?.length > 0) {
-    newImages = await uploadToCloudinary(req.files);
+    const existingCar = await getCarById(req.params.id);
+    const type = req.body.type || existingCar.type || 'car';
+    newImages = await uploadToCloudinary(req.files, type);
   }
   const removePublicIds = req.body.removeImages ? JSON.parse(req.body.removeImages) : [];
   const car = await updateCar(req.params.id, req.owner._id, req.body, newImages, removePublicIds);

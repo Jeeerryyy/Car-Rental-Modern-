@@ -1,7 +1,12 @@
 import transporter from '../config/email.js';
 import { config } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 export const sendEmail = async (to, subject, html) => {
+  if (!transporter) {
+    logger.warn(`[Email] Skipped sending to ${to} — SMTP not configured`);
+    return false;
+  }
   try {
     await transporter.sendMail({
       from: config.smtp.emailFrom,
@@ -11,7 +16,7 @@ export const sendEmail = async (to, subject, html) => {
     });
     return true;
   } catch (error) {
-    console.error('Email send error:', error);
+    logger.error('Email send error:', error);
     return false;
   }
 };

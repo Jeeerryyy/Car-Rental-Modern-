@@ -1,5 +1,6 @@
 import cloudinary from '../config/cloudinary.js';
 import { CLOUDINARY_FOLDERS } from '../utils/constants.js';
+import { logger } from '../utils/logger.js';
 
 export const uploadImage = async (fileBuffer, folder, publicId) => {
   return new Promise((resolve, reject) => {
@@ -28,7 +29,7 @@ export const deleteImage = async (publicId) => {
     const result = await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
     return result.result === 'ok';
   } catch (error) {
-    console.error('Cloudinary delete error:', error);
+    logger.error('Cloudinary delete error:', error);
     return false;
   }
 };
@@ -40,16 +41,17 @@ export const deleteMultipleImages = async (publicIds) => {
     });
     return result;
   } catch (error) {
-    console.error('Cloudinary bulk delete error:', error);
+    logger.error('Cloudinary bulk delete error:', error);
     return false;
   }
 };
 
-export const uploadCarImages = async (files) => {
+export const uploadCarImages = async (files, type = 'car') => {
   const uploadedImages = [];
+  const folder = type === 'bike' ? CLOUDINARY_FOLDERS.BIKE_IMAGES : CLOUDINARY_FOLDERS.CAR_IMAGES;
   for (const file of files) {
     const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const result = await uploadImage(file.buffer, CLOUDINARY_FOLDERS.CAR_IMAGES, uniqueId);
+    const result = await uploadImage(file.buffer, folder, uniqueId);
     uploadedImages.push(result);
   }
   return uploadedImages;

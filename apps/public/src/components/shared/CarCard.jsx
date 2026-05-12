@@ -28,16 +28,11 @@ function CarCard({ id, car }) {
             </div>
           </div>
         )}
-        {rating > 0 && !car?.isBooked && (
-          <div className="absolute top-3 right-3 bg-dark/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-            ★ {Number(rating).toFixed(1)}
-          </div>
-        )}
       </div>
       <div className="p-6 flex-1 flex flex-col">
         <h3 className="text-xl font-bold text-text mb-2 tracking-tight group-hover:text-accent transition-colors">{name}</h3>
         <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs font-medium text-muted mb-4 uppercase tracking-wider">
-          <span className="bg-light-gray px-2 py-0.5 rounded text-[10px]">{car?.category || 'Sedan'}</span>
+          <span className="bg-light-gray px-2 py-0.5 rounded text-[10px]">{car?.fuelType || car?.category || 'Sedan'}</span>
           <span className="text-[8px]">•</span>
           <span>{car?.year || new Date().getFullYear()}</span>
           <span className="text-[8px]">•</span>

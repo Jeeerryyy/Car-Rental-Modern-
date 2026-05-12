@@ -6,12 +6,12 @@ const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
-  const { owner, token } = useOwnerAuth();
+  const { user } = useOwnerAuth();
 
   useEffect(() => {
-    if (owner && token) {
+    if (user) {
       const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-        auth: { token },
+        withCredentials: true,
         transports: ['websocket']
       });
 
@@ -26,7 +26,7 @@ export function SocketProvider({ children }) {
         setSocket(null);
       }
     }
-  }, [owner, token]);
+  }, [user]);
 
   return (
     <SocketContext.Provider value={socket}>

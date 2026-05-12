@@ -3,10 +3,10 @@ import { SOCKET_EVENTS } from './socket.events.js';
 
 let socket = null;
 
-export const connectSocket = (token) => {
+export const connectSocket = () => {
   if (socket?.connected) return socket;
   socket = io(import.meta.env.VITE_SOCKET_URL, {
-    auth: { token },
+    withCredentials: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     transports: ['websocket'],

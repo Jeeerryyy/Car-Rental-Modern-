@@ -1,4 +1,3 @@
-// Server Restart - Bypassing restrictions for debugging
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
@@ -20,21 +19,36 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { generalLimiter, authLimiter } from './middleware/rateLimiter.js';
 import routes from './routes/index.js';
+import { initBookingReminders } from './jobs/bookingReminder.js';
+import { initBackupJob } from './jobs/backupJob.js';
+import { initKeepAlive } from './jobs/keepAlive.js';
+import { swaggerDocs } from './config/swagger.js';
+import { initSentry } from './config/sentry.js';
 
 const app = express();
+initSentry();
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
-// 1. cors({ origin: [CLIENT_URL, PORTAL_URL], credentials: true })
-const allowedOrigins = [config.clientUrl, config.portalUrl].filter(Boolean);
+const allowedOrigins = [
+  config.clientUrl, 
+  config.portalUrl,
+  'https://modernselfdrive.in',
+  'https://www.modernselfdrive.in',
+  'https://admin.modernselfdrive.in'
+].map(url => url?.replace(/\/$/, '')).filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || config.nodeEnv === 'development') {
+    
+    const cleanOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(cleanOrigin) || config.nodeEnv === 'development') {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      logger.error(`CORS Blocked: ${origin}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
   credentials: true,
@@ -73,6 +87,15 @@ if (config.nodeEnv === 'development') {
   }));
 }
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to Modern Drive API',
+    version: '2.0.0',
+    documentation: '/api-docs'
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -82,6 +105,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+if (config.nodeEnv === 'development') {
+  app.use('/api-docs', swaggerDocs);
+}
+
 app.use('/api', routes);
 
 app.use(notFoundHandler);
@@ -90,8 +117,11 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+    initBookingReminders();
+    initBackupJob();
+    initKeepAlive();
 
-    const server = httpServer.listen(config.port, () => {
+    const server = httpServer.listen(config.port, '0.0.0.0', () => {
       logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
 ║  Modern Drive API Server                                 ║

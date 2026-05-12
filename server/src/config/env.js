@@ -33,7 +33,16 @@ const envVarsSchema = Joi.object({
     is: true,
     then: Joi.string().required(),
     otherwise: Joi.optional()
-  })
+  }),
+  GOOGLE_SHEET_ID: Joi.string().optional().allow(''),
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: Joi.string().optional().allow(''),
+  GOOGLE_PRIVATE_KEY: Joi.string().optional().allow(''),
+  SMTP_HOST: Joi.string().optional().allow(''),
+  SMTP_PORT: Joi.number().optional().default(587),
+  SMTP_USER: Joi.string().optional().allow(''),
+  SMTP_PASS: Joi.string().optional().allow(''),
+  SMTP_FROM: Joi.string().optional().allow(''),
+  SENTRY_DSN: Joi.string().optional().allow('')
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
@@ -64,5 +73,17 @@ export const config = {
     enabled: envVars.PAYMENT_ENABLED,
     keyId: envVars.RAZORPAY_KEY_ID,
     secret: envVars.RAZORPAY_SECRET
+  },
+  google: {
+    sheetId: envVars.GOOGLE_SHEET_ID,
+    serviceAccountEmail: envVars.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    privateKey: envVars.GOOGLE_PRIVATE_KEY
+  },
+  smtp: {
+    host: envVars.SMTP_HOST || '',
+    port: envVars.SMTP_PORT,
+    user: envVars.SMTP_USER || '',
+    pass: envVars.SMTP_PASS || '',
+    emailFrom: envVars.SMTP_FROM || ''
   }
 };

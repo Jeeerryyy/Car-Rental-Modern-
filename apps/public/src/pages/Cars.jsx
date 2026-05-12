@@ -10,7 +10,7 @@ import {
 import SidebarFilters from '../components/cars/SidebarFilters';
 import CarGrid from '../components/cars/CarGrid';
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 100;
 
 const EMPTY_FILTERS = {
   type: [],
@@ -37,13 +37,17 @@ const Cars = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [totalCount, setTotalCount] = useState(0);
+  const [quickType, setQuickType] = useState(''); // '' | 'car' | 'bike'
 
   const fetchCars = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = { page: currentPage, limit: ITEMS_PER_PAGE };
+      if (quickType) params.type = quickType;
       if (committedFilters.type.length > 0) params.category = committedFilters.type.join(',');
+      if (committedFilters.fuelType) params.fuelType = committedFilters.fuelType;
+      if (committedFilters.transmission) params.transmission = committedFilters.transmission;
       if (committedFilters.maxPrice) params.maxPrice = committedFilters.maxPrice;
       if (search.trim()) params.search = search.trim();
       const res = await carAPI.getAll(params);
@@ -55,7 +59,7 @@ const Cars = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, committedFilters, search]);
+  }, [currentPage, committedFilters, search, quickType]);
 
   useEffect(() => { fetchCars(); }, [fetchCars]);
 
@@ -123,9 +127,14 @@ const Cars = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
               <h1 className="font-display text-3xl font-bold text-dark mb-1">Available Fleet in Junagadh</h1>
-              <p className="text-sm text-muted font-medium">
+              <p className="text-sm text-muted font-medium mb-3">
                 {totalCount} vehicle{totalCount !== 1 ? 's' : ''} · Self drive &amp; chauffeur vehicles ready to book
               </p>
+              <div className="flex gap-2">
+                <button onClick={() => { setQuickType(''); setCurrentPage(1); }} className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-colors ${!quickType ? 'bg-dark text-white border-dark' : 'bg-white text-dark border-border hover:border-dark'}`}>All</button>
+                <button onClick={() => { setQuickType('car'); setCurrentPage(1); }} className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-colors ${quickType === 'car' ? 'bg-dark text-white border-dark' : 'bg-white text-dark border-border hover:border-dark'}`}>Cars</button>
+                <button onClick={() => { setQuickType('bike'); setCurrentPage(1); }} className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-colors ${quickType === 'bike' ? 'bg-dark text-white border-dark' : 'bg-white text-dark border-border hover:border-dark'}`}>Bikes</button>
+              </div>
             </div>
             <div className="flex items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 md:flex-none">

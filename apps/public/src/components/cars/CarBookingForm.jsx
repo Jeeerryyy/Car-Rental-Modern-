@@ -29,6 +29,7 @@ export default function CarBookingForm({ car }) {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [discount, setDiscount] = useState(0);
 
   // Load search criteria from localStorage
@@ -225,8 +226,8 @@ export default function CarBookingForm({ car }) {
               </div>
             </div>
 
-            <button onClick={handleProceed}
-              className="w-full btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10 transition-all">
+            <button onClick={handleProceed} disabled={!agreedToTerms}
+              className="w-full btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10 disabled:opacity-30 disabled:grayscale transition-all">
               <span className="text-base font-black uppercase tracking-widest">Verify &amp; Proceed</span>
               <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -257,8 +258,8 @@ export default function CarBookingForm({ car }) {
                 className="flex-1 bg-off border border-border py-4 rounded-xl text-dark font-black text-xs uppercase tracking-widest hover:bg-white transition-all">
                 Back
               </button>
-              <button onClick={handleFinalBooking} disabled={isBooking}
-                className="flex-[2] btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10 disabled:opacity-50">
+              <button onClick={handleFinalBooking} disabled={isBooking || !agreedToTerms}
+                className="flex-[2] btn-primary !py-4 flex items-center justify-center gap-3 group shadow-lg shadow-dark/10 disabled:opacity-30 disabled:grayscale transition-all">
                 <LockIcon className="w-5 h-5" />
                 <span className="text-base font-black uppercase tracking-widest">{isBooking ? 'Finalizing...' : 'Confirm & Pay'}</span>
               </button>
@@ -271,12 +272,21 @@ export default function CarBookingForm({ car }) {
             <span>Summary ({days} Day{days > 1 ? 's' : ''})</span>
             <span className="text-dark">₹{total.toLocaleString('en-IN')}</span>
           </div>
-          <div className="flex items-start gap-3 p-3 bg-off rounded-lg border border-border">
-            <ShieldIcon className="w-4 h-4 text-accent mt-0.5" />
-            <p className="text-[9px] text-muted font-bold leading-tight">
-              By proceeding, you agree to the rental terms. Documents are processed securely and encrypted.
-            </p>
-          </div>
+          <label className="flex items-start gap-4 p-4 bg-off rounded-xl border border-border cursor-pointer hover:bg-white transition-colors group">
+            <div className="relative flex items-center">
+              <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="sr-only" />
+              <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${agreedToTerms ? 'bg-dark border-dark' : 'border-muted group-hover:border-dark'}`}>
+                {agreedToTerms && <CheckIcon className="w-3 h-3 text-white" />}
+              </div>
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="text-[10px] text-dark font-black uppercase tracking-widest leading-none">Agreement</p>
+              <p className="text-[9px] text-muted font-bold leading-tight">
+                By proceeding, you agree to the rental terms. Documents are processed securely and encrypted.
+              </p>
+            </div>
+            <ShieldIcon className={`w-4 h-4 transition-colors ${agreedToTerms ? 'text-accent' : 'text-muted'}`} />
+          </label>
         </div>
       </div>
     </div>

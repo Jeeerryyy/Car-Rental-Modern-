@@ -17,9 +17,36 @@ import ownerReportRoutes from './owner/report.routes.js';
 import ownerClientRoutes from './owner/client.routes.js';
 import razorpayRoutes from './webhooks/razorpay.routes.js';
 
-import uploadRoutes from './public/upload.routes.js';
+import { uploadDocument } from '../middleware/upload.js';
+import { uploadDocument as uploadToCloudinary } from '../services/cloudinary.service.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { catchAsync } from '../utils/catchAsync.js';
+import { protect } from '../middleware/auth.js';
+import { config } from '../config/env.js';
 
 const router = Router();
+
+if (config.nodeEnv === 'development') {
+  router.use((req, res, next) => {
+    console.log(`[API Router] ${req.method} ${req.originalUrl}`);
+    next();
+  });
+}
+
+// Public Routes (authenticated)
+router.post('/upload', protect, uploadDocument, catchAsync(async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return ApiResponse.error(res, 400, 'No files uploaded');
+  }
+
+  const results = [];
+  for (const file of req.files) {
+    const result = await uploadToCloudinary(file);
+    results.push(result);
+  }
+
+  return ApiResponse.success(res, 200, 'Files uploaded successfully', { files: results });
+}));
 
 router.use('/auth', authRoutes);
 router.use('/cars', carRoutes);
@@ -28,8 +55,8 @@ router.use('/reviews', reviewRoutes);
 router.use('/search', searchRoutes);
 router.use('/promo', promoRoutes);
 router.use('/contact', contactRoutes);
-router.use('/upload', uploadRoutes);
 
+// Owner Routes
 router.use('/owner/auth', ownerAuthRoutes);
 router.use('/owner/cars', ownerCarRoutes);
 router.use('/owner/bookings', ownerBookingRoutes);
@@ -40,6 +67,7 @@ router.use('/owner/settings', ownerSettingsRoutes);
 router.use('/owner/reports', ownerReportRoutes);
 router.use('/owner/clients', ownerClientRoutes);
 
+// Webhooks
 router.use('/webhooks', razorpayRoutes);
 
 export default router;

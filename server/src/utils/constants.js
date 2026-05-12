@@ -55,17 +55,24 @@ export const BCRYPT_ROUNDS = 12;
 
 export const CLOUDINARY_FOLDERS = {
   CAR_IMAGES: 'modern-drive/cars',
+  BIKE_IMAGES: 'modern-drive/bikes',
   PROFILE_IMAGES: 'modern-drive/profiles',
   DOCUMENTS: 'modern-drive/documents'
 };
 
 export const CLOUDINARY_PUBLIC_ID_PREFIXES = {
   CAR_IMAGES: 'modern-drive/cars/',
+  BIKE_IMAGES: 'modern-drive/bikes/',
   PROFILE_IMAGES: 'modern-drive/profiles/',
   DOCUMENTS: 'modern-drive/documents/'
 };
 
-export const CAR_CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van'];
+export const VEHICLE_TYPES = {
+  CAR: 'car',
+  BIKE: 'bike'
+};
+
+export const CAR_CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van', 'bike', 'scooter', 'cruiser', 'sportsbike'];
 
 export const UPLOAD_LIMITS = {
   IMAGES: 5 * 1024 * 1024,
@@ -87,6 +94,7 @@ export default {
   BCRYPT_ROUNDS,
   CLOUDINARY_FOLDERS,
   CLOUDINARY_PUBLIC_ID_PREFIXES,
+  VEHICLE_TYPES,
   CAR_CATEGORIES,
   UPLOAD_LIMITS
 };
