@@ -431,7 +431,7 @@ export const getInvoiceHtml = (booking) => {
                 <div class="detail-card">
                     <div class="card-label">Renter Information</div>
                     <div class="card-value">${customer.name || 'Customer'}</div>
-                    <div class="card-sub">${customer.phone || '-'}</div>
+                    <div class="card-sub">${booking.phone || customer.phone || '-'}</div>
                     <div class="card-sub">${customer.email || ''}</div>
                 </div>
                 <div class="detail-card">
@@ -528,11 +528,11 @@ export const getInvoiceHtml = (booking) => {
                     </div>
                     <div class="term-row">
                         <span class="term-guj">૪. ભાડા કરાર દરમ્યાન જો વાહન નો અકસ્માત થાય તો ગ્રાહકે તાત્કાલીક સૌ પ્રથમ મોર્ડન સેલ્ફ ડ્રાઈવ ને જાણ કરવાની રહેશે.</span>
-                        <span class="term-eng">If an accident occurs to the vehicle during the rental agreement, the customer must immediately notify Modern Self Drive Car.</span>
+                        <span class="term-eng">If an accident occurs to the vehicle during the rental agreement, the customer must immediately notify modern self drive Car.</span>
                     </div>
                     <div class="term-row">
                         <span class="term-guj">૫. જો ગ્રાહક પોતાનો ભાડા કરાર વધારવા માંગાતા હોય તો ભાડા કરાર પુરૂ થાય તે પહેલા જાણ કરવાની રહેશે.</span>
-                        <span class="term-eng">If the customer wants to extend their rental agreement, they must inform the Modern Self Drive before the rental agreement expires.</span>
+                        <span class="term-eng">If the customer wants to extend their rental agreement, they must inform the modern self drive before the rental agreement expires.</span>
                     </div>
                     <div class="term-row">
                         <span class="term-guj">૬. ગ્રાહકે વાહન સંભાળતા પહેલા વાહનનો વિડિયો ફરજીયાત લઈ લેવા વિનંતી.</span>
@@ -559,13 +559,13 @@ export const getInvoiceHtml = (booking) => {
                     <div class="sig-label">Customer Signature</div>
                 </div>
                 <div class="sig-box">
-                    <div class="sig-box-inner">MODERN DRIVE</div>
+                    <div class="sig-box-inner">MODERN SELF DRIVE</div>
                     <div class="sig-label">Authorized Signatory</div>
                 </div>
             </div>
         </div>
         <div class="footer">
-            <div class="footer-item">Modern Self Drive - Rental Agreement</div>
+            <div class="footer-item">modern self drive - Rental Agreement</div>
             <div class="footer-item">Booking ID: #${booking._id?.slice(-6).toUpperCase()}</div>
         </div>
     </div>

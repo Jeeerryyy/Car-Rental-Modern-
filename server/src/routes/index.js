@@ -6,6 +6,7 @@ import reviewRoutes from './public/review.routes.js';
 import searchRoutes from './public/search.routes.js';
 import promoRoutes from './public/promo.routes.js';
 import contactRoutes from './public/contact.routes.js';
+import uploadRoutes from './public/upload.routes.js';
 import ownerAuthRoutes from './owner/auth.routes.js';
 import ownerCarRoutes from './owner/car.routes.js';
 import ownerBookingRoutes from './owner/booking.routes.js';
@@ -15,6 +16,7 @@ import ownerNotificationRoutes from './owner/notification.routes.js';
 import ownerSettingsRoutes from './owner/settings.routes.js';
 import ownerReportRoutes from './owner/report.routes.js';
 import ownerClientRoutes from './owner/client.routes.js';
+import ownerStaffRoutes from './owner/staff.routes.js';
 import razorpayRoutes from './webhooks/razorpay.routes.js';
 
 import { uploadDocument } from '../middleware/upload.js';
@@ -23,6 +25,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { protect } from '../middleware/auth.js';
 import { config } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -41,8 +44,13 @@ router.post('/upload', protect, uploadDocument, catchAsync(async (req, res) => {
 
   const results = [];
   for (const file of req.files) {
-    const result = await uploadToCloudinary(file);
-    results.push(result);
+    try {
+      const result = await uploadToCloudinary(file);
+      results.push(result);
+    } catch (uploadError) {
+      logger.error('Cloudinary upload error:', uploadError);
+      return ApiResponse.error(res, 500, `Upload failed: ${uploadError.message}`);
+    }
   }
 
   return ApiResponse.success(res, 200, 'Files uploaded successfully', { files: results });
@@ -51,6 +59,7 @@ router.post('/upload', protect, uploadDocument, catchAsync(async (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/cars', carRoutes);
 router.use('/bookings', bookingRoutes);
+router.use('/upload', uploadRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/search', searchRoutes);
 router.use('/promo', promoRoutes);
@@ -66,6 +75,7 @@ router.use('/owner/notifications', ownerNotificationRoutes);
 router.use('/owner/settings', ownerSettingsRoutes);
 router.use('/owner/reports', ownerReportRoutes);
 router.use('/owner/clients', ownerClientRoutes);
+router.use('/owner/staff', ownerStaffRoutes);
 
 // Webhooks
 router.use('/webhooks', razorpayRoutes);

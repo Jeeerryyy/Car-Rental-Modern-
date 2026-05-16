@@ -1,7 +1,25 @@
+import { useEffect, useState } from 'react';
 import { useOwnerAuth } from '../context/OwnerAuthContext';
+import { getOwnerMe } from '../api/auth';
 
 export default function Profile() {
-  const { user, logout } = useOwnerAuth();
+  const { user: localUser, logout, setUser } = useOwnerAuth();
+  const [user, setUserLocal] = useState(localUser);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getOwnerMe()
+      .then(res => {
+        const owner = res.data.data?.owner || res.data.owner;
+        if (owner) {
+          setUserLocal(owner);
+          setUser(owner);
+          localStorage.setItem('owner', JSON.stringify(owner));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="p-6 lg:p-12 max-w-4xl mx-auto w-full animate-in fade-in duration-700">

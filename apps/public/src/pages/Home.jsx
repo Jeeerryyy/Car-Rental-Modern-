@@ -38,7 +38,7 @@ const FEATURES = [
 const FALLBACK_REVIEWS = [
   { _id: '1', name: 'Nishant Sinojia', rating: 5, text: 'We hired self driving car for 7 days, process is much easy and smoother than other vendors. Car condition was good. Price is reasonable. Must recommend if you are looking for self drive option.', vehicle: '7 Days Rental', verified: true, avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
   { _id: '2', name: 'Nirav Shah', rating: 5, text: 'Extra ordinary service. We took a self-drive car (Fronx) from junagadh and had a trip to Gir - Somnath- Dwarka. Car was in excellent condition and we didn\'t face any issues.', vehicle: 'Suzuki Fronx', verified: true, avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
-  { _id: '3', name: 'Hemang Mehta', rating: 5, text: 'I recently rented a car from Modern Self Drive in Junagadh and had an awesome experience! They have a fleet of brand-new, well-maintained cars. A special thanks to Wasim bhai, the owner.', vehicle: 'Self Drive', verified: true, avatar: 'https://images.pexels.com/photos/2100063/pexels-photo-2100063.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
+  { _id: '3', name: 'Hemang Mehta', rating: 5, text: 'I recently rented a car from modern self drive in Junagadh and had an awesome experience! They have a fleet of brand-new, well-maintained cars. A special thanks to Wasim bhai, the owner.', vehicle: 'Self Drive', verified: true, avatar: 'https://images.pexels.com/photos/2100063/pexels-photo-2100063.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
   { _id: '4', name: 'Parth Racka', rating: 5, text: 'Best Car Service ever. The support is awesome. Highly trustable and professional behavior.', vehicle: 'Premium Service', verified: true, avatar: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
   { _id: '5', name: 'Ravi Bagthariya', rating: 5, text: 'Good service and car quality very nice. One of the most reliable options in Junagadh region.', vehicle: 'Hatchback', verified: true, avatar: 'https://images.pexels.com/photos/775358/pexels-photo-775358.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500' },
 ];
@@ -59,7 +59,8 @@ function Home() {
           carAPI.getFeatured(),
           promoAPI.getFeatured()
         ]);
-        setFeaturedCars(carsRes.data.data || []);
+        console.log('Featured Cars API Response:', carsRes.data);
+        setFeaturedCars(carsRes.data.data?.cars || carsRes.data.data || []);
         setFeaturedPromo(promoRes.data.data?.promo || null);
       } catch {
         setFeaturedCars([]);
@@ -79,20 +80,20 @@ function Home() {
   };
 
   return (
-    <main id="main-content" className="bg-off overflow-x-hidden">
+    <main id="main-content" className="overflow-x-hidden" style={{ background: '#F9F8F3' }}>
       <HeroSection />
       <AboutSection />
 
-      <section className="py-6 border-y border-border bg-white overflow-hidden">
+      <section className="py-6 overflow-hidden" style={{ borderTop: '1px solid rgba(182,124,61,0.15)', borderBottom: '1px solid rgba(182,124,61,0.15)', background: '#F2EEE5' }}>
         <div className="relative w-full flex items-center">
-          <div className="flex gap-4 w-max animate-marquee text-dark text-lg font-bold">
+          <div className="flex gap-4 w-max animate-marquee text-lg font-bold" style={{ color: '#19130E' }}>
             {[0, 1].flatMap((set) =>
               DESTINATIONS.map((d, i) => (
                 <div key={`${set}-${i}`} className="flex items-center gap-4">
                   <span className="whitespace-nowrap">
-                    {d.name} <span className="text-muted font-medium text-sm">({d.distance})</span>
+                    {d.name} <span className="font-medium text-sm" style={{ color: '#6b5e50' }}>({d.distance})</span>
                   </span>
-                  <span className="text-border mx-2 text-sm">•</span>
+                  <span className="mx-2 text-sm" style={{ color: 'rgba(182,124,61,0.3)' }}>•</span>
                 </div>
               ))
             )}

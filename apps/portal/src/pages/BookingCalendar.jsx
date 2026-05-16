@@ -25,8 +25,8 @@ export default function BookingCalendar() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const res = await getBookings({ limit: 500 }); // Increase limit for calendar
-      setBookings(res.data.data || []);
+      const res = await getBookings({ limit: 500 });
+      setBookings(res.data.data || res.data || []);
     } catch (err) {
       toast.error('Failed to load bookings');
     } finally {
@@ -216,7 +216,7 @@ export default function BookingCalendar() {
                     <div className="grid grid-cols-1 gap-3 pt-4 border-t border-outline-variant">
                       <div className="flex items-center gap-3 text-sm text-secondary">
                         <span className="material-symbols-outlined text-[18px]">call</span>
-                        <span className="font-bold">{b.customer?.phone || 'No phone provided'}</span>
+                        <span className="font-bold">{b.phone || b.customer?.phone || 'No phone provided'}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-secondary">
                         <span className="material-symbols-outlined text-[18px]">mail</span>

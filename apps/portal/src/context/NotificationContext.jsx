@@ -11,21 +11,21 @@ export function NotificationProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const socket = useSocket();
-  const { owner } = useOwnerAuth();
+  const { user } = useOwnerAuth();
 
   const fetchNotifications = useCallback(async () => {
-    if (!owner) return;
+    if (!user) return;
     try {
       const res = await getNotifications();
-      const data = res.data.data;
-      setNotifications(data.notifications || []);
+      const data = res.data;
+      setNotifications(Array.isArray(data.data) ? data.data : []);
       setUnreadCount(data.unreadCount || 0);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
       setLoading(false);
     }
-  }, [owner]);
+  }, [user]);
 
   useEffect(() => {
     fetchNotifications();

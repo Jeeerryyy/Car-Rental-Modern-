@@ -52,6 +52,7 @@ function PublicShell() {
   const { pathname } = useLocation();
   const { customer } = useAuth();
   const hideChrome = ['/signin', '/signup'].includes(pathname.toLowerCase());
+  const isHome = pathname === '/';
 
   useEffect(() => {
     if (customer) {
@@ -66,7 +67,7 @@ function PublicShell() {
     <>
       {!hideChrome && <Navbar customer={customer} />}
       <Toaster position="top-right" />
-      <div className={!hideChrome ? "pt-[72px]" : ""}>
+      <div className={!hideChrome && !isHome ? "pt-[76px]" : ""}>
         <main id="main-content">
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -101,7 +102,8 @@ export default function App() {
           <ScrollRestoration />
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-white focus:text-dark focus:rounded focus:shadow-lg focus:font-semibold focus:text-sm"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded focus:font-semibold focus:text-sm"
+            style={{ background: '#19130E', color: '#F9F8F3' }}
           >
             Skip to main content
           </a>

@@ -25,6 +25,6 @@ export const updateCar = (id, data) => {
   return api.put(`/owner/cars/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 };
 export const deleteCar = (id) => api.delete(`/owner/cars/${id}`);
-export const toggleCarAvailability = (id) => api.patch(`/owner/cars/${id}/toggle-availability`);
+export const toggleCarAvailability = (id) => api.patch(`/owner/cars/${id}/toggle`);
 export const addBlockedDates = (id, data) => api.post(`/owner/cars/${id}/blocked-dates`, data);
 export const removeBlockedDates = (id, blockId) => api.delete(`/owner/cars/${id}/blocked-dates/${blockId}`);

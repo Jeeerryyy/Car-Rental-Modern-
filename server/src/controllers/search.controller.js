@@ -19,5 +19,5 @@ export const locations = catchAsync(async (req, res) => {
 
 export const featured = catchAsync(async (req, res) => {
   const cars = await getFeaturedCars(parseInt(req.query.limit) || 6);
-  return ApiResponse.success(res, 200, 'Featured cars retrieved', cars);
+  return ApiResponse.success(res, 200, 'Featured cars retrieved', { cars }, undefined);
 });

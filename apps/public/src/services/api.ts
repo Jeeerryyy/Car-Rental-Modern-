@@ -17,6 +17,12 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('customer');
+      
+      // Do not redirect if the request was checking the auth status
+      if (error.config && error.config.url === '/auth/profile') {
+        return Promise.reject(error);
+      }
+
       if (window.location.pathname !== '/signin' && window.location.pathname !== '/signup') {
         window.location.href = '/signin';
       }
@@ -48,6 +54,7 @@ export const carAPI = {
 
 export const bookingAPI = {
   create: (data: any) => api.post('/bookings', data),
+  createCashBooking: (data: any) => api.post('/bookings/cash-booking', data),
   verifyPayment: (params: Record<string, any>) => api.get('/bookings/verify-payment', { params }),
   getMyBookings: (params?: Record<string, any>) => api.get('/bookings/my-bookings', { params }),
   getById: (id: string) => api.get(`/bookings/${id}`),

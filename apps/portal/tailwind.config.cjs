@@ -7,43 +7,43 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ── Owner CRM Design System (Brand Refresh) ──
-        'primary':              '#111827',
-        'primary-container':    '#172033',
-        'on-primary':           '#ffffff',
+        // ── Owner CRM Design System (Public Site Match) ──
+        'primary':              '#19130E',
+        'primary-container':    '#2c241b',
+        'on-primary':           '#F9F8F3',
         'on-primary-container': '#D1D5DB',
 
-        'secondary':            '#C89B5B',
-        'secondary-container':  '#F3F4F6',
-        'on-secondary':         '#111827',
+        'secondary':            '#B67C3D',
+        'secondary-container':  '#F2EEE5',
+        'on-secondary':         '#19130E',
 
-        'surface':              '#F8F7F4',
-        'surface-dim':          '#E5E7EB',
-        'surface-bright':       '#F8F7F4',
-        'surface-variant':      '#F3F4F6',
-        'surface-container-lowest': '#ffffff',
-        'surface-container-low':'#F8F7F4',
-        'surface-container':    '#F3F4F6',
-        'surface-container-high':'#E5E7EB',
+        'surface':              '#F9F8F3',
+        'surface-dim':          'rgba(25, 19, 14, 0.05)',
+        'surface-bright':       '#F9F8F3',
+        'surface-variant':      '#F2EEE5',
+        'surface-container-lowest': '#F2EEE5',
+        'surface-container-low':'#F9F8F3',
+        'surface-container':    '#F2EEE5',
+        'surface-container-high':'rgba(25, 19, 14, 0.1)',
 
-        'on-surface':           '#0F172A',
-        'on-surface-variant':   '#6B7280',
+        'on-surface':           '#19130E',
+        'on-surface-variant':   '#6b5e50',
 
-        'background':           '#F8F7F4',
-        'on-background':        '#0F172A',
+        'background':           '#F9F8F3',
+        'on-background':        '#19130E',
 
-        'outline':              '#9CA3AF',
-        'outline-variant':      '#E5E7EB',
+        'outline':              'rgba(25, 19, 14, 0.3)',
+        'outline-variant':      'rgba(25, 19, 14, 0.15)',
 
         'error':                '#ba1a1a',
         'error-container':      '#ffdad6',
 
         // Utility colors
-        dark:    '#111827',
-        accent:  '#C89B5B',
-        muted:   '#6B7280',
-        off:     '#F8F7F4',
-        border:  '#E5E7EB',
+        dark:    '#19130E',
+        accent:  '#B67C3D',
+        muted:   '#6b5e50',
+        off:     '#F9F8F3',
+        border:  'rgba(25, 19, 14, 0.15)',
       },
       fontFamily: {
         'body-md':     ['Inter', 'sans-serif'],

@@ -33,9 +33,15 @@ const ownerSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'owner',
-    immutable: true
+    enum: ['owner', 'staff'],
+    default: 'owner'
   },
+  parentOwner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Owner',
+    default: null
+  },
+
   profileImage: {
     url: String,
     publicId: String

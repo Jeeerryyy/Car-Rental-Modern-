@@ -17,6 +17,10 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Customer',
     required: [true, 'Customer is required']
   },
+  phone: {
+    type: String,
+    trim: true
+  },
   startDate: {
     type: Date,
     required: [true, 'Start date is required']
@@ -46,6 +50,11 @@ const bookingSchema = new mongoose.Schema({
     enum: Object.values(PAYMENT_STATUS),
     default: PAYMENT_STATUS.PENDING
   },
+  referenceId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   razorpayOrderId: String,
   razorpayPaymentId: String,
   promoCode: String,
@@ -71,6 +80,28 @@ const bookingSchema = new mongoose.Schema({
   signature: {
     url: String,
     publicId: String
+  },
+  cancellationReason: {
+    type: String,
+    enum: ['invalid_documents', 'vehicle_not_available', 'customer_no_show', 'payment_issue', 'other', null],
+    default: null
+  },
+  cancellationNote: {
+    type: String,
+    trim: true,
+    maxlength: [300, 'Cancellation note cannot exceed 300 characters']
+  },
+  cancelledBy: {
+    type: String,
+    enum: ['customer', 'owner', null],
+    default: null
+  },
+  ownerVerification: {
+    documents: [{
+      url: String,
+      publicId: String,
+      uploadedAt: { type: Date, default: Date.now }
+    }]
   }
 }, {
   timestamps: true,

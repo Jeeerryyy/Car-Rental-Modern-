@@ -8,17 +8,18 @@ export function FormInput({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-dark">
+        <label className="block text-sm font-medium" style={{ color: '#19130E' }}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
-        className={`w-full px-4 py-3 rounded-lg border ${
-          error 
-            ? 'border-red-500 focus:border-red-500 bg-red-50' 
-            : 'border-gray-200 focus:border-dark bg-white'
-        } outline-none transition-colors`}
+        className="w-full px-4 py-3 rounded-[8px] outline-none"
+        style={{
+          background: error ? 'rgba(185,28,28,0.05)' : '#F2EEE5',
+          color: '#19130E',
+          border: error ? '1px solid #b91c1c' : '1px solid rgba(182,124,61,0.15)',
+        }}
         {...props}
       />
       {error && (
@@ -41,17 +42,18 @@ export function FormTextarea({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-dark">
+        <label className="block text-sm font-medium" style={{ color: '#19130E' }}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <textarea
-        className={`w-full px-4 py-3 rounded-lg border ${
-          error 
-            ? 'border-red-500 focus:border-red-500 bg-red-50' 
-            : 'border-gray-200 focus:border-dark bg-white'
-        } outline-none transition-colors resize-none`}
+        className="w-full px-4 py-3 rounded-[8px] outline-none resize-none"
+        style={{
+          background: error ? 'rgba(185,28,28,0.05)' : '#F2EEE5',
+          color: '#19130E',
+          border: error ? '1px solid #b91c1c' : '1px solid rgba(182,124,61,0.15)',
+        }}
         {...props}
       />
       {error && (
@@ -76,17 +78,18 @@ export function FormSelect({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-dark">
+        <label className="block text-sm font-medium" style={{ color: '#19130E' }}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <select
-        className={`w-full px-4 py-3 rounded-lg border ${
-          error 
-            ? 'border-red-500 focus:border-red-500 bg-red-50' 
-            : 'border-gray-200 focus:border-dark bg-white'
-        } outline-none transition-colors appearance-none cursor-pointer`}
+        className="w-full px-4 py-3 rounded-[8px] outline-none appearance-none cursor-pointer"
+        style={{
+          background: error ? 'rgba(185,28,28,0.05)' : '#F2EEE5',
+          color: '#19130E',
+          border: error ? '1px solid #b91c1c' : '1px solid rgba(182,124,61,0.15)',
+        }}
         {...props}
       >
         {placeholder && <option value="">{placeholder}</option>}
@@ -116,11 +119,12 @@ export function SubmitButton({
   return (
     <button
       disabled={disabled || loading}
-      className={`w-full bg-dark text-white font-bold py-4 rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+      className={`w-full font-bold py-4 rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+      style={{ background: '#19130E', color: '#FFFFFF' }}
       {...props}
     >
       {loading && (
-        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(220,207,186,0.3)', borderTopColor: '#FFFFFF' }} />
       )}
       {children}
     </button>

@@ -19,9 +19,9 @@ export default function Dashboard() {
         getDashboardStats(),
         getNotifications({ limit: 5 })
       ]);
-      setStats(statsRes.data);
-      setRecentBookings(statsRes.data.recentBookings || []);
-      setNotifications(notifRes.data.data?.notifications || []);
+      setStats(statsRes.data.data || statsRes.data);
+      setRecentBookings(statsRes.data.data?.recentBookings || statsRes.data.recentBookings || []);
+      setNotifications(notifRes.data.data?.notifications || notifRes.data.notifications || []);
     } catch {
       setStats({ totalRevenue: 0, activeBookings: 0, totalCars: 0, availableCars: 0 });
     } finally {

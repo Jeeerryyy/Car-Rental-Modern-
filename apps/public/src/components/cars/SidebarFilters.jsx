@@ -1,147 +1,85 @@
 import React from 'react';
 import { XIcon, CheckIcon } from '../ui/Icons';
 
-export default function SidebarFilters({
-  filterOpen,
-  setFilterOpen,
-  localFilters,
-  setLocalFilters,
-  clearFilters,
-  applyFilters,
-  toggleType
-}) {
+export default function SidebarFilters({ filterOpen, setFilterOpen, localFilters, setLocalFilters, clearFilters, applyFilters, toggleType }) {
+  const cardStyle = { background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' };
+
   return (
     <>
-      {filterOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-[80] lg:hidden"
-          onClick={() => setFilterOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      <aside
-        className={`fixed lg:relative top-0 left-0 h-full lg:h-auto w-[300px] lg:w-[280px] z-[85] lg:z-auto flex-shrink-0 bg-white lg:bg-transparent transform transition-transform duration-300 lg:transform-none ${filterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} overflow-y-auto`}
-      >
-        <div className="bg-white p-6 rounded-none lg:rounded-[var(--radius-md)] shadow-sm lg:border lg:border-border lg:sticky lg:top-[100px]">
-          <h3 className="font-display text-xl font-bold text-dark mb-6 flex items-center justify-between">
+      {filterOpen && (<div className="fixed inset-0 z-[80] lg:hidden" style={{ background: 'rgba(25,19,14,0.35)' }} onClick={() => setFilterOpen(false)} aria-hidden="true" />)}
+      <aside className={`fixed lg:relative top-0 left-0 h-full lg:h-auto w-[300px] lg:w-[280px] z-[85] lg:z-auto flex-shrink-0 lg:transform-none ${filterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} overflow-y-auto`}>
+        <div className="p-6 rounded-none lg:rounded-[12px] lg:sticky lg:top-[100px] min-h-screen lg:min-h-0" style={cardStyle}>
+          <h3 className="font-display text-xl font-bold mb-6 flex items-center justify-between" style={{ color: '#19130E' }}>
             Filters
             <div className="flex items-center gap-3">
-              <button
-                onClick={clearFilters}
-                className="text-xs font-semibold text-muted hover:text-dark uppercase tracking-wider"
-              >
-                Clear
-              </button>
-              <button
-                className="lg:hidden text-muted hover:text-dark"
-                onClick={() => setFilterOpen(false)}
-                aria-label="Close filters"
-              >
-                <XIcon className="w-6 h-6" />
-              </button>
+              <button onClick={clearFilters} className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6b5e50' }}>Clear</button>
+              <button className="lg:hidden" onClick={() => setFilterOpen(false)} aria-label="Close filters" style={{ color: '#6b5e50' }}><XIcon className="w-6 h-6" /></button>
             </div>
           </h3>
 
-          {/* Price Range */}
           <div className="mb-8">
-            <h4 className="text-sm font-bold text-dark mb-4">Max Price / Day</h4>
-            <input
-              type="range" min="500" max="10000" step="500"
-              value={localFilters.maxPrice}
-              onChange={(e) => setLocalFilters((p) => ({ ...p, maxPrice: Number(e.target.value) }))}
-              className="w-full accent-dark"
-            />
+            <h4 className="text-sm font-bold mb-4" style={{ color: '#19130E' }}>Max Price / Day</h4>
+            <input type="range" min="500" max="10000" step="500" value={localFilters.maxPrice} onChange={(e) => setLocalFilters((p) => ({ ...p, maxPrice: Number(e.target.value) }))} className="w-full" style={{ accentColor: '#19130E' }} />
             <div className="flex justify-between text-sm mt-2 font-medium">
-              <span className="text-muted">₹500</span>
-              <span className="text-dark">₹{Number(localFilters.maxPrice).toLocaleString('en-IN')}</span>
+              <span style={{ color: '#6b5e50' }}>₹500</span>
+              <span style={{ color: '#19130E' }}>₹{Number(localFilters.maxPrice).toLocaleString('en-IN')}</span>
             </div>
           </div>
 
-          {/* Vehicle Type */}
           <div className="mb-8">
-            <h4 className="text-sm font-bold text-dark mb-4">Vehicle Type</h4>
+            <h4 className="text-sm font-bold mb-4" style={{ color: '#19130E' }}>Vehicle Type</h4>
             <div className="flex flex-col gap-3">
               {['Hatchback', 'Sedan', 'SUV', 'Luxury', 'Bike', 'Scooter'].map((type) => (
-                <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                  <div
-                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${localFilters.type.includes(type.toLowerCase()) ? 'bg-dark border-dark' : 'border-border group-hover:border-dark bg-white'}`}
-                  >
-                    {localFilters.type.includes(type.toLowerCase()) && <CheckIcon className="w-3.5 h-3.5 text-white" />}
+                <label key={type} className="flex items-center gap-3 cursor-pointer">
+                  <div className="w-5 h-5 rounded flex items-center justify-center"
+                    style={localFilters.type.includes(type.toLowerCase()) ? { background: '#19130E', border: '1px solid #19130E' } : { background: '#F9F8F3', border: '1px solid rgba(182,124,61,0.15)' }}>
+                    {localFilters.type.includes(type.toLowerCase()) && <CheckIcon className="w-3.5 h-3.5" style={{ color: '#F9F8F3' }} />}
                   </div>
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={localFilters.type.includes(type.toLowerCase())}
-                    onChange={() => toggleType(type)}
-                  />
-                  <span className="text-sm text-dark font-medium">{type}</span>
+                  <input type="checkbox" className="sr-only" checked={localFilters.type.includes(type.toLowerCase())} onChange={() => toggleType(type)} />
+                  <span className="text-sm font-medium" style={{ color: '#19130E' }}>{type}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Drive Option */}
           <div className="mb-8">
-            <h4 className="text-sm font-bold text-dark mb-4">Drive Option</h4>
+            <h4 className="text-sm font-bold mb-4" style={{ color: '#19130E' }}>Drive Option</h4>
             <div className="flex flex-col gap-3">
               {['Self Drive', 'With Driver', 'Both'].map((opt) => (
                 <label key={opt} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio" name="driveOption"
-                    className="accent-dark w-4 h-4"
-                    checked={localFilters.driveOption === opt}
-                    onChange={() => setLocalFilters((p) => ({ ...p, driveOption: opt }))}
-                    onClick={() => localFilters.driveOption === opt && setLocalFilters((p) => ({ ...p, driveOption: '' }))}
-                  />
-                  <span className="text-sm text-dark font-medium">{opt}</span>
+                  <input type="radio" name="driveOption" className="w-4 h-4" style={{ accentColor: '#19130E' }} checked={localFilters.driveOption === opt} onChange={() => setLocalFilters((p) => ({ ...p, driveOption: opt }))} onClick={() => localFilters.driveOption === opt && setLocalFilters((p) => ({ ...p, driveOption: '' }))} />
+                  <span className="text-sm font-medium" style={{ color: '#19130E' }}>{opt}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Transmission */}
           <div className="mb-8">
-            <h4 className="text-sm font-bold text-dark mb-4">Transmission</h4>
-            <div className="flex bg-off p-1 rounded-md border border-border">
+            <h4 className="text-sm font-bold mb-4" style={{ color: '#19130E' }}>Transmission</h4>
+            <div className="flex p-1 rounded-[8px]" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)' }}>
               {['Automatic', 'Manual'].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setLocalFilters((p) => ({ ...p, transmission: p.transmission === t ? '' : t }))}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${localFilters.transmission === t ? 'bg-white shadow-sm text-dark' : 'text-muted hover:text-dark'}`}
-                >
+                <button key={t} onClick={() => setLocalFilters((p) => ({ ...p, transmission: p.transmission === t ? '' : t }))}
+                  className="flex-1 py-1.5 text-xs font-bold rounded-[6px]"
+                  style={localFilters.transmission === t ? { background: '#F9F8F3', color: '#19130E', boxShadow: '0 1px 3px rgba(25,19,14,0.06)' } : { color: '#6b5e50' }}>
                   {t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Fuel Type */}
           <div className="mb-8">
-            <h4 className="text-sm font-bold text-dark mb-4">Fuel Type</h4>
+            <h4 className="text-sm font-bold mb-4" style={{ color: '#19130E' }}>Fuel Type</h4>
             <div className="flex flex-col gap-3">
               {['Petrol', 'Diesel', 'CNG', 'Electric'].map((fuel) => (
                 <label key={fuel} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio" name="fuelType"
-                    className="accent-dark w-4 h-4"
-                    checked={localFilters.fuelType === fuel}
-                    onChange={() => setLocalFilters((p) => ({ ...p, fuelType: fuel }))}
-                    onClick={() => localFilters.fuelType === fuel && setLocalFilters((p) => ({ ...p, fuelType: '' }))}
-                  />
-                  <span className="text-sm text-dark font-medium">{fuel}</span>
+                  <input type="radio" name="fuelType" className="w-4 h-4" style={{ accentColor: '#19130E' }} checked={localFilters.fuelType === fuel} onChange={() => setLocalFilters((p) => ({ ...p, fuelType: fuel }))} onClick={() => localFilters.fuelType === fuel && setLocalFilters((p) => ({ ...p, fuelType: '' }))} />
+                  <span className="text-sm font-medium" style={{ color: '#19130E' }}>{fuel}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Apply Button */}
-          <button
-            onClick={applyFilters}
-            className="w-full bg-dark text-white font-semibold py-3 rounded-md hover:opacity-90 transition-opacity"
-          >
-            Apply Filters
-          </button>
+          <button onClick={applyFilters} className="w-full font-semibold py-3 rounded-[8px]" style={{ background: '#19130E', color: '#F9F8F3' }}>Apply Filters</button>
         </div>
       </aside>
     </>

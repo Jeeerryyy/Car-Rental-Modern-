@@ -1,7 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ownerLogin, ownerRegister, ownerLogout, getOwnerMe } from '../api/auth.js';
 
 const OwnerAuthContext = createContext(null);
+
+function hasOwnerCookie() {
+  return document.cookie.split(';').some(c => c.trim().startsWith('ownerToken='));
+}
 
 export function OwnerAuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -12,20 +16,27 @@ export function OwnerAuthProvider({ children }) {
       return null;
     }
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!localStorage.getItem('owner') || hasOwnerCookie());
 
   useEffect(() => {
-    // Try to get profile on load to check if cookie is valid
-    getOwnerMe()
-      .then(res => {
-        setUser(res.data.data.owner);
-        localStorage.setItem('owner', JSON.stringify(res.data.data.owner));
-      })
-      .catch(() => {
-        localStorage.removeItem('owner');
-        setUser(null);
-      })
-      .finally(() => setIsLoading(false));
+    if (hasOwnerCookie() && !localStorage.getItem('owner')) {
+      getOwnerMe()
+        .then(res => {
+          const owner = res.data.data?.owner || res.data.owner;
+          if (owner) {
+            localStorage.setItem('owner', JSON.stringify(owner));
+            setUser(owner);
+          }
+        })
+        .catch(() => {
+          document.cookie = 'ownerToken=; Max-Age=0; path=/';
+          localStorage.removeItem('owner');
+          setUser(null);
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const login = useCallback(async (email, password) => {
@@ -90,5 +101,5 @@ export function useOwnerAuth() {
       checkAuth: async () => {},
     };
   }
-  return { ...ctx, isOwner: true };
+  return { ...ctx, isOwner: ctx.user?.role === 'owner' };
 }

@@ -494,7 +494,7 @@ export const getInvoiceHtml = (booking) => {
             </div>
         </div>
         <div class="footer">
-            <div class="footer-item">Tel: 87924 92717</div>
+            <div class="footer-item">Tel: 90044 60634</div>
             <div class="footer-item">Web: modernselfdrive.in</div>
             <div class="footer-item">support@modernselfdrive.in</div>
         </div>

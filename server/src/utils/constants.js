@@ -9,13 +9,16 @@ export const BOOKING_STATUS = {
 export const PAYMENT_STATUS = {
   PENDING: 'pending',
   PAID: 'paid',
-  REFUNDED: 'refunded'
+  REFUNDED: 'refunded',
+  PAY_AT_CAR: 'pay_at_car'
 };
 
 export const USER_ROLES = {
   CUSTOMER: 'customer',
-  OWNER: 'owner'
+  OWNER: 'owner',
+  STAFF: 'staff'
 };
+
 
 export const PROMO_TYPES = {
   PERCENTAGE: 'percentage',
@@ -57,14 +60,16 @@ export const CLOUDINARY_FOLDERS = {
   CAR_IMAGES: 'modern-drive/cars',
   BIKE_IMAGES: 'modern-drive/bikes',
   PROFILE_IMAGES: 'modern-drive/profiles',
-  DOCUMENTS: 'modern-drive/documents'
+  DOCUMENTS: 'modern-drive/documents',
+  OWNER_VERIFIED_DOCUMENTS: 'modern-drive/owner_verified'
 };
 
 export const CLOUDINARY_PUBLIC_ID_PREFIXES = {
   CAR_IMAGES: 'modern-drive/cars/',
   BIKE_IMAGES: 'modern-drive/bikes/',
   PROFILE_IMAGES: 'modern-drive/profiles/',
-  DOCUMENTS: 'modern-drive/documents/'
+  DOCUMENTS: 'modern-drive/documents/',
+  OWNER_VERIFIED_DOCUMENTS: 'modern-drive/owner_verified/'
 };
 
 export const VEHICLE_TYPES = {

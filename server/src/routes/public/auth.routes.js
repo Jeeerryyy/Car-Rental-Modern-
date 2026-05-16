@@ -102,6 +102,7 @@ router.post('/login', authLimiter, loginRules, validate, login);
 router.post('/google', authLimiter, googleAuth);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
+router.get('/me', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getProfile);
 router.get('/profile', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getProfile);
 router.put('/profile', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), updateProfile);
 router.post('/change-password', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), changePassword);

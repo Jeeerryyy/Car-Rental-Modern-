@@ -39,8 +39,7 @@ export default function SignIn() {
       <div className="hidden lg:flex flex-col justify-between w-[40%] bg-dark text-white p-16 relative overflow-hidden">
         <div className="relative z-10">
           <Link to="/" className="flex flex-col -space-y-1.5 group">
-            <span className="text-2xl font-black tracking-tight text-white leading-tight group-hover:text-accent transition-colors uppercase">Modern</span>
-            <span className="text-[11px] font-bold tracking-[0.25em] text-gray-400 uppercase">Selfdrive</span>
+            <span className="text-2xl font-black tracking-tight text-white leading-tight group-hover:text-accent transition-colors uppercase">modern self drive</span>
           </Link>
           <div className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Command Center</div>
         </div>
@@ -48,7 +47,7 @@ export default function SignIn() {
           <h2 className="text-5xl font-display font-black leading-[1.1] mb-6 tracking-tighter">Fleet management simplified.</h2>
         </div>
         <div className="relative z-10 flex items-center gap-6 text-[10px] font-black uppercase tracking-widest opacity-30">
-          <span>© {new Date().getFullYear()} Modern Selfdrive</span>
+          <span>© {new Date().getFullYear()} modern self drive</span>
         </div>
       </div>
 
@@ -56,8 +55,7 @@ export default function SignIn() {
         <div className="w-full max-w-md">
           <div className="mb-12">
             <div className="lg:hidden mb-12 flex flex-col -space-y-1.5">
-              <span className="text-2xl font-black tracking-tight text-dark leading-tight uppercase">Modern</span>
-              <span className="text-[11px] font-bold tracking-[0.25em] text-muted uppercase">Selfdrive</span>
+              <span className="text-2xl font-black tracking-tight text-dark leading-tight uppercase">modern self drive</span>
             </div>
             <h2 className="text-4xl font-display font-black text-dark mb-3 tracking-tight">Portal Sign In</h2>
             <p className="text-muted font-medium">Access your fleet command center</p>

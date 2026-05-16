@@ -15,7 +15,7 @@ export default function OwnerTopbar({ onMenuToggle }) {
           >
             menu
           </span>
-          <span className="font-display font-black tracking-tighter text-lg uppercase">Modern Drive</span>
+          <span className="font-display font-black tracking-tighter text-lg uppercase">modern self drive</span>
         </div>
         <div className="flex items-center gap-3 relative">
           <Link to="/notifications" className="material-symbols-outlined text-muted hover:text-dark transition-colors relative">
@@ -23,13 +23,14 @@ export default function OwnerTopbar({ onMenuToggle }) {
             {unreadCount > 0 && (
               <span 
                 key={unreadCount}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce"
+                className="absolute -top-1 -right-1 w-4 h-4 bg-secondary text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce"
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
         </div>
+
       </header>
 
       {/* Desktop topbar */}
@@ -49,12 +50,13 @@ export default function OwnerTopbar({ onMenuToggle }) {
           <Link to="/notifications" className="text-muted hover:text-dark transition-colors p-2 rounded-xl hover:bg-off active:scale-95 relative">
             <span className="material-symbols-outlined">notifications</span>
             {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 w-5 h-5 bg-blue-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-lg animate-in zoom-in duration-300">
+              <span className="absolute top-2 right-2 w-5 h-5 bg-secondary text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-lg animate-in zoom-in duration-300">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
         </div>
+
       </header>
     </>
   );

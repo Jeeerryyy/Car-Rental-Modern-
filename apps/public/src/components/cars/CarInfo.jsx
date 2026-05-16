@@ -27,29 +27,29 @@ export default function CarInfo({ car }) {
           { label: 'Fuel Type', value: car.fuelType, icon: FuelIcon },
           { label: 'Kilometers', value: 'Unlimited', icon: SettingsIcon }
         ].map(spec => (
-          <div key={spec.label} className="bg-white p-6 rounded-2xl border border-border shadow-sm group hover:border-dark transition-all">
-            <spec.icon className="w-6 h-6 text-muted mb-4 group-hover:text-dark transition-colors" />
-            <p className="text-[10px] text-muted font-bold uppercase tracking-wider mb-1">{spec.label}</p>
-            <p className="text-sm font-bold text-dark">{spec.value}</p>
+          <div key={spec.label} className="p-6 rounded-[12px]" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
+            <spec.icon className="w-6 h-6 mb-4" style={{ color: '#6b5e50' }} />
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6b5e50' }}>{spec.label}</p>
+            <p className="text-sm font-bold" style={{ color: '#19130E' }}>{spec.value}</p>
           </div>
         ))}
       </div>
 
       <section>
-        <h2 className="text-2xl font-display font-bold text-dark mb-6">About this Vehicle</h2>
-        <p className="text-muted leading-relaxed mb-8">
+        <h2 className="text-2xl font-display font-bold mb-6" style={{ color: '#19130E' }}>About this Vehicle</h2>
+        <p className="leading-relaxed mb-8" style={{ color: '#6b5e50' }}>
           The {car.make} {car.model} offers an exceptional blend of performance, comfort, and state-of-the-art technology. 
           Perfect for both urban navigation and long-distance cruising, this vehicle is meticulously maintained.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {features.map((f, i) => (
             <div key={i} className="flex gap-4">
-              <div className="w-12 h-12 rounded-xl bg-off border border-border flex items-center justify-center shrink-0">
-                <f.icon className="w-6 h-6 text-dark" />
+              <div className="w-12 h-12 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.1)' }}>
+                <f.icon className="w-6 h-6" style={{ color: '#19130E' }} />
               </div>
               <div>
-                <h4 className="font-bold text-dark text-sm">{f.label}</h4>
-                <p className="text-xs text-muted mt-1">{f.desc}</p>
+                <h4 className="font-bold text-sm" style={{ color: '#19130E' }}>{f.label}</h4>
+                <p className="text-xs mt-1" style={{ color: '#6b5e50' }}>{f.desc}</p>
               </div>
             </div>
           ))}

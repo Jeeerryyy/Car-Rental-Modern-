@@ -31,7 +31,7 @@ export const uploadDocument = multer({
   storage: memoryStorage,
   limits: { fileSize: UPLOAD_LIMITS.DOCUMENTS },
   fileFilter
-}).array('documents', UPLOAD_LIMITS.MAX_DOCUMENT_IMAGES);
+}).array('documents', 10);
 
 export const generatePublicId = (folder, filename) => {
   const ext = path.extname(filename);

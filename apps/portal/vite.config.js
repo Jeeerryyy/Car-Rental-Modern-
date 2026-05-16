@@ -11,6 +11,28 @@ export default defineConfig({
   base: '/',
   server: {
     port: 5174,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            const cookies = proxyRes.headers['set-cookie'];
+            if (cookies) {
+              proxyRes.headers['set-cookie'] = cookies.map(c =>
+                c.replace(/; Secure/i, '').replace(/; SameSite=Strict/i, '; SameSite=Lax')
+              );
+            }
+          });
+        },
+      },
+      '/socket.io': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',

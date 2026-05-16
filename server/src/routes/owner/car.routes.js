@@ -8,15 +8,15 @@ import { uploadCarImages } from '../../middleware/upload.js';
 
 const router = Router();
 
-router.use(protect, restrictTo(USER_ROLES.OWNER));
+router.use(protect);
 
-router.get('/my-cars', getMine);
-router.get('/:id', getOne);
-router.post('/', uploadCarImages, createCarRules, validate, create);
-router.put('/:id', uploadCarImages, updateCarRules, validate, update);
-router.delete('/:id', remove);
-router.patch('/:id/toggle-availability', toggle);
-router.post('/:id/blocked-dates', blockDates);
-router.delete('/:id/blocked-dates/:blockId', unblockDates);
+router.get('/my-cars', restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), getMine);
+router.get('/:id', restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), getOne);
+router.post('/', restrictTo(USER_ROLES.OWNER), uploadCarImages, createCarRules, validate, create);
+router.put('/:id', restrictTo(USER_ROLES.OWNER), uploadCarImages, updateCarRules, validate, update);
+router.delete('/:id', restrictTo(USER_ROLES.OWNER), remove);
+router.patch('/:id/toggle-availability', restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), toggle);
+router.post('/:id/blocked-dates', restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), blockDates);
+router.delete('/:id/blocked-dates/:blockId', restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), unblockDates);
 
 export default router;

@@ -1,6 +1,29 @@
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import api from '../api/axiosInstance';
 
 export default function Support() {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ subject: '', message: '' });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.subject.trim() || !form.message.trim()) {
+      toast.error('Please fill all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.post('/contact', form);
+      toast.success('Support request sent successfully!');
+      setForm({ subject: '', message: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const faqs = [
     { q: "Adding new vehicles", a: "Navigate to 'Add Car' to register new fleet assets and upload documentation." },
     { q: "Offline booking management", a: "Use 'New Booking' to register walk-ins and capture real-time KYC documents." },
@@ -56,22 +79,29 @@ export default function Support() {
            <div className="space-y-8">
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-widest text-dark ml-1">Inquiry Subject</label>
-                 <input 
-                   type="text" 
-                   placeholder="Describe your inquiry..."
-                   className="w-full bg-off/30 border border-border rounded-xl px-4 py-4 text-xs font-bold text-dark focus:border-dark outline-none transition-all" 
-                 />
+<input
+                    type="text"
+                    placeholder="Describe your inquiry..."
+                    value={form.subject}
+                    onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
+                    className="w-full bg-off/30 border border-border rounded-xl px-4 py-4 text-xs font-bold text-dark focus:border-dark outline-none transition-all"
+                  />
               </div>
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-widest text-dark ml-1">Message Details</label>
-                 <textarea 
-                   placeholder="Provide specific information about your request..."
-                   className="w-full bg-off/30 border border-border rounded-xl px-4 py-4 text-xs font-bold text-dark focus:border-dark outline-none transition-all min-h-[160px] resize-none" 
-                 />
+<textarea
+                    placeholder="Provide specific information about your request..."
+                    value={form.message}
+                    onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
+                    className="w-full bg-off/30 border border-border rounded-xl px-4 py-4 text-xs font-bold text-dark focus:border-dark outline-none transition-all min-h-[160px] resize-none"
+                  />
               </div>
-              <button className="bg-blue-600 text-white rounded-xl px-10 py-4 font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-lg shadow-blue-600/10">
-                 Send Request
-              </button>
+<button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="bg-blue-600 text-white rounded-xl px-10 py-4 font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-lg shadow-blue-600/10 disabled:opacity-50">
+                  {loading ? 'Sending...' : 'Send Request'}
+               </button>
            </div>
         </section>
       </div>

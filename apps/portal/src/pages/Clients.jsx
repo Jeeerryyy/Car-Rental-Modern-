@@ -12,7 +12,7 @@ export default function Clients() {
   const fetchContacts = async () => {
     try {
       const res = await getClients();
-      setContacts(res.data.data || []);
+      setContacts(res.data.data || res.data || []);
     } catch {
       toast.error('Failed to load inquiries');
     } finally {

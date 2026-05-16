@@ -7,12 +7,36 @@ const SocketContext = createContext(null);
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
   const { user } = useOwnerAuth();
+  const userId = user?._id || user?.id;
 
   useEffect(() => {
-    if (user) {
-      const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
+    if (userId) {
+      let socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isLocalhost && socketUrl.includes('localhost')) {
+        socketUrl = window.location.origin;
+      }
+
+      let token = '';
+      const cookieRow = document.cookie.split(';').find(c => c.trim().startsWith('ownerToken='));
+      if (cookieRow) {
+        token = cookieRow.trim().split('=')[1];
+      }
+
+      const newSocket = io(socketUrl, {
         withCredentials: true,
-        transports: ['websocket']
+        transports: ['websocket', 'polling'],
+        path: '/socket.io',
+        auth: { token }
+      });
+
+      newSocket.on('connect', () => {
+        console.log('[Socket] Connected:', newSocket.id);
+        newSocket.emit('join', `owner:${userId}`);
+      });
+
+      newSocket.on('connect_error', (err) => {
+        console.warn('[Socket] Connection error:', err.message);
       });
 
       setSocket(newSocket);
@@ -21,12 +45,14 @@ export function SocketProvider({ children }) {
         newSocket.close();
       };
     } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
+      setSocket(prevSocket => {
+        if (prevSocket) {
+          prevSocket.close();
+        }
+        return null;
+      });
     }
-  }, [user]);
+  }, [userId]);
 
   return (
     <SocketContext.Provider value={socket}>

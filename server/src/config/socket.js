@@ -7,9 +7,16 @@ import { logger } from '../utils/logger.js';
 let io = null;
 
 export const initSocket = (httpServer) => {
+  const socketOrigins = [
+    config.clientUrl,
+    config.portalUrl,
+    'http://localhost:5174',
+    'http://localhost:5173',
+  ].filter(Boolean);
+
   io = new Server(httpServer, {
     cors: {
-      origin: [config.clientUrl, config.portalUrl],
+      origin: socketOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
     }

@@ -8,7 +8,7 @@ export default function Reviews() {
 
   useEffect(() => {
     getReviews()
-      .then(res => setReviews(res.data.data || []))
+      .then(res => setReviews(res.data.data || res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

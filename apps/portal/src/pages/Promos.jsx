@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { getPromos, createPromo, togglePromo as togglePromoApi, toggleFeatured as toggleFeaturedApi } from '../api/promos';
+import { getPromos, createPromo, togglePromo as togglePromoApi, toggleFeatured as toggleFeaturedApi, deletePromo } from '../api/promos';
 
 export default function Promos() {
   const [promos, setPromos] = useState([]);
@@ -69,6 +69,17 @@ export default function Promos() {
     }
   }, []);
 
+  const handleDelete = useCallback(async (id) => {
+    if (!confirm('Delete this promo code? This cannot be undone.')) return;
+    try {
+      await deletePromo(id);
+      setPromos(prev => prev.filter(p => p._id !== id));
+      toast.success('Promo deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete promo');
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -130,8 +141,8 @@ export default function Promos() {
                 <button
                   onClick={() => handleToggleFeatured(promo._id)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    promo.isFeatured 
-                      ? 'bg-accent/10 text-accent border border-accent/20' 
+                    promo.isFeatured
+                      ? 'bg-accent/10 text-accent border border-accent/20'
                       : 'text-outline hover:bg-surface-container'
                   }`}
                   title={promo.isFeatured ? 'Featured' : 'Mark as Featured'}
@@ -139,6 +150,13 @@ export default function Promos() {
                   <span className={`material-symbols-outlined ${promo.isFeatured ? 'fill-1' : ''}`}>
                     star
                   </span>
+                </button>
+                <button
+                  onClick={() => handleDelete(promo._id)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all"
+                  title="Delete Promo"
+                >
+                  <span className="material-symbols-outlined text-[20px]">delete</span>
                 </button>
                 <button
                   onClick={() => handleToggle(promo._id)}

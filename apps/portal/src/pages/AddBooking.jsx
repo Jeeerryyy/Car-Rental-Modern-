@@ -16,7 +16,7 @@ export default function AddBooking() {
   useEffect(() => {
     getCars({ page: 1, limit: 100 }).then(res => {
       // API returns { success: true, data: [cars...] }
-      setCars(res.data.data || []);
+      setCars(res.data.data || res.data.cars || []);
     }).catch((err) => {
       console.error('Failed to fetch cars:', err);
     });
@@ -73,10 +73,12 @@ export default function AddBooking() {
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="customer@email.com" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-dark mb-2">Phone</label>
-              <input type="tel" value={formData.customer.phone}
-                onChange={e => set('customer', { phone: e.target.value })}
-                className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="+91 9876543210" />
+              <label className="block text-sm font-semibold text-dark mb-2">Phone *</label>
+              <input type="tel" value={formData.customer.phone} required
+                pattern="[0-9]{10}"
+                title="Please enter a valid 10-digit phone number"
+                onChange={e => set('customer', { phone: e.target.value.replace(/\D/g, '') })}
+                className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="9876543210" />
             </div>
           </div>
         </div>

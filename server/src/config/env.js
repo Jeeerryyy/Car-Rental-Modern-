@@ -42,7 +42,9 @@ const envVarsSchema = Joi.object({
   SMTP_USER: Joi.string().optional().allow(''),
   SMTP_PASS: Joi.string().optional().allow(''),
   SMTP_FROM: Joi.string().optional().allow(''),
-  SENTRY_DSN: Joi.string().optional().allow('')
+  SENTRY_DSN: Joi.string().optional().allow(''),
+  GOOGLE_CLIENT_ID: Joi.string().required(),
+  GOOGLE_CLIENT_SECRET: Joi.string().required()
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
@@ -75,6 +77,8 @@ export const config = {
     secret: envVars.RAZORPAY_SECRET
   },
   google: {
+    clientId: envVars.GOOGLE_CLIENT_ID,
+    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
     sheetId: envVars.GOOGLE_SHEET_ID,
     serviceAccountEmail: envVars.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     privateKey: envVars.GOOGLE_PRIVATE_KEY

@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { name: 'Contact', path: '/contact' },
 ];
 
-const BUSINESS_NAME = 'Modern Selfdrive Car';
+const BUSINESS_NAME = 'modern self drive';
 
 function Navbar() {
   const { pathname } = useLocation();
@@ -22,6 +22,7 @@ function Navbar() {
 
   const close = useCallback(() => setOpen(false), []);
 
+  /* Close drawer on every route change (UI-only side-effect) */
   useEffect(() => { close(); }, [pathname, close]);
 
   useEffect(() => {
@@ -46,27 +47,45 @@ function Navbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-white border-b border-border shadow-sm">
+      <header
+        className="fixed top-0 left-0 right-0 z-[100]"
+        style={{
+          backgroundColor: 'rgba(220,207,186,0.60)',
+          backdropFilter: 'blur(16px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          borderBottom: '1px solid rgba(182,124,61,0.15)',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingRight: 'env(safe-area-inset-right)',
+          paddingLeft: 'env(safe-area-inset-left)',
+        }}
+      >
         <nav aria-label="Main navigation"
-          className="max-w-7xl mx-auto px-6 lg:px-10 h-[72px] flex items-center justify-between gap-8">
-          <Link to="/" className="flex items-center gap-0 no-underline group leading-tight" aria-label={`${BUSINESS_NAME} home`}>
+          className="px-5 lg:px-8 h-[52px] flex items-center justify-between gap-6">
+          <Link to="/" className="flex items-center gap-3 no-underline leading-tight" aria-label={`${BUSINESS_NAME} home`}>
+            <img src="/irck-removebg-preview.png" alt="Logo" className="h-8 w-auto object-contain" />
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter text-dark uppercase leading-none">Modern</span>
-              <span className="text-sm font-bold tracking-[0.2em] text-accent uppercase leading-none ml-0.5">Selfdrive</span>
+              <span className="text-lg font-black tracking-tighter uppercase leading-none" style={{ color: '#19130E' }}>modern</span>
+              <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#B67C3D' }}>self drive</span>
             </div>
           </Link>
 
-          <ul className="hidden lg:flex gap-9 list-none m-0 p-0">
+          <ul className="hidden lg:flex gap-8 list-none m-0 p-0">
             {NAV_LINKS.map(({ name, path }) => {
               const active = pathname === path;
               return (
                 <li key={name}>
                   <Link to={path} aria-current={active ? 'page' : undefined}
-                    className={`text-[14.5px] relative transition-colors ${
-                      active ? 'font-semibold text-accent after:content-[""] after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:bg-accent after:rounded-full'
-                      : 'font-medium text-muted hover:text-accent'
-                    }`}>
+                    className={`text-[14px] relative no-underline ${
+                      active ? 'font-semibold after:content-[""] after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:rounded-full'
+                      : 'font-medium'
+                    }`}
+                    style={{
+                      color: active ? '#B67C3D' : '#19130E',
+                      ...(active ? { '--tw-after-bg': '#B67C3D' } : {}),
+                    }}
+                  >
                     {name}
+                    {active && <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full" style={{ background: '#B67C3D' }} />}
                   </Link>
                 </li>
               );
@@ -75,9 +94,10 @@ function Navbar() {
 
           <DesktopActions customer={customer} />
 
-          <button className="lg:hidden flex items-center justify-center w-11 h-11 rounded-xl border border-border bg-soft-white text-text hover:bg-light-gray transition-colors"
+          <button className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full border"
+            style={{ borderColor: 'rgba(182,124,61,0.15)', background: 'rgba(220,207,186,0.4)', color: '#19130E' }}
             onClick={() => setOpen((p) => !p)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-menu">
-            {open ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+            {open ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>
         </nav>
       </header>

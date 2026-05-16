@@ -38,10 +38,12 @@ export function Modal({
   if (!isOpen) return null;
 
   const confirmClass = confirmVariant === 'danger' 
-    ? 'bg-red-600 hover:bg-red-700 text-white' 
+    ? 'bg-red-600 text-white' 
     : confirmVariant === 'success'
-    ? 'bg-green-600 hover:bg-green-700 text-white'
-    : 'bg-primary-container text-on-primary hover:bg-surface-tint';
+    ? 'bg-green-600 text-white'
+    : '';
+  const confirmStyle = confirmVariant !== 'danger' && confirmVariant !== 'success'
+    ? { background: '#19130E', color: '#FFFFFF' } : {};
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -51,7 +53,8 @@ export function Modal({
       />
       <div 
         ref={modalRef}
-        className={`relative bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl ${maxWidth} w-full p-6 sm:p-8 animate-in slide-in-from-bottom sm:zoom-in duration-300 max-h-[90vh] overflow-y-auto`}
+        className={`relative rounded-t-3xl sm:rounded-[12px] ${maxWidth} w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto`}
+        style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -59,7 +62,8 @@ export function Modal({
         {showClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20"
+            className="absolute top-4 right-4 z-20"
+            style={{ color: '#6b5e50' }}
             aria-label="Close modal"
           >
             <span className="material-symbols-outlined">close</span>
@@ -67,12 +71,12 @@ export function Modal({
         )}
         
         {title && (
-          <h2 id="modal-title" className="text-xl font-bold text-dark mb-6">
+          <h2 id="modal-title" className="text-xl font-bold mb-6" style={{ color: '#19130E' }}>
             {title}
           </h2>
         )}
         
-        <div className="text-gray-600 mb-2">
+        <div className="mb-2" style={{ color: '#6b5e50' }}>
           {children}
         </div>
         
@@ -80,14 +84,16 @@ export function Modal({
           <div className="flex gap-3 justify-end mt-8">
             <button
               onClick={onClose}
-              className="px-6 py-2.5 border border-gray-200 rounded-full font-medium text-dark hover:bg-gray-50 transition-colors"
+              className="px-6 py-2.5 rounded-full font-medium"
+              style={{ border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }}
             >
               Cancel
             </button>
             {onConfirm && (
               <button
                 onClick={onConfirm}
-                className={`px-6 py-2.5 rounded-full font-medium transition-colors ${confirmClass}`}
+                className={`px-6 py-2.5 rounded-full font-medium ${confirmClass}`}
+                style={confirmStyle}
               >
                 {confirmLabel}
               </button>
@@ -122,7 +128,7 @@ export function ConfirmModal({
     >
       <p className="mb-2">{message}</p>
       {itemName && (
-        <p className="font-bold text-dark">"{itemName}"</p>
+        <p className="font-bold" style={{ color: '#19130E' }}>"{itemName}"</p>
       )}
     </Modal>
   );

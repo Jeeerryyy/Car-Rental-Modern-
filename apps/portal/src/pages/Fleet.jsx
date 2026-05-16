@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getCars, deleteCar, toggleCarAvailability } from '../api/cars.js';
+import { useOwnerAuth } from '../context/OwnerAuthContext.jsx';
 import toast from 'react-hot-toast';
 
 const CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van'];
 
 export default function Fleet() {
+  const { isOwner } = useOwnerAuth();
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -19,7 +21,7 @@ export default function Fleet() {
       const params = { page, limit: 100, type: typeTab };
       if (filter !== 'all') params.status = filter;
       const res = await getCars(params);
-      setCars(res.data.data || []);
+      setCars(res.data.data || res.data.cars || []);
     } catch {
       toast.error('Failed to load fleet');
     } finally {
@@ -62,14 +64,18 @@ export default function Fleet() {
           <p className="font-body-md text-body-md text-on-surface-variant">{filtered.length} {typeTab === 'car' ? 'cars' : 'bikes'} in your fleet</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Link to="/fleet/add" className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-            Add Car
-          </Link>
-          <Link to="/fleet/add-bike" className="bg-primary-container text-on-primary px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>two_wheeler</span>
-            Add Bike
-          </Link>
+          {isOwner && (
+            <>
+              <Link to="/fleet/add" className="bg-surface-container-high text-on-surface px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+                Add Car
+              </Link>
+              <Link to="/fleet/add-bike" className="bg-primary-container text-on-primary px-6 py-3 rounded-full font-label-caps text-label-caps flex justify-center items-center gap-2 hover:bg-surface-tint transition-colors whitespace-nowrap">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>two_wheeler</span>
+                Add Bike
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -131,13 +137,17 @@ export default function Fleet() {
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest">per day</p>
               </div>
               <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-outline-variant">
-                <Link to={`/fleet/${car._id}`} className="flex-1 sm:flex-none text-center px-4 py-2.5 text-xs font-bold bg-surface-container-high rounded-xl hover:bg-surface-tint transition-colors">Edit</Link>
+                <Link to={`/fleet/${car._id}`} className="flex-1 sm:flex-none text-center px-4 py-2.5 text-xs font-bold bg-surface-container-high rounded-xl hover:bg-surface-tint transition-colors">
+                  {isOwner ? 'Edit' : 'View'}
+                </Link>
                 <button onClick={() => handleToggle(car._id)} className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold bg-surface-container-high rounded-xl hover:bg-surface-tint transition-colors">
                   {car.isActive ? 'Disable' : 'Enable'}
                 </button>
-                <button onClick={() => handleDelete(car._id)} className="px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-                  <span className="material-symbols-outlined text-[20px]">delete</span>
-                </button>
+                {isOwner && (
+                  <button onClick={() => handleDelete(car._id)} className="px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}

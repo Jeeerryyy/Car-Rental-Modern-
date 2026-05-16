@@ -26,6 +26,7 @@ import { swaggerDocs } from './config/swagger.js';
 import { initSentry } from './config/sentry.js';
 
 const app = express();
+app.set('trust proxy', true);
 initSentry();
 const httpServer = http.createServer(app);
 initSocket(httpServer);
@@ -35,8 +36,12 @@ const allowedOrigins = [
   config.portalUrl,
   'https://modernselfdrive.in',
   'https://www.modernselfdrive.in',
-  'https://admin.modernselfdrive.in'
+  'https://admin.modernselfdrive.in',
+  'https://car-rental-modern.vercel.app',
+  'https://car-rental-modern-p7uu.vercel.app'
 ].map(url => url?.replace(/\/$/, '')).filter(Boolean);
+
+logger.info(`Allowed CORS Origins: ${allowedOrigins.join(', ')}`);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -44,7 +49,11 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const cleanOrigin = origin.replace(/\/$/, '');
-    if (allowedOrigins.includes(cleanOrigin) || config.nodeEnv === 'development') {
+    if (
+      allowedOrigins.includes(cleanOrigin) || 
+      config.nodeEnv === 'development' ||
+      (config.nodeEnv === 'production' && cleanOrigin.endsWith('.vercel.app'))
+    ) {
       callback(null, true);
     } else {
       logger.error(`CORS Blocked: ${origin}`);
@@ -57,28 +66,24 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }));
 
-// 2. helmet() — sets all security-related HTTP headers
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
-}));
-
-// 3. mongoSanitize() — strips $ and . from request body/query to prevent NoSQL injection
-app.use(mongoSanitize());
-
-// 4. xss-clean — sanitizes HTML in request body
-app.use(xss());
-
-// 5. express-rate-limit
-app.use('/api', generalLimiter);
-app.use('/api/auth', authLimiter);
-app.use('/api/owner/auth', authLimiter); // Protect owner auth as well
-
-// 6. express.json({ limit: '10kb' }) — prevents large payload attacks
+// 1. Basic Middleware & Parsers
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use(compression());
+
+// 2. Security Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
+app.use(mongoSanitize());
+app.use(xss());
+
+// 3. Rate Limiting
+app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/owner/auth', authLimiter);
 
 // 7. morgan (development only) — request logging
 if (config.nodeEnv === 'development') {
@@ -133,21 +138,29 @@ const startServer = async () => {
 
     process.on('SIGTERM', () => {
       logger.info('SIGTERM received. Shutting down gracefully...');
-      server.close(() => {
-        mongoose.connection.close(false, () => {
+      server.close(async () => {
+        try {
+          await mongoose.connection.close(false);
           logger.info('Server closed');
           process.exit(0);
-        });
+        } catch (err) {
+          logger.error('Error during shutdown:', err);
+          process.exit(1);
+        }
       });
     });
 
     process.on('SIGINT', () => {
       logger.info('SIGINT received. Shutting down gracefully...');
-      server.close(() => {
-        mongoose.connection.close(false, () => {
+      server.close(async () => {
+        try {
+          await mongoose.connection.close(false);
           logger.info('Server closed');
           process.exit(0);
-        });
+        } catch (err) {
+          logger.error('Error during shutdown:', err);
+          process.exit(1);
+        }
       });
     });
 

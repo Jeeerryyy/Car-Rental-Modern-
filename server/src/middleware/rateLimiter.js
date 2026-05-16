@@ -4,8 +4,8 @@ import { config } from '../config/env.js';
 
 export const authLimiter = rateLimit({
   windowMs: RATE_LIMIT.AUTH_WINDOW_MS,
-  max: config.disableRateLimit ? 999999 : RATE_LIMIT.AUTH_MAX,
-  skip: () => config.disableRateLimit,
+  max: 1000, // Effectively removing the small limit (was 5 or 10)
+  skip: () => true, // Skipping the limit as requested
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.'

@@ -27,7 +27,7 @@ export const protect = catchAsync(async (req, res, next) => {
   const decoded = jwt.verify(token, config.jwt.secret);
   
   let user;
-  if (decoded.role === USER_ROLES.OWNER) {
+  if (decoded.role === USER_ROLES.OWNER || decoded.role === USER_ROLES.STAFF) {
     user = await Owner.findById(decoded.id);
   } else if (decoded.role === USER_ROLES.CUSTOMER) {
     user = await Customer.findById(decoded.id);
@@ -39,10 +39,6 @@ export const protect = catchAsync(async (req, res, next) => {
     throw new AppError('User belonging to this token does no longer exist.', 404);
   }
 
-  if (user.lockUntil && user.lockUntil > new Date()) {
-    throw new AppError('Account is locked. Please try again later.', 403);
-  }
-
   if (!user.isActive) {
     throw new AppError('Account is deactivated.', 403);
   }
@@ -50,10 +46,18 @@ export const protect = catchAsync(async (req, res, next) => {
   req.user = user;
   req.role = decoded.role;
   
-  if (decoded.role === USER_ROLES.OWNER) req.owner = user;
-  if (decoded.role === USER_ROLES.CUSTOMER) req.customer = user;
+  if (decoded.role === USER_ROLES.OWNER || decoded.role === USER_ROLES.STAFF) {
+    req.owner = user;
+    // Business ID is either the owner's ID or the parentOwner's ID for staff
+    req.ownerId = user.role === USER_ROLES.STAFF ? user.parentOwner : user._id;
+  }
+  
+  if (decoded.role === USER_ROLES.CUSTOMER) {
+    req.customer = user;
+  }
 
   next();
+
 });
 
 export const restrictTo = (...roles) => {

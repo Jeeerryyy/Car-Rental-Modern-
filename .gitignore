@@ -61,3 +61,4 @@ service-account.json
 # Planning / Internal
 .planning/
 .code-review-graph/
+skills_test/

@@ -11,7 +11,8 @@ export const register = catchAsync(async (req, res) => {
   res.cookie('customerToken', result.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    partitioned: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
   
@@ -25,7 +26,8 @@ export const login = catchAsync(async (req, res) => {
   res.cookie('customerToken', result.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    partitioned: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
@@ -33,7 +35,12 @@ export const login = catchAsync(async (req, res) => {
 });
 
 export const logout = catchAsync(async (req, res) => {
-  res.clearCookie('customerToken');
+  res.clearCookie('customerToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    partitioned: process.env.NODE_ENV === 'production'
+  });
   return ApiResponse.success(res, 200, 'Logged out successfully');
 });
 
@@ -44,7 +51,8 @@ export const googleAuth = catchAsync(async (req, res) => {
   res.cookie('customerToken', result.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    partitioned: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 

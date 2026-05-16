@@ -2,29 +2,29 @@ import { Link } from 'react-router-dom';
 
 export default function Terms() {
   return (
-    <main id="main-content" className="bg-off min-h-screen pt-12 pb-24">
+    <main id="main-content" className="min-h-screen pt-12 pb-24" style={{ background: '#F9F8F3' }}>
       <div className="max-w-[800px] mx-auto px-6 lg:px-10">
-        <nav className="text-sm text-muted mb-8 flex gap-2" aria-label="Breadcrumb">
-          <Link to="/" className="hover:text-dark">Home</Link>
-          <span>/</span>
-          <span className="text-dark font-semibold">Terms & Conditions</span>
+        <nav className="text-sm mb-8 flex gap-2" aria-label="Breadcrumb">
+          <Link to="/" className="no-underline" style={{ color: '#6b5e50' }}>Home</Link>
+          <span style={{ color: '#6b5e50' }}>/</span>
+          <span className="font-semibold" style={{ color: '#19130E' }}>Terms & Conditions</span>
         </nav>
 
-        <h1 className="font-display text-4xl font-bold text-dark mb-6">Terms & Conditions</h1>
+        <h1 className="font-display text-4xl font-bold mb-6" style={{ color: '#19130E' }}>Terms & Conditions</h1>
 
-        <div className="bg-white rounded-[var(--radius-md)] p-8 shadow-sm border border-border space-y-6 text-sm text-dark leading-relaxed">
+        <div className="rounded-[12px] p-8 space-y-6 text-sm leading-relaxed" style={{ background: '#F2EEE5', color: '#19130E', border: '1px solid rgba(182,124,61,0.15)' }}>
           <p>By using the Modern Selfdrive Car platform, you agree to the following general terms:</p>
-          <ul className="list-disc pl-6 space-y-2 text-muted">
+          <ul className="list-disc pl-6 space-y-2" style={{ color: '#6b5e50' }}>
             <li>You must possess a valid Indian driving license to rent a self-drive vehicle.</li>
             <li>A refundable security deposit is required at the time of vehicle pickup.</li>
             <li>The vehicle must be returned in the same condition as received.</li>
             <li>Fuel costs during the rental period are the renter's responsibility.</li>
             <li>Cancellations made 24 hours before pickup are eligible for a full refund.</li>
           </ul>
-          <p className="text-muted">
+          <p style={{ color: '#6b5e50' }}>
             For detailed queries, contact us at{' '}
-            <a href="tel:+918792492717" className="text-dark font-semibold hover:underline">+91 87924 92717</a> or via{' '}
-            <a href="https://wa.me/918792492717" className="text-[#25D366] font-semibold hover:underline" target="_blank" rel="noreferrer">WhatsApp</a>.
+            <a href="tel:+919004460634" className="font-semibold no-underline" style={{ color: '#19130E' }}>+91 90044 60634</a> or via{' '}
+            <a href="https://wa.me/919004460634" className="font-semibold no-underline" style={{ color: '#B67C3D' }} target="_blank" rel="noreferrer">WhatsApp</a>.
           </p>
         </div>
       </div>

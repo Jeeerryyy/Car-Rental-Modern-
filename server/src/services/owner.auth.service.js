@@ -33,24 +33,12 @@ export const loginOwner = async (email, password) => {
     throw new AppError('Invalid email or password', 401);
   }
 
-  if (owner.lockUntil && owner.lockUntil > Date.now()) {
-    throw new AppError('Account is locked. Please try again after 15 minutes.', 403);
-  }
-
   const isMatch = await bcrypt.compare(password, owner.password);
 
   if (!isMatch) {
-    owner.loginAttempts += 1;
-    if (owner.loginAttempts >= 5) {
-      owner.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-    }
-    await owner.save();
     throw new AppError('Invalid email or password', 401);
   }
 
-  owner.loginAttempts = 0;
-  owner.lockUntil = undefined;
-  await owner.save();
 
   const token = signToken(owner._id);
   const userObj = owner.toObject();

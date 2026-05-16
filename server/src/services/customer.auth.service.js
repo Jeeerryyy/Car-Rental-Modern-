@@ -7,7 +7,7 @@ import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { USER_ROLES } from '../utils/constants.js';
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(config.google.clientId);
 
 const signToken = (id) => {
   return jwt.sign(
@@ -39,24 +39,12 @@ export const loginCustomer = async (email, password) => {
     throw new AppError('Invalid email or password', 401);
   }
 
-  if (customer.lockUntil && customer.lockUntil > Date.now()) {
-    throw new AppError('Account is locked. Please try again after 15 minutes.', 403);
-  }
-
   const isMatch = await bcrypt.compare(password, customer.password);
 
   if (!isMatch) {
-    customer.loginAttempts += 1;
-    if (customer.loginAttempts >= 5) {
-      customer.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-    }
-    await customer.save();
     throw new AppError('Invalid email or password', 401);
   }
 
-  customer.loginAttempts = 0;
-  customer.lockUntil = undefined;
-  await customer.save();
 
   const token = signToken(customer._id);
   const userObj = customer.toObject();
@@ -165,7 +153,7 @@ export const googleLoginCustomer = async (credential) => {
 
   const ticket = await googleClient.verifyIdToken({
     idToken: credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
+    audience: config.google.clientId,
   });
 
   const payload = ticket.getPayload();
@@ -180,7 +168,7 @@ export const googleLoginCustomer = async (credential) => {
       name,
       email,
       password: randomPassword,
-      phone: 'Not provided', // Or optional
+      phone: '', // Or optional
       isEmailVerified: true, // Trusted from Google
       profileImage: picture,
     });
