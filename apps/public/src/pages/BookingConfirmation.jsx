@@ -205,7 +205,7 @@ export default function BookingConfirmation() {
         </div>
 
         <p className="text-center text-[11px] mt-12 px-6 leading-relaxed" style={{ color: '#6b5e50' }}>
-          Need help? Contact our 24/7 support at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#19130E' }}>+91 90044 60634</a> or visit the support section.
+          Need help? Contact our 24/7 support at <a href="tel:+918792492717" className="font-bold underline" style={{ color: '#19130E' }}>+91 87924 92717</a> or visit the support section.
         </p>
       </div>
     </div>

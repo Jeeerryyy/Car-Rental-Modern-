@@ -7,8 +7,6 @@ import { createOrder } from './payment.service.js';
 import { createNotification } from './notification.service.js';
 import { getIO } from '../config/socket.js';
 import { SOCKET_EVENTS } from '../config/socket.events.js';
-import { uploadImage } from './cloudinary.service.js';
-import { CLOUDINARY_FOLDERS } from '../utils/constants.js';
 
 export const checkAvailability = async (carId, startDate, endDate) => {
   const car = await Car.findById(carId);
@@ -43,7 +41,7 @@ export const checkAvailability = async (carId, startDate, endDate) => {
   return true;
 };
 
-export const createBooking = async (customerId, carId, startDate, endDate, promoCode = null, notes = '', documents = {}, signature = {}, phone = '') => {
+export const createBooking = async (customerId, carId, startDate, endDate, promoCode = null, notes = '', documents = {}, signature = {}) => {
   await checkAvailability(carId, startDate, endDate);
 
   const car = await Car.findById(carId);
@@ -88,17 +86,10 @@ export const createBooking = async (customerId, carId, startDate, endDate, promo
     notes,
     documents,
     signature,
-    phone,
     status: BOOKING_STATUS.PENDING,
     paymentStatus: PAYMENT_STATUS.PENDING,
     razorpayOrderId: razorpayOrder.id
   });
-
-  // Sync phone with customer profile if provided
-  if (phone) {
-    const Customer = (await import('../models/Customer.js')).default;
-    await Customer.findByIdAndUpdate(customerId, { phone });
-  }
 
   await Car.findByIdAndUpdate(carId, { $inc: { totalBookings: 1 } });
 
@@ -228,7 +219,7 @@ export const getOwnerBookings = async (ownerId, filters = {}, pagination = { pag
   };
 };
 
-export const updateBookingStatus = async (bookingId, ownerId, newStatus, cancellationReason = null, cancellationNote = null) => {
+export const updateBookingStatus = async (bookingId, ownerId, newStatus) => {
   const booking = await Booking.findOne({ _id: bookingId, owner: ownerId });
   if (!booking) {
     throw new AppError('Booking not found', 404);
@@ -237,7 +228,7 @@ export const updateBookingStatus = async (bookingId, ownerId, newStatus, cancell
   const validTransitions = {
     [BOOKING_STATUS.PENDING]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.CANCELLED],
     [BOOKING_STATUS.CONFIRMED]: [BOOKING_STATUS.ACTIVE, BOOKING_STATUS.CANCELLED],
-    [BOOKING_STATUS.ACTIVE]: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED]
+    [BOOKING_STATUS.ACTIVE]: [BOOKING_STATUS.COMPLETED]
   };
 
   if (!validTransitions[booking.status]?.includes(newStatus)) {
@@ -245,14 +236,6 @@ export const updateBookingStatus = async (bookingId, ownerId, newStatus, cancell
   }
 
   booking.status = newStatus;
-
-  // If owner is cancelling, store the reason
-  if (newStatus === BOOKING_STATUS.CANCELLED) {
-    booking.cancelledBy = 'owner';
-    if (cancellationReason) booking.cancellationReason = cancellationReason;
-    if (cancellationNote) booking.cancellationNote = cancellationNote;
-  }
-
   await booking.save();
 
   try {
@@ -260,27 +243,12 @@ export const updateBookingStatus = async (bookingId, ownerId, newStatus, cancell
     getIO().to(`owner:${booking.owner}`).emit(SOCKET_EVENTS.BOOKING_STATUS_UPDATED, booking);
   } catch (err) {}
 
-  const notificationType = newStatus === BOOKING_STATUS.COMPLETED ? 'booking_completed' :
-    newStatus === BOOKING_STATUS.CANCELLED ? 'booking_cancelled' : 'general';
-
-  const REASON_LABELS = {
-    invalid_documents: 'Invalid Documents',
-    vehicle_not_available: 'Vehicle Not Available',
-    customer_no_show: 'Customer No-Show',
-    payment_issue: 'Payment Issue',
-    other: 'Other'
-  };
-
-  const notificationMessage = newStatus === BOOKING_STATUS.CANCELLED && cancellationReason
-    ? `Your booking has been cancelled by the owner. Reason: ${REASON_LABELS[cancellationReason] || cancellationReason}`
-    : `Your booking status has been updated to ${newStatus}`;
-
   await createNotification(
     booking.customer,
     'Customer',
-    notificationType,
+    newStatus === BOOKING_STATUS.COMPLETED ? 'booking_completed' : 'general',
     `Booking ${newStatus}`,
-    notificationMessage,
+    `Your booking status has been updated to ${newStatus}`,
     `/bookings/${booking._id}`
   );
 
@@ -297,8 +265,12 @@ export const cancelBooking = async (bookingId, customerId) => {
     throw new AppError('Cannot cancel this booking', 400);
   }
 
+  // const hoursUntilStart = (new Date(booking.startDate) - new Date()) / (1000 * 60 * 60);
+  // if (hoursUntilStart < 24) {
+  //   throw new AppError('Cannot cancel within 24 hours of start date', 400);
+  // }
+
   booking.status = BOOKING_STATUS.CANCELLED;
-  booking.cancelledBy = 'customer';
   await booking.save();
 
   try {
@@ -311,7 +283,7 @@ export const cancelBooking = async (bookingId, customerId) => {
     'Owner',
     'booking_cancelled',
     'Booking Cancelled',
-    `Booking has been cancelled by the customer`,
+    `Booking has been cancelled`,
     `/owner/bookings/${booking._id}`
   );
 
@@ -346,10 +318,6 @@ export const createManualBooking = async (ownerId, customerData, bookingData) =>
       email,
       password: 'ChangeMe@123'
     });
-  } else if (customerData.phone && !customer.phone) {
-    // Update phone if missing on existing customer
-    customer.phone = customerData.phone;
-    await customer.save();
   }
 
   const start = new Date(bookingData.startDate);
@@ -366,8 +334,7 @@ export const createManualBooking = async (ownerId, customerData, bookingData) =>
     totalPrice,
     status: bookingData.status || 'confirmed',
     paymentStatus: bookingData.paymentStatus || 'paid',
-    notes: bookingData.notes,
-    phone: customerData.phone || ''
+    notes: bookingData.notes
   });
 
   await Car.findByIdAndUpdate(car._id, { $inc: { totalBookings: 1 } });
@@ -391,37 +358,6 @@ export const getBookingById = async (bookingId, userId) => {
 
   if (!booking) {
     throw new AppError('Booking not found', 404);
-  }
-
-  return booking;
-};
-
-export const uploadOwnerVerificationDocuments = async (bookingId, ownerId, documentBase64s) => {
-  const booking = await Booking.findOne({ _id: bookingId, owner: ownerId })
-    .populate('car', 'make model images registrationNumber')
-    .populate('customer', 'name email phone');
-    
-  if (!booking) {
-    throw new AppError('Booking not found', 404);
-  }
-
-  const uploadedDocs = [];
-  for (const base64Data of documentBase64s) {
-    if (base64Data && base64Data.startsWith('data:')) {
-      const cleanBase64 = base64Data.replace(/^data:[^,]+,/, '');
-      const buffer = Buffer.from(cleanBase64, 'base64');
-      const uniqueId = `${bookingId}_owner_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-      const result = await uploadImage(buffer, CLOUDINARY_FOLDERS.OWNER_VERIFIED_DOCUMENTS, uniqueId);
-      uploadedDocs.push(result);
-    }
-  }
-
-  if (uploadedDocs.length > 0) {
-    if (!booking.ownerVerification) {
-      booking.ownerVerification = { documents: [] };
-    }
-    booking.ownerVerification.documents.push(...uploadedDocs);
-    await booking.save();
   }
 
   return booking;

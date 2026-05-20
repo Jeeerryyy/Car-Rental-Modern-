@@ -25,7 +25,7 @@ export const create = catchAsync(async (req, res) => {
 
 export const getAll = catchAsync(async (req, res) => {
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
-  const result = await getAllPromos(req.ownerId, pagination);
+  const result = await getAllPromos(req.owner._id, pagination);
   return ApiResponse.success(res, 200, 'Promos retrieved', result.promos, result.pagination);
 });
 

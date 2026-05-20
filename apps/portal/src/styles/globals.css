@@ -5,16 +5,16 @@
 /* ── Portal Design System (Luxury Minimal) ────────────────── */
 @layer base {
   :root {
-    /* 1. Primary Brand Color Palette (Public Site Match) */
-    --clr-dark:        #19130E; /* Deep Dark */
-    --clr-accent:      #B67C3D; /* Public Accent Gold */
-    --clr-soft-white:  #F9F8F3; /* Public Main Background */
-    --clr-white:       #F2EEE5; /* Card/Panel Backgrounds */
-    --clr-light-gray:  #EBE6DE; /* Alternate backgrounds */
-    --clr-border:      rgba(25, 19, 14, 0.15); /* Darker borders */
-    --clr-text:        #19130E; /* Dark Text */
-    --clr-muted:       #6b5e50; /* Muted Text */
-    --clr-text-light:  #8a7f72; /* Lighter Text */
+    /* 1. Primary Brand Color Palette */
+    --clr-dark:        #111827; /* Deep Midnight Navy */
+    --clr-accent:      #C89B5B; /* Warm Sand Gold */
+    --clr-soft-white:  #F8F7F4; /* Main page background */
+    --clr-white:       #FFFFFF; /* Pure White */
+    --clr-light-gray:  #F3F4F6; /* Alternate backgrounds */
+    --clr-border:      #E5E7EB; /* Soft Border Gray */
+    --clr-text:        #0F172A; /* Rich Dark Navy */
+    --clr-muted:       #6B7280; /* Neutral Gray */
+    --clr-text-light:  #9CA3AF; /* Muted Text */
 
     /* Typography */
     --font-body:    'Inter', system-ui, -apple-system, sans-serif;

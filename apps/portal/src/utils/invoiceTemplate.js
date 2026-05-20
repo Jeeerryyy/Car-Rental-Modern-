@@ -431,7 +431,7 @@ export const getInvoiceHtml = (booking) => {
                 <div class="detail-card">
                     <div class="card-label">Renter Information</div>
                     <div class="card-value">${customer.name || 'Customer'}</div>
-                    <div class="card-sub">${booking.phone || customer.phone || '-'}</div>
+                    <div class="card-sub">${customer.phone || '-'}</div>
                     <div class="card-sub">${customer.email || ''}</div>
                 </div>
                 <div class="detail-card">

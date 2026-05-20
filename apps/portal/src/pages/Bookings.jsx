@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getBookings, updateBookingStatus, uploadOwnerDocuments } from '../api/bookings.js';
+import { getBookings, updateBookingStatus } from '../api/bookings.js';
 import toast from 'react-hot-toast';
-
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { getInvoiceHtml } from '../utils/invoiceTemplate.js';
+import * as XLSX from 'xlsx';
 
 const STATUS_OPTIONS = ['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'];
-
-const CANCELLATION_REASONS = [
-  { value: 'invalid_documents', label: 'Invalid Documents', icon: 'description_off' },
-  { value: 'vehicle_not_available', label: 'Vehicle Not Available', icon: 'no_crash' },
-  { value: 'customer_no_show', label: 'Customer No-Show', icon: 'person_off' },
-  { value: 'payment_issue', label: 'Payment Issue', icon: 'money_off' },
-  { value: 'other', label: 'Other', icon: 'more_horiz' },
-];
 
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
@@ -22,21 +17,10 @@ export default function Bookings() {
 
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  // Cancel modal state
-  const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null, bookingName: '' });
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancelNote, setCancelNote] = useState('');
-  const [cancelling, setCancelling] = useState(false);
-  
-  // Owner Verification state
-  const [uploadingDocs, setUploadingDocs] = useState(false);
-  const [docPreviews, setDocPreviews] = useState([]);
-
-
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 20 };
+      const params = { page, limit: 20 }; // Show more on list
       if (filter !== 'all') params.status = filter;
       const res = await getBookings(params);
       setBookings(res.data.data || res.data || []);
@@ -62,73 +46,6 @@ export default function Bookings() {
     }
   };
 
-  const openCancelModal = (bookingId, customerName) => {
-    setCancelModal({ open: true, bookingId, bookingName: customerName || 'this booking' });
-    setCancelReason('');
-    setCancelNote('');
-  };
-
-  const handleCancel = async () => {
-    if (!cancelReason) { toast.error('Please select a reason'); return; }
-    setCancelling(true);
-    try {
-      await updateBookingStatus(cancelModal.bookingId, {
-        status: 'cancelled',
-        cancellationReason: cancelReason,
-        cancellationNote: cancelReason === 'other' ? cancelNote : undefined,
-      });
-      toast.success('Booking cancelled');
-      setCancelModal({ open: false, bookingId: null, bookingName: '' });
-      fetchBookings();
-      if (selectedBooking?._id === cancelModal.bookingId) {
-        setSelectedBooking(prev => ({ ...prev, status: 'cancelled', cancellationReason: cancelReason, cancellationNote: cancelNote, cancelledBy: 'owner' }));
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Cancellation failed');
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  const handleDocUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-
-    // Show previews
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setDocPreviews(prev => [...prev, ...newPreviews]);
-
-    setUploadingDocs(true);
-    try {
-      const base64Files = await Promise.all(
-        files.map(file => new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        }))
-      );
-
-      const res = await uploadOwnerDocuments(selectedBooking._id, { documents: base64Files });
-      toast.success('Documents uploaded successfully');
-      
-      const updatedBooking = res.data?.data?.booking || res.data?.booking;
-      
-      if (updatedBooking) {
-        setSelectedBooking(updatedBooking);
-      }
-      
-      setDocPreviews([]); // Clear previews after success
-      fetchBookings(); // Refresh list to get updated data
-
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Upload failed');
-      setDocPreviews([]);
-    } finally {
-      setUploadingDocs(false);
-    }
-  };
-
-
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
     confirmed: 'bg-blue-100 text-blue-800',
@@ -143,9 +60,130 @@ export default function Bookings() {
     active: 'completed',
   };
 
+  const generateInvoice = async (booking) => {
+    const toastId = toast.loading('Generating invoice...');
+    try {
+      // 1. Create a hidden container for rendering
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.innerHTML = getInvoiceHtml(booking);
+      document.body.appendChild(container);
 
+      // 2. Give it time to render and load the logo
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
+      const page1 = container.querySelector('#page-1');
+      const page2 = container.querySelector('#page-2');
+      
+      // 3. Capture with html2canvas (both pages)
+      const canvas1 = await html2canvas(page1, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
 
+      const canvas2 = await html2canvas(page2, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
+
+      // 4. Convert to PDF
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Add Page 1
+      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
+
+      // Add Page 2
+      pdf.addPage();
+      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
+      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
+
+      pdf.save(`ModernSelfDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
+
+      // 5. Cleanup
+      document.body.removeChild(container);
+      toast.success('Invoice downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      toast.error('Failed to generate invoice', { id: toastId });
+    }
+  };
+
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing export...');
+    try {
+      // Fetch all bookings (limited to 1000 for safety) matching current filter
+      const params = { limit: 1000 };
+      if (filter !== 'all') params.status = filter;
+      const res = await getBookings(params);
+      const allBookings = res.data.data || [];
+
+      const exportData = allBookings.map(b => {
+        const getLink = (url) => url ? { f: `HYPERLINK("${url}", "View Photo")` } : 'N/A';
+        
+        return {
+          'Booking ID': b._id,
+          'Status': b.status?.toUpperCase(),
+          'Payment': b.paymentStatus === 'pay_at_car' ? 'PAY AT CAR' : b.paymentStatus?.toUpperCase(),
+          'Customer Name': b.customer?.name || 'N/A',
+          'Phone': b.customer?.phone || 'N/A',
+          'Email': b.customer?.email || 'N/A',
+          'Car': `${b.car?.make || ''} ${b.car?.model || ''}`,
+          'Registration': b.car?.registrationNumber || 'N/A',
+          'Pickup Date': b.startDate ? new Date(b.startDate).toLocaleDateString('en-IN') : 'N/A',
+          'Dropoff Date': b.endDate ? new Date(b.endDate).toLocaleDateString('en-IN') : 'N/A',
+          'Total Days': b.totalDays || 0,
+          'Base Price': b.totalPrice + (b.discountAmount || 0),
+          'Discount': b.discountAmount || 0,
+          'Total Paid': b.totalPrice,
+          'Aadhaar Front': getLink(b.documents?.aadhaar?.front?.url || b.customer?.documents?.aadhaar?.front?.url),
+          'Aadhaar Back': getLink(b.documents?.aadhaar?.back?.url || b.customer?.documents?.aadhaar?.back?.url),
+          'License Front': getLink(b.documents?.license?.front?.url || b.customer?.documents?.license?.front?.url),
+          'License Back': getLink(b.documents?.license?.back?.url || b.customer?.documents?.license?.back?.url),
+          'Signature': getLink(b.signature?.url),
+          'Booking Date': new Date(b.createdAt).toLocaleString('en-IN')
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
+      
+      // Auto-size columns
+      const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+        wch: Math.max(key.length, ...exportData.map(row => String(row[key]).length)) + 2
+      }));
+      ws['!cols'] = colWidths;
+
+      XLSX.writeFile(wb, `ModernSelfDrive_Bookings_${filter}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel exported successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export Excel', { id: toastId });
+    }
+  };
 
   return (
     <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6 relative">
@@ -154,7 +192,13 @@ export default function Bookings() {
           <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">Manage all your car rental bookings</p>
         </div>
-
+        <button 
+          onClick={handleExportExcel}
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-dark rounded-xl text-xs font-bold hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[18px] text-muted">description</span>
+          Export to Excel
+        </button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -191,10 +235,6 @@ export default function Bookings() {
                       <span className="material-symbols-outlined text-[14px]">mail</span>
                       {b.customer?.email}
                     </p>
-                    <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px]">call</span>
-                      {b.phone || b.customer?.phone || 'Not Provided'}
-                    </p>
                     <p className="text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2">
                       <span className="font-bold text-on-surface">{b.car?.make} {b.car?.model}</span>
                       <span className="opacity-50">·</span>
@@ -210,26 +250,15 @@ export default function Bookings() {
                     <p className={`text-[10px] font-bold uppercase tracking-wider ${b.paymentStatus === 'paid' ? 'text-green-600' : b.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b.paymentStatus}</p>
                   </div>
                   {nextStatus[b.status] ? (
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCancelModal(b._id, b.customer?.name);
-                        }}
-                        className="px-4 py-3 text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(b._id, nextStatus[b.status]);
-                        }}
-                        className="px-6 py-3 text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10"
-                      >
-                        {nextStatus[b.status]}
-                      </button>
-                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange(b._id, nextStatus[b.status]);
+                      }}
+                      className="px-6 py-3 text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10"
+                    >
+                      {nextStatus[b.status]}
+                    </button>
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary">
                       <span className="material-symbols-outlined">chevron_right</span>
@@ -276,7 +305,7 @@ export default function Bookings() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Phone</p>
-                    <p className="text-lg font-bold">{selectedBooking.phone || selectedBooking.customer?.phone || 'Not Provided'}</p>
+                    <p className="text-lg font-bold">{selectedBooking.customer?.phone || 'N/A'}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Email</p>
@@ -337,59 +366,7 @@ export default function Bookings() {
                     )}
                   </div>
                 )}
-
-                {/* Owner Verification Documents (Pickup) */}
-                <div className="mt-10 pt-8 border-t border-outline-variant">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-bold text-lg text-primary flex items-center gap-2">
-                        <span className="material-symbols-outlined">verified_user</span>
-                        Pickup Verification
-                      </h4>
-                      <p className="text-xs text-on-surface-variant">Owner-uploaded documents for customer pickup</p>
-                    </div>
-                    {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'active') && (
-                      <label className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition-all flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
-                        Upload Photos
-                        <input type="file" multiple accept="image/*" onChange={handleDocUpload} className="hidden" disabled={uploadingDocs} />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                    {/* Existing Owner Documents */}
-                    {selectedBooking.ownerVerification?.documents?.map((doc, idx) => (
-                      <div key={idx} className="relative aspect-square bg-surface rounded-xl border border-outline-variant overflow-hidden group">
-
-                        <img src={doc.url} className="w-full h-full object-cover" alt={`Verification ${idx + 1}`} />
-                        <a href={doc.url} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="material-symbols-outlined text-white">open_in_new</span>
-                        </a>
-                      </div>
-                    ))}
-
-                    {/* Previews (Uploading) */}
-                    {uploadingDocs && docPreviews.map((url, idx) => (
-                      <div key={`preview-${idx}`} className="relative aspect-square bg-surface rounded-xl border border-primary/50 overflow-hidden animate-pulse">
-                        <img src={url} className="w-full h-full object-cover opacity-50" alt="Uploading..." />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {(!selectedBooking.ownerVerification?.documents || selectedBooking.ownerVerification.documents.length === 0) && !uploadingDocs && (
-
-                      <div className="col-span-full py-8 text-center bg-surface-container-low rounded-2xl border border-dashed border-outline-variant">
-                        <span className="material-symbols-outlined text-outline text-4xl mb-2">no_photography</span>
-                        <p className="text-sm text-on-surface-variant">No pickup documents uploaded yet</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </section>
-
 
               {/* Vehicle Section */}
               <section>
@@ -446,7 +423,13 @@ export default function Bookings() {
                     <span className="font-black text-2xl text-primary">₹{Number(selectedBooking.totalPrice).toLocaleString('en-IN')}</span>
                   </div>
                   
-
+                  <button 
+                    onClick={() => generateInvoice(selectedBooking)}
+                    className="w-full py-4 bg-dark text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">download</span>
+                    Download Invoice
+                  </button>
                 </div>
               </section>
 
@@ -474,94 +457,15 @@ export default function Bookings() {
 
             <div className="p-8 border-t border-outline-variant bg-surface-container-low flex gap-4">
               {nextStatus[selectedBooking.status] && (
-                <>
-                  <button 
-                    onClick={() => openCancelModal(selectedBooking._id, selectedBooking.customer?.name)}
-                    className="py-4 px-6 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
-                    className="flex-1 py-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
-                  >
-                    Mark {nextStatus[selectedBooking.status].toUpperCase()}
-                  </button>
-                </>
+                <button 
+                  onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
+                  className="flex-1 py-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
+                >
+                  Mark {nextStatus[selectedBooking.status].toUpperCase()}
+                </button>
               )}
               <button onClick={() => setSelectedBooking(null)} className="flex-1 py-4 bg-surface border border-outline-variant rounded-xl font-bold hover:bg-surface-tint transition-all">
                 Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Booking Modal */}
-      {cancelModal.open && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !cancelling && setCancelModal({ open: false, bookingId: null, bookingName: '' })} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-red-500">cancel</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Cancel Booking</h3>
-                  <p className="text-sm text-gray-500">For {cancelModal.bookingName}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <p className="text-sm font-semibold text-gray-700">Select a reason for cancellation</p>
-              <div className="grid grid-cols-1 gap-2">
-                {CANCELLATION_REASONS.map(r => (
-                  <button
-                    key={r.value}
-                    onClick={() => setCancelReason(r.value)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all border ${
-                      cancelReason === r.value
-                        ? 'border-red-300 bg-red-50 text-red-700'
-                        : 'border-gray-100 bg-gray-50 text-gray-700 hover:border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{r.icon}</span>
-                    {r.label}
-                    {cancelReason === r.value && (
-                      <span className="material-symbols-outlined text-[18px] ml-auto text-red-500">check_circle</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {cancelReason === 'other' && (
-                <textarea
-                  value={cancelNote}
-                  onChange={e => setCancelNote(e.target.value)}
-                  placeholder="Provide additional details..."
-                  maxLength={300}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:border-red-300 focus:ring-1 focus:ring-red-200"
-                />
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-100 flex gap-3">
-              <button
-                onClick={() => setCancelModal({ open: false, bookingId: null, bookingName: '' })}
-                disabled={cancelling}
-                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={!cancelReason || cancelling}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
               </button>
             </div>
           </div>

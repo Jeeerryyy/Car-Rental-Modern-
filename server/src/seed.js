@@ -22,10 +22,7 @@ async function seedOwner() {
     const existingOwner = await Owner.findOne({ email: ownerEmail });
 
     if (existingOwner) {
-      console.log(`Owner account already exists (${ownerEmail}). Updating password...`);
-      existingOwner.password = 'Modern@Drive2024';
-      await existingOwner.save();
-      console.log('Password updated successfully.');
+      console.log(`Owner account already exists (${ownerEmail}). Skipping...`);
     } else {
       console.log('Creating master owner account...');
       await Owner.create({

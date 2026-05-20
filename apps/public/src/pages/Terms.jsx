@@ -23,8 +23,8 @@ export default function Terms() {
           </ul>
           <p style={{ color: '#6b5e50' }}>
             For detailed queries, contact us at{' '}
-            <a href="tel:+919004460634" className="font-semibold no-underline" style={{ color: '#19130E' }}>+91 90044 60634</a> or via{' '}
-            <a href="https://wa.me/919004460634" className="font-semibold no-underline" style={{ color: '#B67C3D' }} target="_blank" rel="noreferrer">WhatsApp</a>.
+            <a href="tel:+918792492717" className="font-semibold no-underline" style={{ color: '#19130E' }}>+91 87924 92717</a> or via{' '}
+            <a href="https://wa.me/918792492717" className="font-semibold no-underline" style={{ color: '#B67C3D' }} target="_blank" rel="noreferrer">WhatsApp</a>.
           </p>
         </div>
       </div>

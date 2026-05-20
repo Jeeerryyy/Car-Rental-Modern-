@@ -1,4 +1,4 @@
-import { createBooking, verifyPayment, getCustomerBookings, cancelBooking, getOwnerBookings, updateBookingStatus, createManualBooking, getBookingById, uploadOwnerVerificationDocuments } from '../services/booking.service.js';
+import { createBooking, verifyPayment, getCustomerBookings, cancelBooking, getOwnerBookings, updateBookingStatus, createManualBooking, getBookingById } from '../services/booking.service.js';
 import { createOrder as createRazorpayOrder, verifySignature } from '../services/payment.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
@@ -12,16 +12,16 @@ export const getOne = catchAsync(async (req, res) => {
 });
 
 export const create = catchAsync(async (req, res) => {
-  const { carId, startDate, endDate, promoCode, notes, documents, signature, phone } = req.body;
+  const { carId, startDate, endDate, promoCode, notes, documents, signature } = req.body;
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
-  const result = await createBooking(userId, carId, startDate, endDate, promoCode, notes, documents, signature, phone);
+  const result = await createBooking(userId, carId, startDate, endDate, promoCode, notes, documents, signature);
   return ApiResponse.success(res, 201, 'Booking created', result);
 });
 
 export const createOrder = catchAsync(async (req, res) => {
   const {
     carId, pickupLocation, startDate, startTime, endDate, endTime,
-    totalDays, totalPrice: basePrice, promoCode, documents, signature, phone,
+    totalDays, totalPrice: basePrice, promoCode, documents, signature,
   } = req.body;
 
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
@@ -45,7 +45,7 @@ export const createOrder = catchAsync(async (req, res) => {
   const balanceAmount = Math.max(0, finalTotalPrice - advanceAmount);
   const referenceId = `MD${Date.now().toString().slice(-8)}`;
 
-  const razorpayOrder = await createOrder(
+  const razorpayOrder = await createRazorpayOrder(
     Math.round(advanceAmount * 100),
     'INR',
     referenceId
@@ -65,15 +65,8 @@ export const createOrder = catchAsync(async (req, res) => {
     razorpayOrderId: razorpayOrder.id,
     documents: documents || {},
     signature: signature || {},
-    phone: phone || '',
     notes: '',
   });
-
-  // Sync phone to customer profile
-  if (phone) {
-    const Customer = (await import('../models/Customer.js')).default;
-    await Customer.findByIdAndUpdate(userId, { phone });
-  }
 
   return ApiResponse.success(res, 201, 'Order created', {
     bookingDetails: {
@@ -112,23 +105,23 @@ export const cancel = catchAsync(async (req, res) => {
 
 export const forOwner = catchAsync(async (req, res) => {
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
-  const result = await getOwnerBookings(req.ownerId, req.query, pagination);
+  const result = await getOwnerBookings(req.owner._id, req.query, pagination);
   return ApiResponse.success(res, 200, 'Bookings retrieved', result.bookings, result.pagination);
 });
 
 export const updateStatus = catchAsync(async (req, res) => {
-  const { status, cancellationReason, cancellationNote } = req.body;
-  const booking = await updateBookingStatus(req.params.id, req.ownerId, status, cancellationReason, cancellationNote);
+  const { status } = req.body;
+  const booking = await updateBookingStatus(req.params.id, req.owner._id, status);
   return ApiResponse.success(res, 200, 'Booking status updated', { booking });
 });
 
 export const manual = catchAsync(async (req, res) => {
-  const booking = await createManualBooking(req.ownerId, req.body.customer, req.body.booking);
+  const booking = await createManualBooking(req.owner._id, req.body.customer, req.body.booking);
   return ApiResponse.success(res, 201, 'Manual booking created', { booking });
 });
 
 export const createCashBooking = catchAsync(async (req, res) => {
-  const { carId, pickupLocation, startDate, startTime, endDate, endTime, totalDays, totalPrice, promoCode, discountAmount, documents, signature, notes, phone } = req.body;
+  const { carId, pickupLocation, startDate, startTime, endDate, endTime, totalDays, totalPrice, promoCode, discountAmount, documents, signature, notes } = req.body;
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
   const Car = (await import('../models/Car.js')).default;
   const car = await Car.findById(carId);
@@ -152,19 +145,10 @@ export const createCashBooking = catchAsync(async (req, res) => {
     status: BOOKING_STATUS.CONFIRMED,
     paymentStatus: PAYMENT_STATUS.PAY_AT_CAR,
     referenceId: referenceId,
-    razorpayOrderId: undefined,
     documents: documents || {},
     signature: signature || {},
     notes: notes || '',
-    phone: phone || '',
   });
-
-  // Sync phone to customer profile
-  if (phone) {
-    const Customer = (await import('../models/Customer.js')).default;
-    await Customer.findByIdAndUpdate(userId, { phone });
-  }
-
   const { getIO } = await import('../config/socket.js');
   const { SOCKET_EVENTS } = await import('../config/socket.events.js');
   try { getIO().to(`owner:${car.owner}`).emit(SOCKET_EVENTS.BOOKING_CREATED, booking); } catch {}
@@ -173,13 +157,4 @@ export const createCashBooking = catchAsync(async (req, res) => {
   return ApiResponse.success(res, 201, 'Cash booking created', {
     bookingDetails: { _id: booking._id, referenceId, totalPrice: finalTotalPrice, promoCode, discountAmount: finalDiscount, paymentStatus: PAYMENT_STATUS.PAY_AT_CAR }
   });
-});
-
-export const uploadOwnerDocuments = catchAsync(async (req, res) => {
-  const { documents } = req.body;
-  if (!documents || !Array.isArray(documents)) {
-    return ApiResponse.error(res, 400, 'Documents are required as an array of base64 strings');
-  }
-  const booking = await uploadOwnerVerificationDocuments(req.params.id, req.ownerId, documents);
-  return ApiResponse.success(res, 200, 'Documents uploaded successfully', { booking });
 });

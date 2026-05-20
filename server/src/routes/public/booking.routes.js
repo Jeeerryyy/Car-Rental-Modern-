@@ -9,8 +9,8 @@ import { generalLimiter } from '../../middleware/rateLimiter.js';
 const router = Router();
 
 router.post('/', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, create);
-router.post('/create-order', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, createOrder);
-router.post('/cash-booking', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, createCashBooking);
+router.post('/create-order', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createOrder);
+router.post('/cash-booking', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createCashBooking);
 router.get('/verify-payment', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), verify);
 router.get('/my-bookings', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), forCustomer);
 router.get('/:id', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getOne);

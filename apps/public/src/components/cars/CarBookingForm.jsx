@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useNavigate, Link } from 'react-router-dom';
 import { LockIcon, ArrowRightIcon, ShieldIcon, CameraIcon, CheckIcon } from '../ui/Icons';
 import { useAuth } from '../../context/AuthContext';
@@ -103,12 +102,8 @@ export default function CarBookingForm({ car }) {
         toast.error('Please select dates');
         return;
       }
-      if (!bookingData.phone || bookingData.phone.trim() === '') {
-        toast.error('Phone number is compulsory to proceed');
-        return;
-      }
-      if (!isValidPhoneNumber(bookingData.phone, 'IN')) {
-        toast.error('Please enter a valid Indian mobile number');
+      if (!bookingData.phone || bookingData.phone.length < 10) {
+        toast.error('Please enter a valid phone number');
         return;
       }
       setStep(2);
@@ -420,17 +415,7 @@ export default function CarBookingForm({ car }) {
         <div className="space-y-4 sm:space-y-6">
           <div>
             <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#19130E' }}>Identity Verification</h3>
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#6b5e50' }}>Upload clear photos of your documents</p>
-            
-            <div className="p-4 rounded-xl mb-6 flex gap-3 items-start" style={{ background: 'rgba(182,124,61,0.1)', border: '1px solid rgba(182,124,61,0.2)' }}>
-              <ShieldIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#B67C3D' }} />
-              <div className="space-y-1">
-                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#19130E' }}>Document Policy</p>
-                <p className="text-[10px] sm:text-[11px] font-bold leading-relaxed" style={{ color: '#6b5e50' }}>
-                  All documents must be <span className="text-[#19130E]">original and legitimate</span>. We only accept <span className="text-[#19130E]">Aadhaar Card and Driving Licence</span>. Any invalid or incorrect uploads will result in the booking not being processed or immediate cancellation.
-                </p>
-              </div>
-            </div>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#6b5e50' }}>Upload clear photos of your documents</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4">

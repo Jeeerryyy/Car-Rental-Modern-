@@ -19,7 +19,6 @@ const Support   = React.lazy(() => import('./pages/Support'));
 const Promos    = React.lazy(() => import('./pages/Promos'));
 const Reviews   = React.lazy(() => import('./pages/Reviews'));
 const Reports   = React.lazy(() => import('./pages/Reports'));
-const Staff     = React.lazy(() => import('./pages/Staff'));
 const BookingCalendar = React.lazy(() => import('./pages/BookingCalendar'));
 const NotFound  = React.lazy(() => import('./pages/NotFound'));
 const OwnerLayout = React.lazy(() => import('./components/layout/OwnerLayout'));
@@ -40,13 +39,6 @@ function RequireAuth({ children }) {
     );
   }
   if (!isAuthenticated) return <Navigate to="/signin" replace />;
-  return children;
-}
-
-function RequireOwner({ children }) {
-  const { isOwner, isLoading } = useOwnerAuth();
-  if (isLoading) return null;
-  if (!isOwner) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -132,13 +124,12 @@ export default function App() {
             <Route path="/clients"       element={<Clients />} />
             <Route path="/notifications"   element={<Notifications />} />
             <Route path="/profile"       element={<Profile />} />
-            <Route path="/settings"      element={<RequireOwner><Settings /></RequireOwner>} />
+            <Route path="/settings"       element={<Settings />} />
             <Route path="/support"       element={<Support />} />
-            <Route path="/promos"        element={<RequireOwner><Promos /></RequireOwner>} />
-            <Route path="/staff"         element={<RequireOwner><Staff /></RequireOwner>} />
-            <Route path="/reviews"       element={<Reviews />} />
-            <Route path="/reports"       element={<RequireOwner><Reports /></RequireOwner>} />
-            <Route path="/calendar"      element={<BookingCalendar />} />
+            <Route path="/promos"         element={<Promos />} />
+            <Route path="/reviews"        element={<Reviews />} />
+            <Route path="/reports"        element={<Reports />} />
+            <Route path="/calendar"       element={<BookingCalendar />} />
           </Route>
 
           {/* ── 404 ── */}

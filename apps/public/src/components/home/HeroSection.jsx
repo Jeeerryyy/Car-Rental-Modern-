@@ -30,6 +30,11 @@ export default function HeroSection() {
           <div className="flex flex-wrap gap-6 items-center justify-center">
             <Link to="/cars" className="btn-primary w-full sm:w-auto justify-center">Browse Fleet</Link>
             <div className="flex items-center gap-2 text-left">
+              <div className="flex -space-x-3">
+                {['#F9F8F3', '#b5a78f', '#a0937b'].map((bg) => (
+                  <div key={bg} className="w-10 h-10 rounded-full border-2" style={{ borderColor: '#F9F8F3', background: bg }} />
+                ))}
+              </div>
               <div className="text-sm font-semibold ml-2" style={{ color: '#19130E' }}>
                 5.0★ <span className="font-normal block text-xs" style={{ color: '#6b5e50' }}>500+ Fleet | 8+ Years</span>
               </div>

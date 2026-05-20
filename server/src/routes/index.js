@@ -16,7 +16,6 @@ import ownerNotificationRoutes from './owner/notification.routes.js';
 import ownerSettingsRoutes from './owner/settings.routes.js';
 import ownerReportRoutes from './owner/report.routes.js';
 import ownerClientRoutes from './owner/client.routes.js';
-import ownerStaffRoutes from './owner/staff.routes.js';
 import razorpayRoutes from './webhooks/razorpay.routes.js';
 
 import { uploadDocument } from '../middleware/upload.js';
@@ -75,7 +74,6 @@ router.use('/owner/notifications', ownerNotificationRoutes);
 router.use('/owner/settings', ownerSettingsRoutes);
 router.use('/owner/reports', ownerReportRoutes);
 router.use('/owner/clients', ownerClientRoutes);
-router.use('/owner/staff', ownerStaffRoutes);
 
 // Webhooks
 router.use('/webhooks', razorpayRoutes);

@@ -17,12 +17,6 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('customer');
-      
-      // Do not redirect if the request was checking the auth status
-      if (error.config && error.config.url === '/auth/profile') {
-        return Promise.reject(error);
-      }
-
       if (window.location.pathname !== '/signin' && window.location.pathname !== '/signup') {
         window.location.href = '/signin';
       }

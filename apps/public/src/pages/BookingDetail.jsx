@@ -3,8 +3,11 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { bookingAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import SEO from '../components/SEO';
-
+import { getInvoiceHtml } from '../utils/invoiceTemplate';
+import html2canvas from 'html2canvas';
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -29,7 +32,80 @@ export default function BookingDetail() {
     fetch();
   }, [id, customer, navigate]);
 
+  const generateInvoice = async () => {
+    if (!booking) return;
 
+    const toastId = toast.loading('Preparing your invoice...');
+    try {
+      // 1. Create a visible but off-screen container
+      const container = document.createElement('div');
+      container.innerHTML = getInvoiceHtml(booking);
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '5000px'; // Move way off-screen but keep it rendered
+      container.style.width = '800px';
+      container.style.zIndex = '-9999';
+      document.body.appendChild(container);
+
+      // 2. Give it time to render and load the logo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const page1 = container.querySelector('#page-1');
+      const page2 = container.querySelector('#page-2');
+      
+      // 3. Capture with html2canvas (both pages)
+      const canvas1 = await html2canvas(page1, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
+
+      const canvas2 = await html2canvas(page2, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 800,
+        height: 1120,
+        windowWidth: 800
+      });
+
+      // 4. Convert to PDF
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Add Page 1
+      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
+
+      // Add Page 2
+      pdf.addPage();
+      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
+      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
+
+      pdf.save(`ModernDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
+
+      // 5. Cleanup
+      document.body.removeChild(container);
+      toast.success('Invoice downloaded!', { id: toastId });
+    } catch (error) {
+      console.error('Invoice generation error:', error);
+      toast.error('Failed to generate invoice', { id: toastId });
+    }
+  };
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -157,35 +233,17 @@ export default function BookingDetail() {
                 </div>
               </div>
               
-
+              <button
+                onClick={generateInvoice}
+                className="w-full py-4 text-xs font-bold rounded-[8px] flex items-center justify-center gap-2"
+                style={{ background: '#19130E', color: '#FFFFFF' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Invoice
+              </button>
             </div>
-
-            {booking.status === 'cancelled' && (booking.cancelledBy || booking.cancellationReason) && (
-              <div className="rounded-[12px] p-6" style={{ background: 'rgba(185,28,28,0.05)', border: '1px solid rgba(185,28,28,0.15)' }}>
-                <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#b91c1c' }}>Cancellation Details</h3>
-                <div className="space-y-3">
-                  {booking.cancelledBy && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: '#6b5e50' }}>Cancelled By</span>
-                      <span className="text-xs font-bold capitalize" style={{ color: '#b91c1c' }}>{booking.cancelledBy}</span>
-                    </div>
-                  )}
-                  {booking.cancellationReason && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: '#6b5e50' }}>Reason</span>
-                      <span className="text-xs font-bold" style={{ color: '#19130E' }}>
-                        {{ invalid_documents: 'Invalid Documents', vehicle_not_available: 'Vehicle Not Available', customer_no_show: 'Customer No-Show', payment_issue: 'Payment Issue', other: 'Other' }[booking.cancellationReason] || booking.cancellationReason}
-                      </span>
-                    </div>
-                  )}
-                  {booking.cancellationNote && (
-                    <div className="pt-3" style={{ borderTop: '1px solid rgba(185,28,28,0.1)' }}>
-                      <p className="text-xs italic" style={{ color: '#6b5e50' }}>"{booking.cancellationNote}"</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {(booking.status === 'pending' || booking.status === 'confirmed') && (
               <button
@@ -199,7 +257,7 @@ export default function BookingDetail() {
 
             <div className="rounded-[12px] p-6 text-center" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
               <p className="text-xs leading-relaxed" style={{ color: '#6b5e50' }}>
-                Need support? <br /> Call us at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#19130E' }}>+91 90044 60634</a>
+                Need support? <br /> Call us at <a href="tel:+918792492717" className="font-bold underline" style={{ color: '#19130E' }}>+91 87924 92717</a>
               </p>
             </div>
           </div>

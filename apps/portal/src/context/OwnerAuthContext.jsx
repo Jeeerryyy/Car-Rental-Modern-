@@ -101,5 +101,5 @@ export function useOwnerAuth() {
       checkAuth: async () => {},
     };
   }
-  return { ...ctx, isOwner: ctx.user?.role === 'owner' };
+  return { ...ctx, isOwner: true };
 }

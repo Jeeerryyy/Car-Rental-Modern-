@@ -23,9 +23,9 @@ export default function DesktopActions() {
       <div className="flex items-center gap-3 pr-5" style={{ borderRight: '1px solid rgba(182,124,61,0.15)' }}>
         <span className="flex items-center gap-2 text-[13px] font-medium" style={{ color: '#19130E' }}>
           <PhoneIcon className="w-4 h-4" />
-          +91 90044 60634
-</span>
-<a href="https://wa.me/919004460634" target="_blank" rel="noopener noreferrer"
+          +91 87924 92717
+        </span>
+        <a href="https://wa.me/918792492717" target="_blank" rel="noopener noreferrer"
           className="flex items-center no-underline" style={{ color: '#25D366' }} aria-label="Chat on WhatsApp">
           <WhatsAppIcon className="w-4 h-4" />
         </a>
