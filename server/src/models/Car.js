@@ -51,6 +51,10 @@ const carSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  color: {
+    type: String,
+    trim: true
+  },
   transmission: {
     type: String,
     trim: true
@@ -121,6 +125,7 @@ carSchema.index({ isActive: 1 });
 carSchema.index({ isDeleted: 1 });
 carSchema.index({ pricePerDay: 1 });
 carSchema.index({ owner: 1 });
+carSchema.index({ owner: 1, isDeleted: 1, isActive: 1 });
 carSchema.index({ make: 'text', model: 'text', location: 'text' });
 
 const Car = mongoose.model('Car', carSchema);

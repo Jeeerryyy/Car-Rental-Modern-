@@ -44,7 +44,8 @@ const envVarsSchema = Joi.object({
   SMTP_FROM: Joi.string().optional().allow(''),
   SENTRY_DSN: Joi.string().optional().allow(''),
   GOOGLE_CLIENT_ID: Joi.string().required(),
-  GOOGLE_CLIENT_SECRET: Joi.string().required()
+  GOOGLE_CLIENT_SECRET: Joi.string().required(),
+  REDIS_URL: Joi.string().optional().allow('')
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
@@ -59,6 +60,7 @@ export const config = {
   nodeEnv: envVars.NODE_ENV,
   port: envVars.PORT,
   mongoUri: envVars.MONGO_URI,
+  redisUrl: envVars.REDIS_URL,
   jwt: {
     secret: envVars.JWT_SECRET,
     expiry: envVars.JWT_EXPIRY
@@ -72,7 +74,7 @@ export const config = {
   },
   disableRateLimit: envVars.DISABLE_RATE_LIMIT,
   payment: {
-    enabled: envVars.PAYMENT_ENABLED,
+    enabled: envVars.NODE_ENV === 'test' ? false : envVars.PAYMENT_ENABLED,
     keyId: envVars.RAZORPAY_KEY_ID,
     secret: envVars.RAZORPAY_SECRET
   },

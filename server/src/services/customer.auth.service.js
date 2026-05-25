@@ -168,9 +168,9 @@ export const googleLoginCustomer = async (credential) => {
       name,
       email,
       password: randomPassword,
-      phone: 'Not provided', // Or optional
+      phone: '', // Or optional
       isEmailVerified: true, // Trusted from Google
-      profileImage: picture,
+      profileImage: { url: picture, publicId: '' },
     });
   }
 

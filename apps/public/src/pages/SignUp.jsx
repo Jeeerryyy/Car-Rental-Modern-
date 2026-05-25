@@ -14,6 +14,7 @@ export default function CustomerSignUp() {
   const validate = () => {
     const errs = {};
     if (!form.name || form.name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
+    else if (!/^[a-zA-Z\s'-]+$/.test(form.name.trim())) errs.name = 'Name can only contain letters, spaces, and hyphens';
     if (!form.email) errs.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email format';
     if (!form.phone) errs.phone = 'Phone number is required';

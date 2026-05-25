@@ -143,112 +143,114 @@ export default function BookingCalendar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-sm">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 border-b border-outline-variant bg-surface-container-lowest gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-primary font-headline-md">{monthNames[month]} {year}</h2>
-          <p className="text-secondary text-sm font-body-md mt-1">Fleet schedule for offline & online bookings</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />}
-          <button onClick={prevMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-            <span className="material-symbols-outlined">chevron_left</span>
-          </button>
-          <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-bold text-primary hover:bg-surface-container rounded-lg transition-colors border border-outline-variant">
-            Today
-          </button>
-          <button onClick={nextMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-            <span className="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Grid Header */}
-      <div className="grid grid-cols-7 bg-surface-container-low border-b border-outline-variant">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-          <div key={d} className="py-2 text-center text-[10px] font-black text-secondary uppercase tracking-widest border-r border-outline-variant last:border-r-0">
-            {d}
+    <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6">
+      <div className="flex flex-col h-full bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 border-b border-outline-variant bg-surface-container-lowest gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-primary font-headline-md">{monthNames[month]} {year}</h2>
+            <p className="text-secondary text-sm font-body-md mt-1">Fleet schedule for offline & online bookings</p>
           </div>
-        ))}
-      </div>
+          <div className="flex items-center gap-2">
+            {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />}
+            <button onClick={prevMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-bold text-primary hover:bg-surface-container rounded-lg transition-colors border border-outline-variant">
+              Today
+            </button>
+            <button onClick={nextMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
 
-      {/* Grid */}
-      <div className="flex-1 grid grid-cols-7 overflow-y-auto min-h-[400px]">
-        {calendarDays}
-      </div>
-
-      {/* Side Panel Overlay */}
-      {sidePanelOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidePanelOpen(false)} />
-          <div className="relative w-full md:max-w-md bg-surface-container-lowest h-full shadow-2xl flex flex-col border-l border-outline-variant animate-in slide-in-from-right duration-300">
-            <div className="px-6 py-4 md:px-8 md:py-6 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
-              <div>
-                <h3 className="text-xl font-bold text-primary">Bookings for {selectedDate?.day} {selectedDate?.month}</h3>
-                <p className="text-secondary text-sm mt-1">{selectedDate?.bookings.length} reservations found</p>
-              </div>
-              <button onClick={() => setSidePanelOpen(false)} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-                <span className="material-symbols-outlined">close</span>
-              </button>
+        {/* Grid Header */}
+        <div className="grid grid-cols-7 bg-surface-container-low border-b border-outline-variant">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+            <div key={d} className="py-2 text-center text-[10px] font-black text-secondary uppercase tracking-widest border-r border-outline-variant last:border-r-0">
+              {d}
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              {selectedDate?.bookings.length > 0 ? (
-                selectedDate.bookings.map((b, idx) => (
-                  <div key={idx} className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant hover:border-primary/50 transition-all group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary overflow-hidden flex items-center justify-center font-bold text-xl">
-                        {b.car?.images?.[0]?.url ? (
-                          <img src={b.car.images[0].url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{b.car?.make?.[0] || 'C'}</span>
-                        )}
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[b.status] || 'bg-gray-100 text-gray-700'}`}>
-                        {b.status}
-                      </span>
-                    </div>
-                    
-                    <h4 className="text-lg font-bold text-primary mb-1">{b.car?.make} {b.car?.model}</h4>
-                    <p className="text-secondary font-medium mb-4">{b.customer?.name || 'Walk-in Customer'}</p>
-                    
-                    <div className="grid grid-cols-1 gap-3 pt-4 border-t border-outline-variant">
-                      <div className="flex items-center gap-3 text-sm text-secondary">
-                        <span className="material-symbols-outlined text-[18px]">call</span>
-                        <span className="font-bold">{b.customer?.phone || 'No phone provided'}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-secondary">
-                        <span className="material-symbols-outlined text-[18px]">mail</span>
-                        <span className="truncate">{b.customer?.email}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-secondary">
-                        <span className="material-symbols-outlined text-[18px]">date_range</span>
-                        <span>{new Date(b.startDate).toLocaleDateString()} - {new Date(b.endDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-secondary">
-                        <span className="material-symbols-outlined text-[18px]">payments</span>
-                        <span className="font-bold text-primary">₹{Number(b.totalPrice).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
-                  <span className="material-symbols-outlined text-[64px] mb-4">calendar_today</span>
-                  <p className="text-lg font-bold">No bookings for this date</p>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 grid grid-cols-7 overflow-y-auto min-h-[400px]">
+          {calendarDays}
+        </div>
+
+        {/* Side Panel Overlay */}
+        {sidePanelOpen && (
+          <div className="fixed inset-0 z-[100] flex justify-end">
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidePanelOpen(false)} />
+            <div className="relative w-full md:max-w-md bg-surface-container-lowest h-full shadow-2xl flex flex-col border-l border-outline-variant animate-in slide-in-from-right duration-300">
+              <div className="px-6 py-4 md:px-8 md:py-6 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+                <div>
+                  <h3 className="text-xl font-bold text-primary">Bookings for {selectedDate?.day} {selectedDate?.month}</h3>
+                  <p className="text-secondary text-sm mt-1">{selectedDate?.bookings.length} reservations found</p>
                 </div>
-              )}
-            </div>
+                <button onClick={() => setSidePanelOpen(false)} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                {selectedDate?.bookings.length > 0 ? (
+                  selectedDate.bookings.map((b, idx) => (
+                    <div key={idx} className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant hover:border-primary/50 transition-all group">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary overflow-hidden flex items-center justify-center font-bold text-xl">
+                          {b.car?.images?.[0]?.url ? (
+                            <img src={b.car.images[0].url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{b.car?.make?.[0] || 'C'}</span>
+                          )}
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[b.status] || 'bg-gray-100 text-gray-700'}`}>
+                          {b.status}
+                        </span>
+                      </div>
+                      
+                      <h4 className="text-lg font-bold text-primary mb-1">{b.car?.make} {b.car?.model}</h4>
+                      <p className="text-secondary font-medium mb-4">{b.customer?.name || 'Walk-in Customer'}</p>
+                      
+                      <div className="grid grid-cols-1 gap-3 pt-4 border-t border-outline-variant">
+                        <div className="flex items-center gap-3 text-sm text-secondary">
+                          <span className="material-symbols-outlined text-[18px]">call</span>
+                          <span className="font-bold">{b.phone || b.customer?.phone || 'No phone provided'}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-secondary">
+                          <span className="material-symbols-outlined text-[18px]">mail</span>
+                          <span className="truncate">{b.customer?.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-secondary">
+                          <span className="material-symbols-outlined text-[18px]">date_range</span>
+                          <span>{new Date(b.startDate).toLocaleDateString()} - {new Date(b.endDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-secondary">
+                          <span className="material-symbols-outlined text-[18px]">payments</span>
+                          <span className="font-bold text-primary">₹{Number(b.totalPrice).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20">
+                    <span className="material-symbols-outlined text-[64px] mb-4">calendar_today</span>
+                    <p className="text-lg font-bold">No bookings for this date</p>
+                  </div>
+                )}
+              </div>
 
-            <div className="p-8 border-t border-outline-variant bg-surface-container-low">
-              <button onClick={() => setSidePanelOpen(false)} className="w-full py-4 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
-                Close Panel
-              </button>
+              <div className="p-8 border-t border-outline-variant bg-surface-container-low">
+                <button onClick={() => setSidePanelOpen(false)} className="w-full py-4 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
+                  Close Panel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

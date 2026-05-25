@@ -57,10 +57,13 @@ export const initSocket = (httpServer) => {
     socket.join(`user:${user.id}`);
     logger.info(`[Socket] ${user.id} joined room: user:${user.id}`);
     
-    // If owner, join owner room
+    // Join owner room if owner or staff
     if (user.role === 'owner') {
       socket.join(`owner:${user.id}`);
       logger.info(`[Socket] ${user.id} joined room: owner:${user.id}`);
+    } else if (user.role === 'staff' && user.parentOwner) {
+      socket.join(`owner:${user.parentOwner}`);
+      logger.info(`[Socket] Staff ${user.id} joined room: owner:${user.parentOwner}`);
     }
 
     // Join public room for broadcast events

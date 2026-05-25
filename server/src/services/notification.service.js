@@ -1,6 +1,7 @@
 import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { getIO } from '../config/socket.js';
+import { logger } from '../utils/logger.js';
 
 export const createNotification = async (recipientId, recipientModel, type, title, message, link = null) => {
   const notification = await Notification.create({
@@ -16,9 +17,9 @@ export const createNotification = async (recipientId, recipientModel, type, titl
   try {
     const room = recipientModel === 'Owner' ? `owner:${recipientId}` : `user:${recipientId}`;
     getIO().to(room).emit('notification:received', notification);
-    console.log(`[Socket] Emitted notification to room ${room}:`, notification.title);
+    logger.info(`[Socket] Emitted notification to room ${room}: ${notification.title}`);
   } catch (err) {
-    console.error(`[Socket] Failed to emit notification: ${err.message}`);
+    logger.error(`[Socket] Failed to emit notification: ${err.message}`);
   }
 
   return notification;

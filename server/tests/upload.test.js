@@ -20,12 +20,15 @@ jest.unstable_mockModule('../src/config/razorpay.js', () => ({
 }));
 
 jest.unstable_mockModule('../src/services/cloudinary.service.js', () => ({
+  uploadImage: jest.fn(),
+  deleteImage: jest.fn(),
+  deleteMultipleImages: jest.fn(),
+  uploadCarImages: jest.fn(),
+  uploadProfileImage: jest.fn(),
   uploadDocument: jest.fn(async (file) => ({
     url: `https://res.cloudinary.com/test/image/upload/mock_${file.originalname}`,
     publicId: `mock_${Date.now()}`,
   })),
-  uploadCarImages: jest.fn(),
-  deleteMultipleImages: jest.fn(),
 }));
 
 jest.unstable_mockModule('../src/config/email.js', () => ({
@@ -60,7 +63,7 @@ describe('File Upload (POST /api/upload)', () => {
   it('should reject unauthenticated upload (401)', async () => {
     const res = await request
       .post('/api/upload')
-      .attach('documents', Buffer.from('fake-image-data'), {
+      .attach('documents', Buffer.from('89504E470D0A1A0A', 'hex'), {
         filename: 'test.jpg',
         contentType: 'image/jpeg',
       });
@@ -75,7 +78,7 @@ describe('File Upload (POST /api/upload)', () => {
     const res = await request
       .post('/api/upload')
       .set('Cookie', cookie)
-      .attach('documents', Buffer.from('fake-image-data'), {
+      .attach('documents', Buffer.from('89504E470D0A1A0A', 'hex'), {
         filename: 'test.jpg',
         contentType: 'image/jpeg',
       });
@@ -92,12 +95,29 @@ describe('File Upload (POST /api/upload)', () => {
     const res = await request
       .post('/api/upload')
       .set('Cookie', cookie)
-      .attach('documents', Buffer.from('fake-image-data'), {
+      .attach('documents', Buffer.from('89504E470D0A1A0A', 'hex'), {
         filename: 'doc.png',
         contentType: 'image/png',
       });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+  });
+
+  it('should allow authenticated customer to upload a PDF file', async () => {
+    const { cookie } = await createTestCustomer();
+
+    const res = await request
+      .post('/api/upload')
+      .set('Cookie', cookie)
+      .attach('documents', Buffer.from('255044462D312E340A', 'hex'), { // %PDF-1.4
+        filename: 'document.pdf',
+        contentType: 'application/pdf',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.files).toBeDefined();
+    expect(res.body.data.files[0].url).toContain('mock_document.pdf');
   });
 });

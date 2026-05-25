@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { register, login, googleAuth, getProfile, updateProfile, changePassword, logout, forgotPassword, resetPassword } from '../../controllers/customer.auth.controller.js';
 import { registerRules, loginRules } from '../../validators/customer.auth.validator.js';
 import { validate } from '../../middleware/validate.js';
-import { authLimiter } from '../../middleware/rateLimiter.js';
 import { protect, restrictTo } from '../../middleware/auth.js';
 import { USER_ROLES } from '../../utils/constants.js';
 
@@ -97,11 +96,11 @@ import { USER_ROLES } from '../../utils/constants.js';
 
 const router = Router();
 
-router.post('/register', authLimiter, registerRules, validate, register);
-router.post('/login', authLimiter, loginRules, validate, login);
-router.post('/google', authLimiter, googleAuth);
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.post('/reset-password', authLimiter, resetPassword);
+router.post('/register', registerRules, validate, register);
+router.post('/login', loginRules, validate, login);
+router.post('/google', googleAuth);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.get('/me', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getProfile);
 router.get('/profile', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getProfile);
 router.put('/profile', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), updateProfile);

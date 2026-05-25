@@ -59,7 +59,6 @@ function Home() {
           carAPI.getFeatured(),
           promoAPI.getFeatured()
         ]);
-        console.log('Featured Cars API Response:', carsRes.data);
         setFeaturedCars(carsRes.data.data?.cars || carsRes.data.data || []);
         setFeaturedPromo(promoRes.data.data?.promo || null);
       } catch {

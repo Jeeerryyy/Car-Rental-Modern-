@@ -15,7 +15,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 const ownerRoutes = [
   '/dashboard', '/fleet', '/bookings', '/clients', '/settings',
   '/support', '/promos', '/reviews', '/reports', '/calendar',
-  '/notifications', '/profile', '/signin',
+  '/notifications', '/profile', '/signin', '/staff'
 ];
 
 api.interceptors.response.use(

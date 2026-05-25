@@ -3,15 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CarIcon, LocationIcon, CalendarIcon, ChevronDownIcon } from '../ui/Icons';
 
 const LOCATIONS = [
-  'Junagadh City',
-  'Junagadh Airport (IATA: JGA)',
-  'Keshod Airport',
-  'Somnath',
-  'Gir',
-  'Veraval',
-  'Porbandar',
-  'Rajkot',
-  'Ahmedabad',
+  'Junagadh Office Location',
 ];
 
 const TYPES = ['Hatchback', 'Sedan', 'SUV', 'Luxury', 'Bike/Scooter'];
@@ -20,7 +12,7 @@ export default function SearchWidget() {
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  const [form, setForm] = useState({ location: '', from: '', to: '', type: '' });
+  const [form, setForm] = useState({ location: 'Junagadh Office Location', from: '', to: '', type: '' });
 
   // Real-time persistence: save as user types/selects
   useEffect(() => {
@@ -56,7 +48,6 @@ export default function SearchWidget() {
         <Field id="sw-location" label="Pick-up Location" icon={LocationIcon}>
           <select id="sw-location" value={form.location} onChange={update('location')}
             className="field-input appearance-none h-[54px] pr-10" style={fieldInputStyle}>
-            <option value="">Select Location</option>
             {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
           </select>
           <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#6b5e50' }} />

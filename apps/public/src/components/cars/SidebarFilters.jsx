@@ -7,9 +7,8 @@ export default function SidebarFilters({ filterOpen, setFilterOpen, localFilters
   return (
     <>
       {filterOpen && (<div className="fixed inset-0 z-[80] lg:hidden" style={{ background: 'rgba(25,19,14,0.35)' }} onClick={() => setFilterOpen(false)} aria-hidden="true" />)}
-      <aside className={`fixed lg:relative top-0 left-0 h-full lg:h-auto w-[300px] lg:w-[280px] z-[85] lg:z-auto flex-shrink-0 lg:transform-none ${filterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} overflow-y-auto`}
-        style={{ background: '#F2EEE5' }}>
-        <div className="p-6 rounded-none lg:rounded-[12px] lg:sticky lg:top-[100px]" style={cardStyle}>
+      <aside className={`fixed lg:relative top-0 left-0 h-full lg:h-auto w-[300px] lg:w-[280px] z-[85] lg:z-auto flex-shrink-0 lg:transform-none ${filterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} overflow-y-auto`}>
+        <div className="p-6 rounded-none lg:rounded-[12px] lg:sticky lg:top-[100px] min-h-screen lg:min-h-0" style={cardStyle}>
           <h3 className="font-display text-xl font-bold mb-6 flex items-center justify-between" style={{ color: '#19130E' }}>
             Filters
             <div className="flex items-center gap-3">

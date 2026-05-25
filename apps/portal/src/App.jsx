@@ -19,6 +19,7 @@ const Support   = React.lazy(() => import('./pages/Support'));
 const Promos    = React.lazy(() => import('./pages/Promos'));
 const Reviews   = React.lazy(() => import('./pages/Reviews'));
 const Reports   = React.lazy(() => import('./pages/Reports'));
+const Staff     = React.lazy(() => import('./pages/Staff'));
 const BookingCalendar = React.lazy(() => import('./pages/BookingCalendar'));
 const NotFound  = React.lazy(() => import('./pages/NotFound'));
 const OwnerLayout = React.lazy(() => import('./components/layout/OwnerLayout'));
@@ -42,17 +43,27 @@ function RequireAuth({ children }) {
   return children;
 }
 
-function RedirectAuth({ children }) {
-  const { isAuthenticated, isLoading } = useOwnerAuth();
+function RequireOwner({ children }) {
+  const { isOwner, isLoading } = useOwnerAuth();
   if (isLoading) return null;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (!isOwner) return <Navigate to="/bookings" replace />;
+  return children;
+}
+
+function RedirectAuth({ children }) {
+  const { isAuthenticated, isOwner, isLoading } = useOwnerAuth();
+  if (isLoading) return null;
+  if (isAuthenticated) {
+    return <Navigate to={isOwner ? "/dashboard" : "/bookings"} replace />;
+  }
   return children;
 }
 
 function RootRedirect() {
-  const { isAuthenticated, isLoading } = useOwnerAuth();
+  const { isAuthenticated, isOwner, isLoading } = useOwnerAuth();
   if (isLoading) return <LoadingScreen />;
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/signin'} replace />;
+  if (!isAuthenticated) return <Navigate to="/signin" replace />;
+  return <Navigate to={isOwner ? '/dashboard' : '/bookings'} replace />;
 }
 
 function ScrollRestoration() {
@@ -114,22 +125,23 @@ export default function App() {
 
           {/* ── Protected owner routes ── */}
           <Route element={<RequireAuth><OwnerLayout /></RequireAuth>}>
-            <Route path="/dashboard"      element={<Dashboard />} />
-            <Route path="/fleet"          element={<Fleet />} />
-            <Route path="/fleet/add"      element={<AddCar />} />
-            <Route path="/fleet/add-bike" element={<AddBike />} />
-            <Route path="/fleet/:id"     element={<FleetDetail />} />
+            <Route path="/dashboard"      element={<RequireOwner><Dashboard /></RequireOwner>} />
+            <Route path="/fleet"          element={<RequireOwner><Fleet /></RequireOwner>} />
+            <Route path="/fleet/add"      element={<RequireOwner><AddCar /></RequireOwner>} />
+            <Route path="/fleet/add-bike" element={<RequireOwner><AddBike /></RequireOwner>} />
+            <Route path="/fleet/:id"     element={<RequireOwner><FleetDetail /></RequireOwner>} />
             <Route path="/bookings"      element={<Bookings />} />
             <Route path="/bookings/new"  element={<AddBooking />} />
-            <Route path="/clients"       element={<Clients />} />
+            <Route path="/clients"       element={<RequireOwner><Clients /></RequireOwner>} />
             <Route path="/notifications"   element={<Notifications />} />
             <Route path="/profile"       element={<Profile />} />
-            <Route path="/settings"       element={<Settings />} />
-            <Route path="/support"       element={<Support />} />
-            <Route path="/promos"         element={<Promos />} />
-            <Route path="/reviews"        element={<Reviews />} />
-            <Route path="/reports"        element={<Reports />} />
-            <Route path="/calendar"       element={<BookingCalendar />} />
+            <Route path="/settings"      element={<RequireOwner><Settings /></RequireOwner>} />
+            <Route path="/support"       element={<RequireOwner><Support /></RequireOwner>} />
+            <Route path="/promos"        element={<RequireOwner><Promos /></RequireOwner>} />
+            <Route path="/staff"         element={<RequireOwner><Staff /></RequireOwner>} />
+            <Route path="/reviews"       element={<RequireOwner><Reviews /></RequireOwner>} />
+            <Route path="/reports"       element={<RequireOwner><Reports /></RequireOwner>} />
+            <Route path="/calendar"      element={<RequireOwner><BookingCalendar /></RequireOwner>} />
           </Route>
 
           {/* ── 404 ── */}

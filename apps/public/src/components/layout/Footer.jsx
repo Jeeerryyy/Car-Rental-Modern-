@@ -4,7 +4,7 @@ import { LocationIcon, MailIcon, PhoneIcon } from '../ui/Icons';
 const BUSINESS_NAME = 'modern self drive';
 const ADDRESS = 'Junagadh, Gujarat';
 const EMAIL = 'booking@modernselfdrive.in';
-const PHONE = '+91 87924 92717';
+const PHONE = '+91 90044 60634';
 
 function Footer() {
 

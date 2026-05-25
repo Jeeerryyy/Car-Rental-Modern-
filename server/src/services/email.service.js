@@ -1,6 +1,7 @@
 import transporter from '../config/email.js';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { emailBreaker } from '../utils/resilience.js';
 
 export const sendEmail = async (to, subject, html) => {
   if (!transporter) {
@@ -8,7 +9,7 @@ export const sendEmail = async (to, subject, html) => {
     return false;
   }
   try {
-    await transporter.sendMail({
+    await emailBreaker.fire(transporter.sendMail.bind(transporter), {
       from: config.smtp.emailFrom,
       to,
       subject,

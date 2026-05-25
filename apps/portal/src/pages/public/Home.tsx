@@ -111,7 +111,7 @@ export default function Home() {
                       </div>
                       <div className="text-[11px] text-on-surface-variant font-semibold">{car.year} · {car.category}</div>
                       <div className="mt-auto pt-2">
-                        <div className="w-full py-2.5 bg-secondary text-[#111] font-bold text-[11px] uppercase tracking-widest text-center group-hover:bg-[#B08040] transition-colors">
+                        <div className="flex items-center justify-center w-full py-2.5 bg-secondary text-[#111] font-bold text-[11px] uppercase tracking-widest group-hover:bg-[#B08040] transition-colors">
                           Book Now
                         </div>
                       </div>

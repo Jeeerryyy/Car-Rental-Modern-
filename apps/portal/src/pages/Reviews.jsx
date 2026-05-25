@@ -30,8 +30,8 @@ export default function Reviews() {
   };
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6">
+      <div>
         <h1 className="text-headline-lg font-headline-lg font-bold text-primary">Reviews</h1>
         <p className="text-body-sm text-secondary mt-1">Customer feedback and review moderation</p>
       </div>
@@ -52,7 +52,7 @@ export default function Reviews() {
                 <div>
                   <p className="font-bold text-primary">{review.customer?.name || 'Customer'}</p>
                   <p className="text-[12px] text-outline">
-                    {review.car?.make} {review.car?.model} · {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-IN') : ''}
+                    {review.car?.make} {review.car?.model} • {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-IN') : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -2,7 +2,7 @@ import React from 'react';
 import { PhoneIcon, MailIcon, LocationIcon, WhatsAppIcon, InstagramIcon, FacebookIcon, MapIcon } from '../ui/Icons';
 
 const SOCIAL_LINKS = [
-  { name: 'WhatsApp', icon: <WhatsAppIcon className="w-5 h-5" />, link: 'https://wa.me/918792492717', label: '+91 87924 92717' },
+  { name: 'WhatsApp', icon: <WhatsAppIcon className="w-5 h-5" />, link: 'https://wa.me/919004460634', label: '+91 90044 60634' },
   { name: 'Instagram', icon: <InstagramIcon className="w-5 h-5" />, link: 'https://instagram.com/modernselfdrive', label: '@modernselfdrive' },
   { name: 'Facebook', icon: <FacebookIcon className="w-5 h-5" />, link: 'https://facebook.com/modernselfdrive', label: 'Modern Selfdrive' },
   { name: 'Google Maps', icon: <MapIcon className="w-5 h-5" />, link: 'https://g.page/modern-selfdrive', label: 'Visit our Office' },
@@ -19,7 +19,7 @@ export default function ContactMethods() {
           <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={iconBg}><PhoneIcon className="w-6 h-6" /></div>
           <div>
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#6b5e50' }}>Call Us</p>
-            <a href="tel:+918792492717" className="text-xl font-bold no-underline" style={{ color: '#19130E' }}>+91 87924 92717</a>
+            <a href="tel:+919004460634" className="text-xl font-bold no-underline" style={{ color: '#19130E' }}>+91 90044 60634</a>
             <p className="text-sm mt-1" style={{ color: '#6b5e50' }}>Available 24/7 for support</p>
           </div>
         </div>

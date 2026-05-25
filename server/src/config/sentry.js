@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { config } from './env.js';
+import { logger } from '../utils/logger.js';
 
 export const initSentry = () => {
   if (config.nodeEnv === 'production') {
@@ -20,7 +21,7 @@ export const initSentry = () => {
       }
     });
 
-    console.log('Sentry initialized for production');
+    logger.info('Sentry initialized for production');
   }
 };
 

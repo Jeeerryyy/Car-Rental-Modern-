@@ -8,6 +8,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // Phase 0: Environment & Security Hardening
 import './config/env.js';
@@ -24,10 +25,35 @@ import { initBackupJob } from './jobs/backupJob.js';
 import { initKeepAlive } from './jobs/keepAlive.js';
 import { swaggerDocs } from './config/swagger.js';
 import { initSentry } from './config/sentry.js';
+import { correlationMiddleware } from './middleware/correlation.middleware.js';
+import { requestLogger } from './middleware/requestLogger.middleware.js';
+import { metricsMiddleware, getMetricsString } from './config/metrics.js';
+import { cacheService } from './config/redis.js';
+import { initCleanupJob } from './jobs/cleanupJob.js';
+import { initPaymentReconciliation } from './jobs/paymentReconciliation.js';
+import { initAnalyticsSnapshot } from './jobs/analyticsSnapshot.js';
 
 const app = express();
 app.set('trust proxy', true);
 initSentry();
+
+// Generate a CSP nonce for every request
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
+// Trace correlation and logging middleware
+app.use(correlationMiddleware);
+app.use(requestLogger);
+app.use(metricsMiddleware);
+
+// Permissions-Policy header (not covered by helmet defaults)
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), interest-cohort=()');
+  next();
+});
+
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
@@ -67,22 +93,42 @@ app.use(cors({
 }));
 
 // 1. Basic Middleware & Parsers
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use('/api/upload', express.json({ limit: '50mb' }));
+app.use('/api/upload', express.urlencoded({ extended: true, limit: '50mb' }));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 
 // 2. Security Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", "https://api.cloudinary.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 app.use(mongoSanitize());
 app.use(xss());
 
 // 3. Rate Limiting
 app.use('/api', generalLimiter);
-app.use('/api/auth', authLimiter);
 app.use('/api/owner/auth', authLimiter);
 
 // 7. morgan (development only) — request logging
@@ -110,6 +156,59 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/health/live', (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health/ready', async (req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1;
+  const redisConnected = cacheService.isConnected();
+  
+  const status = dbConnected && redisConnected ? 200 : 503;
+  res.status(status).json({
+    status: status === 200 ? 'UP' : 'DOWN',
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: dbConnected ? 'UP' : 'DOWN',
+      cache: redisConnected ? 'UP' : 'DOWN'
+    }
+  });
+});
+
+const metricsAuth = (req, res, next) => {
+  if (process.env.METRICS_AUTH_ENABLED !== 'true') {
+    return next();
+  }
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Metrics"');
+    return res.status(401).send('Authentication required');
+  }
+  const auth = Buffer.from(authHeader.split(' ')[1] || '', 'base64').toString().split(':');
+  const user = auth[0];
+  const pass = auth[1];
+  const expectedUser = process.env.METRICS_USERNAME || 'admin';
+  const expectedPass = process.env.METRICS_PASSWORD || 'admin';
+  if (user === expectedUser && pass === expectedPass) {
+    return next();
+  }
+  res.setHeader('WWW-Authenticate', 'Basic realm="Metrics"');
+  return res.status(401).send('Authentication required');
+};
+
+app.get('/metrics', metricsAuth, async (req, res) => {
+  try {
+    const metrics = await getMetricsString();
+    res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    res.send(metrics);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 if (config.nodeEnv === 'development') {
   app.use('/api-docs', swaggerDocs);
 }
@@ -125,6 +224,9 @@ const startServer = async () => {
     initBookingReminders();
     initBackupJob();
     initKeepAlive();
+    initCleanupJob();
+    initPaymentReconciliation();
+    initAnalyticsSnapshot();
 
     const server = httpServer.listen(config.port, '0.0.0.0', () => {
       logger.info(`
@@ -136,33 +238,38 @@ const startServer = async () => {
       `);
     });
 
-    process.on('SIGTERM', () => {
-      logger.info('SIGTERM received. Shutting down gracefully...');
-      server.close(async () => {
-        try {
-          await mongoose.connection.close(false);
-          logger.info('Server closed');
-          process.exit(0);
-        } catch (err) {
-          logger.error('Error during shutdown:', err);
-          process.exit(1);
-        }
+    const gracefulShutdown = (signal) => {
+      logger.info(`${signal} received. Starting graceful shutdown (10s connection draining)...`);
+      
+      // Stop accepting new requests
+      server.close(() => {
+        logger.info('HTTP server closed. Draining active connections completed.');
       });
-    });
 
-    process.on('SIGINT', () => {
-      logger.info('SIGINT received. Shutting down gracefully...');
-      server.close(async () => {
+      // Wait 10 seconds before terminating resources
+      setTimeout(async () => {
         try {
+          logger.info('Closing database and cache connections...');
           await mongoose.connection.close(false);
-          logger.info('Server closed');
+          logger.info('Database connection closed.');
+          
+          const redisClient = cacheService.getClient();
+          if (redisClient) {
+            await redisClient.quit();
+            logger.info('Redis client closed.');
+          }
+          
+          logger.info('Graceful shutdown complete. Exiting.');
           process.exit(0);
         } catch (err) {
-          logger.error('Error during shutdown:', err);
+          logger.error('Error during graceful shutdown:', err);
           process.exit(1);
         }
-      });
-    });
+      }, 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error) {
     logger.error(`Server startup failed: ${error.message}`);

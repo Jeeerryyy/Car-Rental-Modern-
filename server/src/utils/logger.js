@@ -2,6 +2,7 @@ import winston from 'winston';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getTraceContext } from '../middleware/correlation.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +12,49 @@ if (!existsSync(logDir)) {
   mkdirSync(logDir, { recursive: true });
 }
 
-const { combine, timestamp, printf, colorize, errors } = winston.format;
+const { combine, timestamp, printf, colorize, errors, json } = winston.format;
 
-const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
+const sensitiveKeys = ['password', 'token', 'secret', 'authorization', 'signature', 'clientsecret', 'key', 'pass', 'cvv', 'card', 'cookie', 'session', 'razorpay'];
+
+const sanitizeValue = (value, seen = new WeakSet()) => {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== 'object') return value;
+  
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeValue(item, seen));
+  }
+
+  const sanitized = {};
+  for (const [k, v] of Object.entries(value)) {
+    const lowerKey = k.toLowerCase();
+    if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
+      sanitized[k] = '[REDACTED]';
+    } else if (typeof v === 'object' && v !== null) {
+      sanitized[k] = sanitizeValue(v, seen);
+    } else {
+      sanitized[k] = v;
+    }
+  }
+  return sanitized;
+};
+
+const sanitizeFormat = winston.format((info) => {
+  const context = getTraceContext();
+  if (context) {
+    info.correlationId = context.correlationId;
+    info.traceId = context.traceId;
+    info.parentId = context.parentId;
+  }
+  return sanitizeValue(info);
+});
+
+const consoleFormat = printf(({ level, message, timestamp, stack, correlationId, traceId }) => {
+  const tracePart = traceId ? ` [trace=${traceId}]` : '';
+  const correlationPart = correlationId ? ` [corr=${correlationId}]` : '';
+  return `${timestamp} [${level}]${tracePart}${correlationPart}: ${stack || message}`;
 });
 
 export const logger = winston.createLogger({
@@ -22,22 +62,24 @@ export const logger = winston.createLogger({
   format: combine(
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errors({ stack: true }),
-    logFormat
+    sanitizeFormat()
   ),
   transports: [
     new winston.transports.Console({
-      format: combine(colorize(), logFormat)
+      format: combine(colorize(), consoleFormat)
     }),
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
-      maxsize: 5242880,
-      maxFiles: 5
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
+      format: json()
     }),
     new winston.transports.File({
       filename: path.join(logDir, 'combined.log'),
-      maxsize: 5242880,
-      maxFiles: 5
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
+      format: json()
     })
   ]
 });

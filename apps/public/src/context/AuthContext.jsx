@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api';
-import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +23,7 @@ export function AuthProvider({ children }) {
       })
       .catch(() => {
         localStorage.removeItem('customer');
+        localStorage.removeItem('customerToken');
         setCustomer(null);
       })
       .finally(() => setLoading(false));
@@ -31,24 +31,27 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login({ email, password });
-    const { customer: cust } = res.data.data;
+    const { customer: cust, token } = res.data.data;
     localStorage.setItem('customer', JSON.stringify(cust));
+    localStorage.setItem('customerToken', token);
     setCustomer(cust);
     return cust;
   }, []);
 
   const loginWithGoogle = useCallback(async (credential) => {
     const res = await authAPI.googleAuth(credential);
-    const { customer: cust } = res.data.data;
+    const { customer: cust, token } = res.data.data;
     localStorage.setItem('customer', JSON.stringify(cust));
+    localStorage.setItem('customerToken', token);
     setCustomer(cust);
     return cust;
   }, []);
 
   const register = useCallback(async (data) => {
     const res = await authAPI.register(data);
-    const { customer: cust } = res.data.data;
+    const { customer: cust, token } = res.data.data;
     localStorage.setItem('customer', JSON.stringify(cust));
+    localStorage.setItem('customerToken', token);
     setCustomer(cust);
     return cust;
   }, []);
@@ -56,13 +59,17 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try { await authAPI.logout(); } catch {}
     localStorage.removeItem('customer');
+    localStorage.removeItem('customerToken');
     setCustomer(null);
   }, []);
 
   const updateCustomer = useCallback((data) => {
-    setCustomer(prev => ({ ...prev, ...data }));
-    localStorage.setItem('customer', JSON.stringify({ ...customer, ...data }));
-  }, [customer]);
+    setCustomer(prev => {
+      const updated = { ...prev, ...data };
+      localStorage.setItem('customer', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ customer, loading, login, loginWithGoogle, register, logout, updateCustomer }}>

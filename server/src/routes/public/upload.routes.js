@@ -4,6 +4,8 @@ import { ApiResponse } from '../../utils/ApiResponse.js';
 import { catchAsync } from '../../utils/catchAsync.js';
 import { protect, restrictTo } from '../../middleware/auth.js';
 import { USER_ROLES } from '../../utils/constants.js';
+import { scanAndValidateUpload } from '../../utils/fileScanner.js';
+import { uploadFailuresCounter } from '../../config/metrics.js';
 
 const router = Router();
 
@@ -16,10 +18,13 @@ router.post('/car-images', protect, restrictTo(USER_ROLES.OWNER), catchAsync(asy
 
   const results = [];
   for (const imageData of images) {
-    if (imageData && typeof imageData === 'string' && imageData.startsWith('data:')) {
-      const base64Data = imageData.replace(/^data:[^,]+,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-      const file = { buffer };
+    if (imageData && typeof imageData === 'string') {
+      const cleanBuffer = scanAndValidateUpload(imageData, 10 * 1024 * 1024, ['image/jpeg', 'image/png', 'image/webp']);
+      if (!cleanBuffer) {
+        uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+        return ApiResponse.error(res, 400, 'Invalid, oversized or malicious car image payload');
+      }
+      const file = { buffer: cleanBuffer };
       const result = await uploadCarImages([file]);
       results.push(result[0]);
     }
@@ -31,14 +36,17 @@ router.post('/car-images', protect, restrictTo(USER_ROLES.OWNER), catchAsync(asy
 router.post('/profile-image', protect, catchAsync(async (req, res) => {
   const { profileImage } = req.body;
 
-  if (!profileImage || !profileImage.startsWith('data:')) {
-    return ApiResponse.error(res, 400, 'Invalid profile image data');
+  if (!profileImage) {
+    return ApiResponse.error(res, 400, 'No profile image data provided');
   }
 
-  const base64Data = profileImage.replace(/^data:[^,]+,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
-  const file = { buffer };
+  const cleanBuffer = scanAndValidateUpload(profileImage, 2 * 1024 * 1024, ['image/jpeg', 'image/png', 'image/webp']);
+  if (!cleanBuffer) {
+    uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+    return ApiResponse.error(res, 400, 'Invalid, oversized or malicious profile image payload');
+  }
 
+  const file = { buffer: cleanBuffer };
   const result = await uploadProfileImage(file);
 
   return ApiResponse.success(res, 200, 'Profile image uploaded', { file: result });
@@ -49,16 +57,22 @@ router.post('/document', protect, catchAsync(async (req, res) => {
 
   const results = { aadhar: null, license: null };
 
-  if (aadhar && typeof aadhar === 'string' && aadhar.startsWith('data:')) {
-    const base64Data = aadhar.replace(/^data:[^,]+,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    results.aadhar = await uploadDocument(buffer);
+  if (aadhar && typeof aadhar === 'string') {
+    const cleanBuffer = scanAndValidateUpload(aadhar, 5 * 1024 * 1024, ['image/jpeg', 'image/png', 'application/pdf']);
+    if (!cleanBuffer) {
+      uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+      return ApiResponse.error(res, 400, 'Invalid, oversized or malicious Aadhar document payload');
+    }
+    results.aadhar = await uploadDocument(cleanBuffer);
   }
 
-  if (license && typeof license === 'string' && license.startsWith('data:')) {
-    const base64Data = license.replace(/^data:[^,]+,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    results.license = await uploadDocument(buffer);
+  if (license && typeof license === 'string') {
+    const cleanBuffer = scanAndValidateUpload(license, 5 * 1024 * 1024, ['image/jpeg', 'image/png', 'application/pdf']);
+    if (!cleanBuffer) {
+      uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+      return ApiResponse.error(res, 400, 'Invalid, oversized or malicious License document payload');
+    }
+    results.license = await uploadDocument(cleanBuffer);
   }
 
   return ApiResponse.success(res, 200, 'Documents uploaded', {
@@ -72,14 +86,17 @@ router.post('/document', protect, catchAsync(async (req, res) => {
 router.post('/signature', protect, catchAsync(async (req, res) => {
   const { signature } = req.body;
 
-  if (!signature || !signature.startsWith('data:')) {
-    return ApiResponse.error(res, 400, 'Invalid signature data');
+  if (!signature) {
+    return ApiResponse.error(res, 400, 'No signature data provided');
   }
 
-  const base64Data = signature.replace(/^data:[^,]+,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
+  const cleanBuffer = scanAndValidateUpload(signature, 1 * 1024 * 1024, ['image/png', 'image/jpeg']);
+  if (!cleanBuffer) {
+    uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+    return ApiResponse.error(res, 400, 'Invalid, oversized or malicious signature payload');
+  }
 
-  const result = await uploadDocument(buffer);
+  const result = await uploadDocument(cleanBuffer);
 
   return ApiResponse.success(res, 200, 'Signature uploaded', { files: { signature: result } });
 }));

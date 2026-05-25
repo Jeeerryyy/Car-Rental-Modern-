@@ -31,18 +31,11 @@ export default function Notifications() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-4xl font-display font-black text-dark tracking-tight">Activity Log</h1>
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 rounded-full border border-green-100">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Live</span>
-            </div>
           </div>
           <p className="text-muted font-medium mt-2">Real-time updates from your fleet and operations.</p>
         </div>

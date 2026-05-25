@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { create, verify, forCustomer, cancel, getOne, createOrder, createCashBooking } from '../../controllers/booking.controller.js';
+import { getInvoiceHTML, getInvoiceJSON } from '../../controllers/invoice.controller.js';
 import { createBookingRules } from '../../validators/booking.validator.js';
 import { validate } from '../../middleware/validate.js';
 import { protect, restrictTo } from '../../middleware/auth.js';
@@ -9,11 +10,15 @@ import { generalLimiter } from '../../middleware/rateLimiter.js';
 const router = Router();
 
 router.post('/', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, create);
-router.post('/create-order', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createOrder);
-router.post('/cash-booking', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createCashBooking);
-router.get('/verify-payment', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), verify);
+router.post('/create-order', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, createOrder);
+router.post('/cash-booking', generalLimiter, protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), createBookingRules, validate, createCashBooking);
+router.route('/verify-payment')
+  .get(protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), verify)
+  .post(protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), verify);
 router.get('/my-bookings', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), forCustomer);
 router.get('/:id', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getOne);
+router.get('/:id/invoice', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getInvoiceHTML);
+router.get('/:id/invoice/data', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), getInvoiceJSON);
 router.put('/:id/cancel', protect, restrictTo(USER_ROLES.CUSTOMER, USER_ROLES.OWNER), cancel);
 
 export default router;

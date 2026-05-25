@@ -17,6 +17,10 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Customer',
     required: [true, 'Customer is required']
   },
+  phone: {
+    type: String,
+    trim: true
+  },
   startDate: {
     type: Date,
     required: [true, 'Start date is required']
@@ -63,6 +67,22 @@ const bookingSchema = new mongoose.Schema({
     trim: true,
     maxlength: [500, 'Notes cannot exceed 500 characters']
   },
+  invoiceNumber: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  invoiceDate: {
+    type: Date
+  },
+  securityDeposit: {
+    type: Number,
+    default: 0
+  },
+  amountPaid: {
+    type: Number,
+    default: 0
+  },
   documents: {
     aadhaar: {
       front: { url: String, publicId: String },
@@ -76,6 +96,28 @@ const bookingSchema = new mongoose.Schema({
   signature: {
     url: String,
     publicId: String
+  },
+  cancellationReason: {
+    type: String,
+    enum: ['invalid_documents', 'vehicle_not_available', 'customer_no_show', 'payment_issue', 'other', null],
+    default: null
+  },
+  cancellationNote: {
+    type: String,
+    trim: true,
+    maxlength: [300, 'Cancellation note cannot exceed 300 characters']
+  },
+  cancelledBy: {
+    type: String,
+    enum: ['customer', 'owner', null],
+    default: null
+  },
+  ownerVerification: {
+    documents: [{
+      url: String,
+      publicId: String,
+      uploadedAt: { type: Date, default: Date.now }
+    }]
   }
 }, {
   timestamps: true,
@@ -107,6 +149,7 @@ bookingSchema.index({ createdAt: -1 });
 
 // Phase 2 Indexes
 bookingSchema.index({ owner: 1, status: 1 });
+bookingSchema.index({ owner: 1, status: 1, paymentStatus: 1 });
 bookingSchema.index({ car: 1, startDate: 1, endDate: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);

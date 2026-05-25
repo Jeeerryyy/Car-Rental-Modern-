@@ -51,8 +51,8 @@ export default function Reports() {
   };
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-headline-lg font-headline-lg font-bold text-primary">Reports & Analytics</h1>
           <p className="text-body-sm text-secondary mt-1">Fleet analytics and financial summaries</p>
@@ -72,7 +72,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
+      <div className="grid gap-4 md:grid-cols-3">
         {REPORT_TYPES.map(({ id, label, icon, description }) => (
           <div 
             key={id} 

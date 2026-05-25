@@ -60,7 +60,7 @@ export default function CarDetails() {
   const [selectedDays, setSelectedDays] = useState(null);
 
   // Location & contact
-  const [pickupLocation, setPickupLocation] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('Junagadh Office');
   const [phone, setPhone] = useState(customer?.phone || '');
   const [phoneError, setPhoneError] = useState('');
 
@@ -400,19 +400,19 @@ export default function CarDetails() {
                   <input type="time" value={returnTime} onChange={e => setReturnTime(e.target.value)}
                     className="w-full p-3 bg-surface-variant border border-outline text-on-surface font-body text-base mb-4 outline-none focus:border-secondary/50 box-border" />
 
-                  {car.location && (
-                    <>
-                      <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1.5">Pickup Location</label>
-                      <div className="flex items-center gap-3 p-3 border border-outline bg-surface-variant cursor-pointer mb-4"
-                        onClick={() => setPickupLocation(pickupLocation === car.location ? '' : car.location)}>
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${pickupLocation === car.location ? 'bg-secondary border-secondary' : 'border-outline'}`}>
-                          {pickupLocation === car.location && <div className="w-1.5 h-1.5 rounded-full bg-[#111]" />}
-                        </div>
-                        <span className="text-[13px] font-semibold text-on-surface">{car.location}</span>
-                        <span className="ml-auto text-sm">📍</span>
-                      </div>
-                    </>
-                  )}
+                  <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1.5">Pickup Location</label>
+                  <div className="p-4 rounded-xl border border-outline bg-surface-variant mb-4">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-secondary">Primary Office</span>
+                      <h4 className="text-sm font-bold text-on-surface">Junagadh Office</h4>
+                      <p className="text-xs leading-relaxed text-on-surface-variant">
+                        GIDC 1, Joshipara, Junagadh - 362002, Gujarat, India
+                      </p>
+                      <a href="https://g.page/modern-selfdrive" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mt-2 text-secondary hover:underline">
+                        <span>📍 View on Google Maps</span>
+                      </a>
+                    </div>
+                  </div>
 
                   <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1.5">Contact Phone Number *</label>
                   <input type="tel" value={phone} maxLength={10} placeholder="10-digit mobile number"
@@ -557,28 +557,6 @@ export default function CarDetails() {
                     <div className="flex justify-between text-[15px] font-bold text-secondary pt-2 mt-1 border-t border-outline"><span>{payAtCar ? 'Full Amount' : 'Total'}</span><span>₹{Math.max(0, totalPrice - (appliedPromo?.discountAmount || 0)).toLocaleString()}</span></div>
                   </div>
 
-                  <div className="mb-4 space-y-2">
-                    <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1.5">Payment Method</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div onClick={() => setPayAtCar(false)}
-                        className={`p-3 border rounded-xl cursor-pointer text-center transition-all ${!payAtCar ? 'border-secondary bg-[rgba(200,155,91,0.08)]' : 'border-outline bg-surface-variant hover:border-secondary/50'}`}>
-                        <div className={`w-4 h-4 rounded-full border-2 mx-auto mb-1.5 flex items-center justify-center transition-all ${!payAtCar ? 'border-secondary bg-secondary' : 'border-outline'}`}>
-                          {!payAtCar && <div className="w-2 h-2 rounded-full bg-[#111]" />}
-                        </div>
-                        <span className="text-[11px] font-bold text-on-surface">Online Pay</span>
-                        <div className="text-[10px] text-on-surface-variant mt-0.5">₹500 Advance</div>
-                      </div>
-                      <div onClick={() => setPayAtCar(true)}
-                        className={`p-3 border rounded-xl cursor-pointer text-center transition-all ${payAtCar ? 'border-secondary bg-[rgba(200,155,91,0.08)]' : 'border-outline bg-surface-variant hover:border-secondary/50'}`}>
-                        <div className={`w-4 h-4 rounded-full border-2 mx-auto mb-1.5 flex items-center justify-center transition-all ${payAtCar ? 'border-secondary bg-secondary' : 'border-outline'}`}>
-                          {payAtCar && <div className="w-2 h-2 rounded-full bg-[#111]" />}
-                        </div>
-                        <span className="text-[11px] font-bold text-on-surface">Pay at Car</span>
-                        <div className="text-[10px] text-on-surface-variant mt-0.5">Full amount</div>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="mb-4">
                     <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1.5">Have a Promo Code?</label>
                     {appliedPromo ? (
@@ -641,14 +619,14 @@ export default function CarDetails() {
                       {agreedTerms && <span className="text-[#111]"><CheckIcon /></span>}
                     </div>
                     <span className="text-[12px] text-on-surface-variant leading-relaxed">
-                      I have read and agree to the Terms & Conditions.{payAtCar ? ' Full payment will be made at the time of vehicle pickup.' : ' The advance payment is non-refundable.'}
+                      I have read and agree to the Terms & Conditions. The advance payment is non-refundable.
                     </span>
                   </div>
 
                   <div className="bg-[rgba(200,155,91,0.08)] border border-secondary/25 p-3.5 text-center mb-4">
-                    <div className="text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1">{payAtCar ? 'Full Amount to Pay' : 'Advance Payment'}</div>
+                    <div className="text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1">Advance Payment</div>
                     <div className="font-headline-xl text-secondary" style={{ fontSize: '36px', letterSpacing: '0.02em' }}>
-                      ₹{payAtCar ? Math.max(0, totalPrice - (appliedPromo?.discountAmount || 0)).toLocaleString() : ADVANCE}
+                      ₹{ADVANCE}
                     </div>
                   </div>
 
@@ -663,7 +641,7 @@ export default function CarDetails() {
                     onClick={handlePay}>
                     {payProcessing ? (
                       <><span className="inline-block w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2 align-middle" />Processing...</>
-                    ) : payAtCar ? `Confirm Booking — Pay ₹${Math.max(0, totalPrice - (appliedPromo?.discountAmount || 0)).toLocaleString()} at Car` : `Pay ₹${ADVANCE} Advance`}
+                    ) : `Pay ₹${ADVANCE} Advance`}
                   </button>
                   <button className="text-on-surface-variant text-[11px] font-bold uppercase tracking-widest bg-none border-0 mt-2.5 cursor-pointer flex items-center gap-1.5 hover:text-on-surface transition-colors"
                     onClick={() => setStep(3)}>

@@ -31,12 +31,7 @@ export function SocketProvider({ children }) {
       });
 
       newSocket.on('connect', () => {
-        console.log('[Socket] Connected:', newSocket.id);
         newSocket.emit('join', `owner:${userId}`);
-      });
-
-      newSocket.on('connect_error', (err) => {
-        console.warn('[Socket] Connection error:', err.message);
       });
 
       setSocket(newSocket);

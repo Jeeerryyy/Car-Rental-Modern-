@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { cacheService } from '../../src/config/redis.js';
 
 let mongoServer;
 
@@ -25,4 +26,11 @@ export const clearTestDB = async () => {
   for (const key in collections) {
     await collections[key].deleteMany({});
   }
+  // Clear in-memory/Redis cache to prevent cross-test data pollution
+  try {
+    await cacheService.flush();
+  } catch (err) {
+    console.error('Failed to flush cache in clearTestDB:', err);
+  }
 };
+

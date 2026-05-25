@@ -2,6 +2,8 @@ import { registerOwner, loginOwner, getOwnerById, updateOwnerProfile, changeOwne
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { sendEmail } from '../services/email.service.js';
+import { logAudit } from '../utils/auditLogger.js';
+import { blacklistToken } from '../utils/tokenRevocation.js';
 
 export const register = catchAsync(async (req, res) => {
   const { name, email, password, phone, businessName } = req.body;
@@ -15,7 +17,9 @@ export const register = catchAsync(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 
-  return ApiResponse.success(res, 201, 'Registration successful', { owner: result.owner });
+  await logAudit('auth.owner_register', result.owner._id.toString(), 'owner', { email }, req);
+
+  return ApiResponse.success(res, 201, 'Registration successful', { owner: result.owner, token: result.token });
 });
 
 export const login = catchAsync(async (req, res) => {
@@ -30,10 +34,24 @@ export const login = catchAsync(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 
-  return ApiResponse.success(res, 200, 'Login successful', { owner: result.owner });
+  await logAudit('auth.owner_login', result.owner._id.toString(), result.owner.role === 'staff' ? 'staff' : 'owner', { email }, req);
+
+  return ApiResponse.success(res, 200, 'Login successful', { owner: result.owner, token: result.token });
 });
 
 export const logout = catchAsync(async (req, res) => {
+  let token = req.cookies?.ownerToken;
+  if (!token && req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (token) {
+    await blacklistToken(token);
+  }
+
+  if (req.owner) {
+    await logAudit('auth.owner_logout', req.owner._id.toString(), req.owner.role === 'staff' ? 'staff' : 'owner', {}, req);
+  }
+
   res.clearCookie('ownerToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

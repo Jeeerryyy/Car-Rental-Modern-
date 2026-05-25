@@ -5,7 +5,7 @@ import { USER_ROLES } from '../../utils/constants.js';
 
 const router = Router();
 
-router.use(protect, restrictTo(USER_ROLES.OWNER));
+router.use(protect, restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF));
 
 router.get('/', list);
 router.patch('/:id/read', markRead);

@@ -3,11 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { bookingAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import SEO from '../components/SEO';
-import { getInvoiceHtml } from '../utils/invoiceTemplate';
-import html2canvas from 'html2canvas';
+
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -15,6 +12,8 @@ export default function BookingDetail() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [razorpayKeyId, setRazorpayKeyId] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     if (!customer) { navigate('/signin'); return; }
@@ -22,6 +21,7 @@ export default function BookingDetail() {
       try {
         const res = await bookingAPI.getById(id);
         setBooking(res.data.data.booking);
+        setRazorpayKeyId(res.data.data.razorpayKeyId);
       } catch { 
         setBooking(null); 
         toast.error('Booking details unavailable');
@@ -32,80 +32,104 @@ export default function BookingDetail() {
     fetch();
   }, [id, customer, navigate]);
 
-  const generateInvoice = async () => {
+  const handlePayment = async () => {
     if (!booking) return;
+    setPaymentLoading(true);
 
-    const toastId = toast.loading('Preparing your invoice...');
+    const orderId = booking.razorpayOrderId;
+    const amount = 500 * 100; // ₹500 advance in paise
+    const keyId = razorpayKeyId || import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+    // Check if mock mode is active
+    const isMock = !orderId || orderId.startsWith('mock_order_') || !keyId || keyId === 'your-razorpay-key-id';
+
+    if (isMock) {
+      const toastId = toast.loading('Processing sandbox payment...');
+      setTimeout(async () => {
+        try {
+          const verifyRes = await bookingAPI.verifyPayment({
+            bookingId: booking._id,
+            razorpayOrderId: orderId || `mock_order_${Date.now()}`,
+            razorpayPaymentId: `mock_pay_${Date.now()}`,
+            razorpaySignature: 'mock_sig'
+          });
+          toast.success('Sandbox Payment Verified!', { id: toastId });
+          const updatedBooking = verifyRes.data.data.booking || verifyRes.data.data;
+          setBooking(updatedBooking);
+        } catch (err) {
+          console.error('Payment verification failed:', err);
+          toast.error('Sandbox verification failed', { id: toastId });
+        } finally {
+          setPaymentLoading(false);
+        }
+      }, 1500);
+      return;
+    }
+
+    // Real Razorpay Checkout
     try {
-      // 1. Create a visible but off-screen container
-      const container = document.createElement('div');
-      container.innerHTML = getInvoiceHtml(booking);
-      container.style.position = 'fixed';
-      container.style.top = '0';
-      container.style.left = '5000px'; // Move way off-screen but keep it rendered
-      container.style.width = '800px';
-      container.style.zIndex = '-9999';
-      document.body.appendChild(container);
+      if (!window.Razorpay) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Failed to load Razorpay SDK.'));
+          document.body.appendChild(script);
+        });
+      }
 
-      // 2. Give it time to render and load the logo
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: 'INR',
+        name: 'Modern Selfdrive',
+        description: 'Advance Payment to Secure Booking',
+        order_id: orderId,
+        prefill: {
+          name: customer?.name || '',
+          email: customer?.email || '',
+          contact: booking.phone || '',
+        },
+        theme: {
+          color: '#B67C3D',
+        },
+        handler: async (response) => {
+          const toastId = toast.loading('Verifying payment signature...');
+          try {
+            const verifyRes = await bookingAPI.verifyPayment({
+              bookingId: booking._id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            toast.success('Payment Secured! Booking Confirmed.', { id: toastId });
+            const updatedBooking = verifyRes.data.data.booking || verifyRes.data.data;
+            setBooking(updatedBooking);
+          } catch (err) {
+            console.error('Verify Signature Error:', err);
+            toast.error(err.response?.data?.message || 'Signature verification failed', { id: toastId });
+          } finally {
+            setPaymentLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast.error('Payment cancelled. To secure your ride, complete the payment.');
+            setPaymentLoading(false);
+          }
+        }
+      };
 
-      const page1 = container.querySelector('#page-1');
-      const page2 = container.querySelector('#page-2');
-      
-      // 3. Capture with html2canvas (both pages)
-      const canvas1 = await html2canvas(page1, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: 800,
-        height: 1120,
-        windowWidth: 800
-      });
-
-      const canvas2 = await html2canvas(page2, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: 800,
-        height: 1120,
-        windowWidth: 800
-      });
-
-      // 4. Convert to PDF
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'pt',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      
-      // Add Page 1
-      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
-      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
-      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
-
-      // Add Page 2
-      pdf.addPage();
-      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
-      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
-      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
-
-      pdf.save(`ModernDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
-
-      // 5. Cleanup
-      document.body.removeChild(container);
-      toast.success('Invoice downloaded!', { id: toastId });
-    } catch (error) {
-      console.error('Invoice generation error:', error);
-      toast.error('Failed to generate invoice', { id: toastId });
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error('Razorpay Error:', err);
+      toast.error(err.message || 'Failed to open Razorpay checkout');
+      setPaymentLoading(false);
     }
   };
+
+
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -215,7 +239,7 @@ export default function BookingDetail() {
 
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-[12px] p-8" style={{ background: '#FFFFFF', border: '1px solid rgba(25,19,14,0.08)', boxShadow: 'var(--shadow-sm)' }}>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-6" style={{ color: '#6b5e50' }}>Total Amount</h3>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-6" style={{ color: '#6b5e50' }}>Payment Summary</h3>
               <div className="space-y-3 mb-8">
                 <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
                   <span>Subtotal</span>
@@ -227,23 +251,107 @@ export default function BookingDetail() {
                     <span>-₹{booking.discountAmount.toLocaleString('en-IN')}</span>
                   </div>
                 )}
+                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                  <span>Security Deposit</span>
+                  <span className="font-bold" style={{ color: '#19130E' }}>₹{Number(booking.securityDeposit || 500).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                  <span>Paid Amount</span>
+                  <span className="font-bold" style={{ color: '#19130E' }}>₹{Number(booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                  <span>Remaining Payable</span>
+                  <span className="font-bold text-primary">
+                    ₹{Number(
+                      (booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)) >= (booking.securityDeposit || 500)
+                        ? Math.max(0, booking.totalPrice - (booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)))
+                        : (booking.totalPrice + (booking.securityDeposit || 500) - (booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)))
+                    ).toLocaleString('en-IN')}
+                  </span>
+                </div>
                 <div className="pt-4 border-t flex justify-between items-end" style={{ borderColor: 'rgba(182,124,61,0.15)' }}>
-                  <span className="text-sm font-bold" style={{ color: '#19130E' }}>Total Paid</span>
+                  <span className="text-sm font-bold" style={{ color: '#19130E' }}>Total Rent</span>
                   <span className="text-2xl font-display font-bold tracking-tight" style={{ color: '#19130E' }}>₹{booking.totalPrice.toLocaleString('en-IN')}</span>
                 </div>
               </div>
               
+              {booking.status === 'pending' && booking.paymentStatus === 'pending' && (
+                <button
+                  onClick={handlePayment}
+                  disabled={paymentLoading}
+                  className="w-full mt-4 py-4 text-xs font-bold rounded-[8px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                  style={{ background: '#B67C3D', color: '#19130E' }}
+                >
+                  {paymentLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-dark border-t-transparent rounded-full animate-spin mr-2" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      Pay ₹500 Advance Now
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Download Invoice Button */}
+            {['confirmed', 'active', 'completed'].includes(booking.status) && (
               <button
-                onClick={generateInvoice}
+                onClick={async () => {
+                  try {
+                    const res = await bookingAPI.getInvoiceHTML(booking._id);
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                      newWindow.document.write(res.data);
+                      newWindow.document.close();
+                    } else {
+                      toast.error('Pop-up blocked. Please allow pop-ups for this site.');
+                    }
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || 'Failed to load invoice');
+                  }
+                }}
                 className="w-full py-4 text-xs font-bold rounded-[8px] flex items-center justify-center gap-2"
-                style={{ background: '#19130E', color: '#FFFFFF' }}
+                style={{ background: '#19130E', color: '#F9F8F3' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Download Invoice
               </button>
-            </div>
+            )}
+
+            {booking.status === 'cancelled' && (booking.cancelledBy || booking.cancellationReason) && (
+              <div className="rounded-[12px] p-6" style={{ background: 'rgba(185,28,28,0.05)', border: '1px solid rgba(185,28,28,0.15)' }}>
+                <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#b91c1c' }}>Cancellation Details</h3>
+                <div className="space-y-3">
+                  {booking.cancelledBy && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: '#6b5e50' }}>Cancelled By</span>
+                      <span className="text-xs font-bold capitalize" style={{ color: '#b91c1c' }}>{booking.cancelledBy}</span>
+                    </div>
+                  )}
+                  {booking.cancellationReason && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: '#6b5e50' }}>Reason</span>
+                      <span className="text-xs font-bold" style={{ color: '#19130E' }}>
+                        {{ invalid_documents: 'Invalid Documents', vehicle_not_available: 'Vehicle Not Available', customer_no_show: 'Customer No-Show', payment_issue: 'Payment Issue', other: 'Other' }[booking.cancellationReason] || booking.cancellationReason}
+                      </span>
+                    </div>
+                  )}
+                  {booking.cancellationNote && (
+                    <div className="pt-3" style={{ borderTop: '1px solid rgba(185,28,28,0.1)' }}>
+                      <p className="text-xs italic" style={{ color: '#6b5e50' }}>"{booking.cancellationNote}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {(booking.status === 'pending' || booking.status === 'confirmed') && (
               <button
@@ -257,7 +365,7 @@ export default function BookingDetail() {
 
             <div className="rounded-[12px] p-6 text-center" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
               <p className="text-xs leading-relaxed" style={{ color: '#6b5e50' }}>
-                Need support? <br /> Call us at <a href="tel:+918792492717" className="font-bold underline" style={{ color: '#19130E' }}>+91 87924 92717</a>
+                Need support? <br /> Call us at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#19130E' }}>+91 90044 60634</a>
               </p>
             </div>
           </div>

@@ -33,18 +33,11 @@ export function NotificationProvider({ children }) {
 
   useEffect(() => {
     if (socket) {
-      console.log('[Socket] Initializing listeners...');
-      
-      socket.on('connect', () => {
-        console.log('[Socket] Connected successfully');
-      });
-
       socket.on('connect_error', (err) => {
-        console.error('[Socket] Connection error:', err.message);
+        // Silently handle socket connection errors
       });
 
       const handleNewNotification = (notification) => {
-        console.log('[Socket] New notification received:', notification);
         setNotifications((prev) => [notification, ...prev]);
         setUnreadCount((prev) => prev + 1);
         
@@ -70,9 +63,7 @@ export function NotificationProvider({ children }) {
 
       socket.on('notification:received', handleNewNotification);
       return () => {
-        console.log('[Socket] Cleaning up listeners...');
         socket.off('notification:received', handleNewNotification);
-        socket.off('connect');
         socket.off('connect_error');
       };
     }

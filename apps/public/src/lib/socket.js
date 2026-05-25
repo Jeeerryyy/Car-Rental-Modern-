@@ -11,8 +11,8 @@ export const connectSocket = () => {
     reconnectionDelay: 1000,
     transports: ['websocket'],
   });
-  socket.on('connect_error', (err) => {
-    console.error('[Socket] Connection failed:', err.message);
+  socket.on('connect_error', () => {
+    // Silently handled — reconnection is automatic
   });
   return socket;
 };

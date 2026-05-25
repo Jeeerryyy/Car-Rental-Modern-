@@ -4,5 +4,6 @@ export { default as Car } from './Car.js';
 export { default as Booking } from './Booking.js';
 export { default as Review } from './Review.js';
 export { default as Promo } from './Promo.js';
+export { default as Contact } from './Contact.js';
 export { default as Notification } from './Notification.js';
 export { default as Settings } from './Settings.js';

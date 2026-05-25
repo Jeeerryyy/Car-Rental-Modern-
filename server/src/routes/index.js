@@ -16,7 +16,11 @@ import ownerNotificationRoutes from './owner/notification.routes.js';
 import ownerSettingsRoutes from './owner/settings.routes.js';
 import ownerReportRoutes from './owner/report.routes.js';
 import ownerClientRoutes from './owner/client.routes.js';
+import ownerStaffRoutes from './owner/staff.routes.js';
 import razorpayRoutes from './webhooks/razorpay.routes.js';
+import chaosRoutes from './public/chaos.routes.js';
+import telemetryRoutes from './public/telemetry.routes.js';
+
 
 import { uploadDocument } from '../middleware/upload.js';
 import { uploadDocument as uploadToCloudinary } from '../services/cloudinary.service.js';
@@ -25,12 +29,17 @@ import { catchAsync } from '../utils/catchAsync.js';
 import { protect } from '../middleware/auth.js';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { idempotencyMiddleware } from '../middleware/idempotency.middleware.js';
+import { validateBufferMime, scanForThreats } from '../utils/fileScanner.js';
 
 const router = Router();
 
+// Apply idempotency check on all API routes
+router.use(idempotencyMiddleware);
+
 if (config.nodeEnv === 'development') {
   router.use((req, res, next) => {
-    console.log(`[API Router] ${req.method} ${req.originalUrl}`);
+    logger.debug(`[API Router] ${req.method} ${req.originalUrl}`);
     next();
   });
 }
@@ -44,6 +53,12 @@ router.post('/upload', protect, uploadDocument, catchAsync(async (req, res) => {
   const results = [];
   for (const file of req.files) {
     try {
+      // Validate signature & scan for threats in multipart upload
+      if (!validateBufferMime(file.buffer, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']) || !scanForThreats(file.buffer)) {
+        const { uploadFailuresCounter } = await import('../config/metrics.js');
+        uploadFailuresCounter.inc({ reason: 'malicious_or_invalid_type' });
+        return ApiResponse.error(res, 400, 'Invalid or malicious file payload');
+      }
       const result = await uploadToCloudinary(file);
       results.push(result);
     } catch (uploadError) {
@@ -63,6 +78,10 @@ router.use('/reviews', reviewRoutes);
 router.use('/search', searchRoutes);
 router.use('/promo', promoRoutes);
 router.use('/contact', contactRoutes);
+if (config.nodeEnv === 'development') {
+  router.use('/chaos', chaosRoutes);
+}
+router.use('/telemetry', telemetryRoutes);
 
 // Owner Routes
 router.use('/owner/auth', ownerAuthRoutes);
@@ -74,6 +93,7 @@ router.use('/owner/notifications', ownerNotificationRoutes);
 router.use('/owner/settings', ownerSettingsRoutes);
 router.use('/owner/reports', ownerReportRoutes);
 router.use('/owner/clients', ownerClientRoutes);
+router.use('/owner/staff', ownerStaffRoutes);
 
 // Webhooks
 router.use('/webhooks', razorpayRoutes);

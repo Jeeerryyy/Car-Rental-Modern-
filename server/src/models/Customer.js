@@ -27,6 +27,21 @@ const customerSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  address: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'Address cannot exceed 200 characters']
+  },
+  drivingLicenceNumber: {
+    type: String,
+    trim: true,
+    maxlength: [30, 'Driving licence number cannot exceed 30 characters']
+  },
+  aadhaarNumber: {
+    type: String,
+    trim: true,
+    maxlength: [20, 'Aadhaar number cannot exceed 20 characters']
+  },
   role: {
     type: String,
     default: 'customer',

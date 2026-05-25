@@ -13,14 +13,17 @@ export default function MobileDrawer({ open, close, drawerRef, pathname, NAV_LIN
   }, [pathname, close]);
 
   return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-[90] lg:hidden" style={{ top: '76px', background: 'rgba(25,19,14,0.35)' }} onClick={close} aria-hidden="true" />
-      )}
+      <>
+      <div 
+        className={`fixed inset-0 z-[90] lg:hidden transition-opacity duration-300 ease-in-out ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        style={{ top: '76px', background: 'rgba(25,19,14,0.35)' }} 
+        onClick={close} 
+        aria-hidden="true" 
+      />
 
       <div id="mobile-menu" ref={drawerRef}
         role={open ? 'dialog' : undefined} aria-modal={open ? 'true' : undefined} aria-label="Mobile navigation"
-        className={`fixed left-0 right-0 z-[95] lg:hidden overflow-hidden ${
+        className={`fixed left-0 right-0 z-[95] lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
           open ? 'max-h-[100vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
         style={{
@@ -51,10 +54,10 @@ export default function MobileDrawer({ open, close, drawerRef, pathname, NAV_LIN
 
           <div className="flex items-center gap-3 px-4 py-3">
             <PhoneIcon className="w-4 h-4" style={{ color: '#B67C3D' }} />
-            <a href="tel:+918792492717" className="text-[14px] font-medium no-underline" style={{ color: '#19130E' }}>+91 87924 92717</a>
+            <a href="tel:+919004460634" className="text-[14px] font-medium no-underline" style={{ color: '#19130E' }}>+91 90044 60634</a>
           </div>
 
-          <a href="https://wa.me/918792492717" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" onClick={close}
+          <a href="https://wa.me/919004460634" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" onClick={close}
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-[15px] font-medium no-underline"
             style={{ color: '#25D366' }}
           >

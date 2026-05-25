@@ -4,18 +4,42 @@ import { logger } from '../utils/logger.js';
 
 export const uploadImage = async (fileBuffer, folder, publicId) => {
   try {
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new Error('Empty file buffer provided');
+    }
+
+    // Detect mime type via magic bytes
+    let mime = 'image/jpeg';
+    const hex = fileBuffer.toString('hex', 0, 12).toUpperCase();
+    if (hex.startsWith('89504E470D0A1A0A')) {
+      mime = 'image/png';
+    } else if (hex.startsWith('FFD8FF')) {
+      mime = 'image/jpeg';
+    } else if (hex.startsWith('25504446')) {
+      mime = 'application/pdf';
+    } else if (hex.startsWith('52494646') && hex.slice(16, 24) === '57454250') {
+      mime = 'image/webp';
+    }
+
     const base64Image = fileBuffer.toString('base64');
-    const dataUri = `data:image/jpeg;base64,${base64Image}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
+    const dataUri = `data:${mime};base64,${base64Image}`;
+
+    const options = {
       folder,
       public_id: publicId,
-      resource_type: 'image',
-      transformation: [
+      resource_type: 'auto'
+    };
+
+    // Apply transformations only if it is an image
+    if (mime !== 'application/pdf') {
+      options.transformation = [
         { width: 1200, height: 800, crop: 'limit' },
         { quality: 'auto:good' },
         { format: 'auto' }
-      ]
-    });
+      ];
+    }
+
+    const result = await cloudinary.uploader.upload(dataUri, options);
     return { url: result.secure_url, publicId: result.public_id };
   } catch (error) {
     logger.error('Cloudinary upload error:', error.message || error);

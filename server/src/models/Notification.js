@@ -38,6 +38,7 @@ const notificationSchema = new mongoose.Schema({
 
 notificationSchema.index({ read: 1 });
 notificationSchema.index({ createdAt: -1 });
+notificationSchema.index({ recipient: 1, read: 1, createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

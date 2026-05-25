@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useNavigate, Link } from 'react-router-dom';
 import { LockIcon, ArrowRightIcon, ShieldIcon, CameraIcon, CheckIcon } from '../ui/Icons';
 import { useAuth } from '../../context/AuthContext';
@@ -20,7 +21,7 @@ export default function CarBookingForm({ car }) {
     notes: '', 
     promoCode: '',
     phone: customer?.phone || '',
-    pickupLocation: car?.location || ''
+    pickupLocation: 'Junagadh Office'
   });
 
   const [bookingRef, setBookingRef] = useState('');
@@ -102,8 +103,12 @@ export default function CarBookingForm({ car }) {
         toast.error('Please select dates');
         return;
       }
-      if (!bookingData.phone || bookingData.phone.length < 10) {
-        toast.error('Please enter a valid phone number');
+      if (!bookingData.phone || bookingData.phone.trim() === '') {
+        toast.error('Phone number is compulsory to proceed');
+        return;
+      }
+      if (!isValidPhoneNumber(bookingData.phone, 'IN')) {
+        toast.error('Please enter a valid Indian mobile number');
         return;
       }
       setStep(2);
@@ -168,38 +173,105 @@ export default function CarBookingForm({ car }) {
         signature: sig
       };
 
-      let booking;
-      if (payAtCar) {
-        const res = await bookingAPI.createCashBooking(bookingPayload);
-        booking = res.data.data.bookingDetails || res.data.data;
-        toast.success('Booking confirmed! Pay the full amount at vehicle pickup.');
-      } else {
-        const res = await bookingAPI.create(bookingPayload);
-        booking = res.data.data.booking;
-        const { razorpayOrderId, amount } = res.data.data;
-        toast.success('Booking initialized!');
+      const res = await bookingAPI.create(bookingPayload);
+      const bookingDataRes = res.data.data.booking;
+      const { razorpayOrderId, amount, keyId } = res.data.data;
 
-        setBookingRef(booking.referenceId || booking._id?.slice(-6).toUpperCase() || 'PENDING');
-        setStep(4);
+      // Dynamically load Razorpay script if needed
+      if (!window.Razorpay) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Failed to load payment gateway.'));
+          document.body.appendChild(script);
+        });
+      }
 
-        setTimeout(() => {
-          navigate(`/booking-confirmation/${booking._id}`, {
-            state: { booking, razorpayOrderId, amount, customer }
-          });
-        }, 2000);
-        setIsBooking(false);
+      // Check if it's mock/test mode
+      const isMock = !razorpayOrderId || razorpayOrderId.startsWith('mock_order_') || !keyId || keyId === 'your-razorpay-key-id';
+
+      if (isMock) {
+        const toastId = toast.loading('Simulating secure sandbox payment...');
+        setTimeout(async () => {
+          try {
+            const verifyRes = await bookingAPI.verifyPayment({
+              bookingId: bookingDataRes._id,
+              razorpayOrderId: razorpayOrderId || `mock_order_${Date.now()}`,
+              razorpayPaymentId: `mock_pay_${Date.now()}`,
+              razorpaySignature: 'mock_sig'
+            });
+            toast.success('Sandbox Payment Verified!', { id: toastId });
+            const confirmedBooking = verifyRes.data.data.booking || verifyRes.data.data;
+            setBookingRef(confirmedBooking.referenceId || confirmedBooking._id?.slice(-6).toUpperCase() || 'CONFIRMED');
+            setStep(4);
+            setTimeout(() => {
+              navigate(`/booking-confirmation/${confirmedBooking._id}`, {
+                state: { booking: confirmedBooking, customer }
+              });
+            }, 2000);
+          } catch (verifyErr) {
+            console.error('Mock verification failed:', verifyErr);
+            toast.error('Sandbox verification failed', { id: toastId });
+          } finally {
+            setIsBooking(false);
+          }
+        }, 1500);
         return;
       }
 
-      setBookingRef(booking.referenceId || booking._id?.slice(-6).toUpperCase() || 'CONFIRMED');
-      setStep(4);
+      // Real Razorpay integration
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: 'INR',
+        name: 'Modern Selfdrive',
+        description: `${car.make} ${car.model} — Advance Booking Payment`,
+        order_id: razorpayOrderId,
+        prefill: {
+          name: customer?.name || '',
+          email: customer?.email || '',
+          contact: bookingPayload.phone || '',
+        },
+        theme: {
+          color: '#B67C3D',
+        },
+        handler: async (response) => {
+          const toastId = toast.loading('Verifying payment signature...');
+          try {
+            const verifyRes = await bookingAPI.verifyPayment({
+              bookingId: bookingDataRes._id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            toast.success('Payment Verified! Booking Confirmed.', { id: toastId });
+            const confirmedBooking = verifyRes.data.data.booking || verifyRes.data.data;
+            setBookingRef(confirmedBooking.referenceId || confirmedBooking._id?.slice(-6).toUpperCase() || 'CONFIRMED');
+            setStep(4);
+            setTimeout(() => {
+              navigate(`/booking-confirmation/${confirmedBooking._id}`, {
+                state: { booking: confirmedBooking, customer }
+              });
+            }, 2000);
+          } catch (verifyErr) {
+            console.error('Verification failed:', verifyErr);
+            toast.error(verifyErr.response?.data?.message || 'Payment verification failed', { id: toastId });
+          } finally {
+            setIsBooking(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast.error('Payment was cancelled. Your booking remains pending.');
+            setIsBooking(false);
+          }
+        }
+      };
 
-      // Add redirection for cash bookings as well
-      setTimeout(() => {
-        navigate(`/booking-confirmation/${booking._id}`, {
-          state: { booking, customer }
-        });
-      }, 3000);
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      return;
     } catch (err) {
       console.error('Booking Error:', err);
       toast.error(err.response?.data?.message || 'Failed to process booking');
@@ -243,7 +315,7 @@ export default function CarBookingForm({ car }) {
     <div className="rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 lg:p-8 relative overflow-hidden" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
       {/* Progress Tracker */}
       <div className="mb-6 sm:mb-10 px-2 sm:px-4">
-        <div className="grid grid-cols-4 w-full relative">
+        <div className="flex w-full relative items-center">
           {/* Connecting Line Background */}
           <div className="absolute top-4 left-[12.5%] right-[12.5%] h-[2px]" style={{ background: 'rgba(182,124,61,0.15)' }} />
           
@@ -253,18 +325,18 @@ export default function CarBookingForm({ car }) {
             { n: 3, label: 'Pay' },
             { n: 4, label: 'Done' }
           ].map(({ n, label }, i) => (
-            <div key={n} className="flex flex-col items-center relative z-10">
+            <div key={n} className="flex-1 flex flex-col items-center relative z-10">
               <div className="relative flex items-center justify-center w-full">
                 {/* Active/Completed Line */}
                 {i > 0 && (
                   <div className="absolute right-[50%] top-1/2 -translate-y-1/2 h-[2px] w-full"
-                    style={{ background: step >= n ? '#22c55e' : 'transparent', display: step > i ? 'block' : 'none' }} />
+                    style={{ background: step >= n ? '#B67C3D' : 'transparent', display: step > i ? 'block' : 'none' }} />
                 )}
                 
                 <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[11px] font-black relative z-20 transition-all duration-500"
                   style={step === n ? { background: '#B67C3D', borderColor: '#B67C3D', color: '#19130E', transform: 'scale(1.1)' } :
-                    step > n ? { background: '#22c55e', borderColor: '#22c55e', color: '#fff' } : { background: '#EBE6DE', borderColor: 'rgba(182,124,61,0.15)', color: '#6b5e50' }}>
-                  {step > n ? <CheckIcon className="w-4 h-4" /> : n}
+                    step > n ? { background: '#B67C3D', borderColor: '#B67C3D', color: '#19130E' } : { background: '#EBE6DE', borderColor: 'rgba(182,124,61,0.15)', color: '#6b5e50' }}>
+                  {step > n ? <CheckIcon className="w-4 h-4 text-[#19130E]" /> : n}
                 </div>
               </div>
               <span className="text-[9px] font-black uppercase tracking-wider mt-2 transition-colors duration-500"
@@ -329,33 +401,22 @@ export default function CarBookingForm({ car }) {
             </div>
           </div>
 
-          {/* Location Selection Grid */}
+          {/* Pickup Location */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#6b5e50' }}>Pickup Location</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[car.location, 'Railway Station', 'Airport Terminal', 'City Center'].filter((loc, i, self) => self.indexOf(loc) === i).map((loc, i) => (
-                <div key={loc} 
-                  onClick={() => setBookingData({ ...bookingData, pickupLocation: loc })}
-                  className="relative overflow-hidden group p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 cursor-pointer"
-                  style={bookingData.pickupLocation === loc ? { borderColor: '#B67C3D', background: 'rgba(182,124,61,0.05)' } : { borderColor: 'rgba(182,124,61,0.15)', background: '#EBE6DE' }}>
-                  <div className="flex items-center justify-between relative z-10">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: bookingData.pickupLocation === loc ? '#B67C3D' : '#6b5e50' }}>
-                        {loc === car.location ? 'Primary' : 'Hub'}
-                      </span>
-                      <span className="text-[13px] font-bold" style={{ color: bookingData.pickupLocation === loc ? '#19130E' : '#6b5e50' }}>
-                        {loc}
-                      </span>
-                    </div>
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0"
-                      style={bookingData.pickupLocation === loc ? { background: '#B67C3D', color: '#19130E' } : { background: '#F2EEE5', color: '#6b5e50' }}>
-                      <ShieldIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </div>
-                  </div>
-                  {/* Decorative Background Element */}
-                  <div className="absolute -bottom-2 -right-2 text-4xl opacity-5 pointer-events-none">📍</div>
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2" style={{ borderColor: '#B67C3D', background: 'rgba(182,124,61,0.05)' }}>
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-accent" style={{ color: '#B67C3D' }}>Primary Office</span>
+                  <h4 className="text-sm font-bold text-dark">Junagadh Office</h4>
+                  <p className="text-xs leading-relaxed text-muted" style={{ color: '#6b5e50' }}>
+                    GIDC 1, Joshipara, Junagadh - 362002, Gujarat, India
+                  </p>
+                  <a href="https://g.page/modern-selfdrive" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider mt-2 hover:underline" style={{ color: '#B67C3D' }}>
+                    <span>📍 View on Google Maps</span>
+                  </a>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
 
@@ -402,8 +463,8 @@ export default function CarBookingForm({ car }) {
           )}
 
           <button onClick={handleProceed}
-            className="w-full py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4"
-            style={{ background: '#B67C3D', color: '#19130E' }}>
+            className="w-full py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4"
+            style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
             <span>Continue to Verification</span>
             <ArrowRightIcon className="w-4 h-4" />
           </button>
@@ -415,7 +476,17 @@ export default function CarBookingForm({ car }) {
         <div className="space-y-4 sm:space-y-6">
           <div>
             <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#19130E' }}>Identity Verification</h3>
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#6b5e50' }}>Upload clear photos of your documents</p>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#6b5e50' }}>Upload clear photos of your documents</p>
+            
+            <div className="p-4 rounded-xl mb-6 flex gap-3 items-start" style={{ background: 'rgba(182,124,61,0.1)', border: '1px solid rgba(182,124,61,0.2)' }}>
+              <ShieldIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#B67C3D' }} />
+              <div className="space-y-1">
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#19130E' }}>Document Policy</p>
+                <p className="text-[10px] sm:text-[11px] font-bold leading-relaxed" style={{ color: '#6b5e50' }}>
+                  All documents must be <span className="text-[#19130E]">original and legitimate</span>. We only accept <span className="text-[#19130E]">Aadhaar Card and Driving Licence</span>. Any invalid or incorrect uploads will result in the booking not being processed or immediate cancellation.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -440,13 +511,13 @@ export default function CarBookingForm({ car }) {
 
           <div className="flex gap-2 sm:gap-3 pt-2">
             <button onClick={() => setStep(1)}
-              className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[10px] uppercase tracking-widest"
-              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }}>
+              className="px-6 py-3.5 sm:py-4 rounded-xl font-black text-[10px] uppercase tracking-widest"
+              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#6b5e50' }}>
               Back
             </button>
             <button onClick={handleProceed}
-              className="flex-1 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3"
-              style={{ background: '#19130E', color: '#F9F8F3' }}>
+              className="flex-1 py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3"
+              style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
               <span>Review & Pay</span>
               <ArrowRightIcon className="w-4 h-4" />
             </button>
@@ -527,54 +598,15 @@ export default function CarBookingForm({ car }) {
                   </div>
                 )}
 
-                {/* Payment Method Selector */}
-                <div className="pt-4">
-                  <span className="text-[9px] font-black uppercase tracking-widest block mb-3" style={{ color: '#6b5e50' }}>Payment Method</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div onClick={() => setPayAtCar(false)}
-                      className="p-4 rounded-xl border cursor-pointer text-center"
-                      style={!payAtCar ? { borderColor: '#B67C3D', background: 'rgba(182,124,61,0.12)' } : { borderColor: 'rgba(182,124,61,0.15)', background: 'rgba(255,255,255,0.3)' }}>
-                      <div className={`w-4 h-4 rounded-full border-2 mx-auto mb-2 flex items-center justify-center`}
-                        style={!payAtCar ? { borderColor: '#B67C3D', background: '#B67C3D' } : { borderColor: '#6b5e50' }}>
-                        {!payAtCar && <div className="w-2 h-2 rounded-full" style={{ background: '#19130E' }} />}
-                      </div>
-                      <span className="text-[11px] font-black block" style={{ color: '#19130E' }}>Online Pay</span>
-                      <span className="text-[9px] font-bold block mt-1" style={{ color: '#6b5e50' }}>₹500 Advance</span>
-                    </div>
-                    <div onClick={() => setPayAtCar(true)}
-                      className="p-4 rounded-xl border cursor-pointer text-center"
-                      style={payAtCar ? { borderColor: '#B67C3D', background: 'rgba(182,124,61,0.12)' } : { borderColor: 'rgba(182,124,61,0.15)', background: 'rgba(255,255,255,0.3)' }}>
-                      <div className={`w-4 h-4 rounded-full border-2 mx-auto mb-2 flex items-center justify-center`}
-                        style={payAtCar ? { borderColor: '#B67C3D', background: '#B67C3D' } : { borderColor: '#6b5e50' }}>
-                        {payAtCar && <div className="w-2 h-2 rounded-full" style={{ background: '#19130E' }} />}
-                      </div>
-                      <span className="text-[11px] font-black block" style={{ color: '#19130E' }}>Pay at Car</span>
-                      <span className="text-[9px] font-bold block mt-1" style={{ color: '#6b5e50' }}>Full amount</span>
-                    </div>
+                <div className="mt-6 p-5 rounded-2xl flex justify-between items-center" style={{ background: 'rgba(182,124,61,0.12)', border: '1px solid rgba(182,124,61,0.25)' }}>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#B67C3D' }}>Booking Advance</span>
+                    <span className="text-[9px] font-bold uppercase" style={{ color: '#6b5e50' }}>Non-Refundable Fee</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-3xl font-display font-bold" style={{ color: '#B67C3D' }}>₹500</span>
                   </div>
                 </div>
-
-                {!payAtCar ? (
-                  <div className="mt-6 p-5 rounded-2xl flex justify-between items-center" style={{ background: 'rgba(182,124,61,0.12)', border: '1px solid rgba(182,124,61,0.25)' }}>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#B67C3D' }}>Booking Advance</span>
-                      <span className="text-[9px] font-bold uppercase" style={{ color: '#6b5e50' }}>Non-Refundable Fee</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-display font-bold" style={{ color: '#B67C3D' }}>₹500</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-6 p-5 rounded-2xl flex justify-between items-center" style={{ background: 'rgba(25,19,14,0.06)', border: '1px solid rgba(182,124,61,0.15)' }}>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#19130E' }}>Full Amount</span>
-                      <span className="text-[9px] font-bold uppercase" style={{ color: '#6b5e50' }}>Payable at pickup</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-display font-bold" style={{ color: '#19130E' }}>₹{Math.max(0, total - discount).toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -645,15 +677,15 @@ export default function CarBookingForm({ car }) {
 
           <div className="flex gap-2 sm:gap-3 pt-2">
             <button onClick={() => setStep(2)}
-              className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[10px] uppercase tracking-widest"
-              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }}>
+              className="px-6 py-3.5 sm:py-4 rounded-xl font-black text-[10px] uppercase tracking-widest"
+              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#6b5e50' }}>
               Back
             </button>
             <button onClick={handleFinalBooking} disabled={isBooking || !agreedTerms}
-              className="flex-1 py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50"
-              style={{ background: '#B67C3D', color: '#19130E' }}>
+              className="flex-1 py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50"
+              style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
               <LockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-dark/40" />
-              <span>{isBooking ? 'Processing...' : payAtCar ? `Confirm — ₹${Math.max(0, total).toLocaleString('en-IN')}` : 'Pay ₹500'}</span>
+              <span>{isBooking ? 'Processing...' : 'Pay ₹500'}</span>
             </button>
           </div>
         </div>

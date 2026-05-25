@@ -1,6 +1,8 @@
 import Booking from '../models/Booking.js';
 import { AppError } from '../utils/AppError.js';
 import { BOOKING_STATUS } from '../utils/constants.js';
+import cacheService from '../config/redis.js';
+import { logger } from '../utils/logger.js';
 
 export const getRevenueReport = async (ownerId, startDate, endDate) => {
   const query = {
@@ -31,14 +33,14 @@ export const getRevenueReport = async (ownerId, startDate, endDate) => {
   });
 
   return Object.entries(monthlyData).map(([month, data]) => ({
-    month,
-    revenue: data.revenue,
-    bookings: data.bookings
+    _id: month,
+    totalRevenue: data.revenue,
+    count: data.bookings
   }));
 };
 
 export const getFleetReport = async (ownerId) => {
-  const bookings = await Booking.find({ 'car.owner': ownerId })
+  const bookings = await Booking.find({ owner: ownerId, status: { $ne: 'pending' } })
     .populate('car', 'make model pricePerDay');
 
   const carStats = {};
@@ -57,11 +59,15 @@ export const getFleetReport = async (ownerId) => {
     }
   });
 
-  return Object.values(carStats);
+  return Object.values(carStats).map(stat => ({
+    _id: `${stat.car.make} ${stat.car.model}`,
+    totalRevenue: stat.revenue,
+    count: stat.bookings
+  }));
 };
 
 export const getBookingsReport = async (ownerId, startDate, endDate) => {
-  const query = { 'car.owner': ownerId };
+  const query = { owner: ownerId, status: { $ne: 'pending' } };
 
   if (startDate || endDate) {
     query.startDate = {};
@@ -88,11 +94,15 @@ export const getBookingsReport = async (ownerId, startDate, endDate) => {
     }
   });
 
-  return statusCounts;
+  return Object.entries(statusCounts).map(([status, data]) => ({
+    _id: status.charAt(0).toUpperCase() + status.slice(1),
+    totalRevenue: data.revenue,
+    count: data.count
+  }));
 };
 
 export const exportBookingsCSV = async (ownerId, startDate, endDate) => {
-  const query = { 'car.owner': ownerId };
+  const query = { owner: ownerId, status: { $ne: 'pending' } };
 
   if (startDate || endDate) {
     query.startDate = {};
@@ -125,6 +135,16 @@ export const exportBookingsCSV = async (ownerId, startDate, endDate) => {
 };
 
 export const getDashboardStats = async (ownerId) => {
+  const cacheKey = `owner:dashboard-stats:${ownerId}`;
+  try {
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  } catch (err) {
+    logger.warn('Cache read error in getDashboardStats:', err);
+  }
+
   const [revenueResult, activeBookings, totalCars, availableCars] = await Promise.all([
     Booking.aggregate([
       { 
@@ -141,10 +161,19 @@ export const getDashboardStats = async (ownerId) => {
     (await import('../models/Car.js')).default.countDocuments({ owner: ownerId, isDeleted: false, isActive: true })
   ]);
 
-  return {
+  const stats = {
     totalRevenue: revenueResult[0]?.total || 0,
     activeBookings,
     totalCars,
     availableCars
   };
+
+  try {
+    // Cache owner dashboard statistics for 60 seconds (1 minute)
+    await cacheService.set(cacheKey, stats, 60);
+  } catch (err) {
+    logger.warn('Cache write error in getDashboardStats:', err);
+  }
+
+  return stats;
 };

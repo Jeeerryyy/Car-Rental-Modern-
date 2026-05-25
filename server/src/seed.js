@@ -22,13 +22,13 @@ async function seedOwner() {
     const existingOwner = await Owner.findOne({ email: ownerEmail });
 
     if (existingOwner) {
-      console.log(`Owner account already exists (${ownerEmail}). Skipping...`);
+      console.log(`Owner account already exists (${ownerEmail}). Keeping existing password.`);
     } else {
       console.log('Creating master owner account...');
       await Owner.create({
         name: 'Modern Drive Owner',
         email: ownerEmail,
-        password: 'Modern@Drive2024',
+        password: 'Modern@Drive2026',
         phone: '1234567890',
         businessName: 'Modern Selfdrive',
         role: 'owner',
@@ -36,7 +36,7 @@ async function seedOwner() {
       });
       console.log('Master owner account created successfully!');
       console.log('Email:', ownerEmail);
-      console.log('Password: Modern@Drive2024');
+      console.log('Password: Modern@Drive2026');
     }
 
     await mongoose.disconnect();

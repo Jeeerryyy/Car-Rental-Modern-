@@ -17,12 +17,12 @@ export const forCar = catchAsync(async (req, res) => {
 
 export const forOwner = catchAsync(async (req, res) => {
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
-  const result = await getOwnerReviews(req.owner._id, req.query, pagination);
+  const result = await getOwnerReviews(req.ownerId, req.query, pagination);
   return ApiResponse.success(res, 200, 'Reviews retrieved', result.reviews, result.pagination);
 });
 
 export const moderate = catchAsync(async (req, res) => {
   const { status, ownerReply } = req.body;
-  const review = await updateReviewStatus(req.params.id, req.owner._id, status, ownerReply);
+  const review = await updateReviewStatus(req.params.id, req.ownerId, status, ownerReply);
   return ApiResponse.success(res, 200, 'Review updated', { review });
 });

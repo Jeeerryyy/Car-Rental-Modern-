@@ -5,8 +5,8 @@ import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { USER_ROLES } from '../utils/constants.js';
 
-const signToken = (id) => {
-  return jwt.sign({ id, role: USER_ROLES.OWNER }, config.jwt.secret, {
+const signToken = (id, role = USER_ROLES.OWNER) => {
+  return jwt.sign({ id, role }, config.jwt.secret, {
     expiresIn: config.jwt.expiry
   });
 };
@@ -18,7 +18,7 @@ export const registerOwner = async (name, email, password, phone, businessName) 
   }
 
   const owner = await Owner.create({ name, email, password, phone, businessName });
-  const token = signToken(owner._id);
+  const token = signToken(owner._id, owner.role);
 
   const userObj = owner.toObject();
   delete userObj.password;
@@ -40,7 +40,7 @@ export const loginOwner = async (email, password) => {
   }
 
 
-  const token = signToken(owner._id);
+  const token = signToken(owner._id, owner.role);
   const userObj = owner.toObject();
   delete userObj.password;
 

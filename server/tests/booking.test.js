@@ -21,9 +21,12 @@ jest.unstable_mockModule('../src/config/razorpay.js', () => ({
 }));
 
 jest.unstable_mockModule('../src/services/cloudinary.service.js', () => ({
-  uploadDocument: jest.fn(),
-  uploadCarImages: jest.fn(),
+  uploadImage: jest.fn(),
+  deleteImage: jest.fn(),
   deleteMultipleImages: jest.fn(),
+  uploadCarImages: jest.fn(),
+  uploadProfileImage: jest.fn(),
+  uploadDocument: jest.fn(),
 }));
 
 jest.unstable_mockModule('../src/config/email.js', () => ({
@@ -75,6 +78,7 @@ describe('Booking Creation (POST /api/bookings)', () => {
         carId: car._id.toString(),
         startDate: tomorrow.toISOString(),
         endDate: dayAfter.toISOString(),
+        phone: '9876543210',
       });
 
     expect(res.status).toBe(201);
@@ -105,6 +109,7 @@ describe('Booking Creation (POST /api/bookings)', () => {
         carId: car._id.toString(),
         startDate: tomorrow.toISOString(),
         endDate: dayAfter.toISOString(),
+        phone: '9876543210',
       });
 
     expect(res.status).toBe(404);
@@ -136,6 +141,7 @@ describe('Booking Creation (POST /api/bookings)', () => {
         carId: car._id.toString(),
         startDate: tomorrow.toISOString(),
         endDate: dayAfter.toISOString(),
+        phone: '9876543210',
       });
 
     expect(res.status).toBe(400);
@@ -160,6 +166,7 @@ describe('Booking Creation (POST /api/bookings)', () => {
         carId: car._id.toString(),
         startDate: start.toISOString(),
         endDate: end.toISOString(),
+        phone: '9876543210',
       });
 
     expect(res.status).toBe(201);
@@ -288,3 +295,118 @@ describe('Customer Cancellation (PUT /api/bookings/:id/cancel)', () => {
     expect(res.body.success).toBe(false);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// OWNER BOOKING DELETION
+// ═══════════════════════════════════════════════════════════════
+describe('Owner Booking Deletion (DELETE /api/owner/bookings/:id)', () => {
+
+  it('should allow owner to delete their own booking', async () => {
+    const { owner, cookie: ownerCookie } = await createTestOwner();
+    const { customer } = await createTestCustomer();
+    const car = await createTestCar(owner._id);
+    const booking = await createTestBooking(customer._id, owner._id, car._id);
+
+    const res = await request
+      .delete(`/api/owner/bookings/${booking._id}`)
+      .set('Cookie', ownerCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toContain('deleted');
+
+    // Verify booking is deleted from DB
+    const dbBooking = await Booking.findById(booking._id);
+    expect(dbBooking).toBeNull();
+  });
+
+  it('should reject booking deletion by non-owning owner', async () => {
+    const { owner: owner1 } = await createTestOwner();
+    const { cookie: owner2Cookie } = await createTestOwner();
+    const { customer } = await createTestCustomer();
+    const car = await createTestCar(owner1._id);
+    const booking = await createTestBooking(customer._id, owner1._id, car._id);
+
+    const res = await request
+      .delete(`/api/owner/bookings/${booking._id}`)
+      .set('Cookie', owner2Cookie);
+
+    expect(res.status).toBe(404);
+    
+    // Verify booking still exists in DB
+    const dbBooking = await Booking.findById(booking._id);
+    expect(dbBooking).not.toBeNull();
+  });
+
+  it('should reject deletion for unauthenticated users', async () => {
+    const { owner } = await createTestOwner();
+    const { customer } = await createTestCustomer();
+    const car = await createTestCar(owner._id);
+    const booking = await createTestBooking(customer._id, owner._id, car._id);
+
+    const res = await request
+      .delete(`/api/owner/bookings/${booking._id}`);
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INVOICE AND SECURITY DEPOSIT CALCULATIONS
+// ═══════════════════════════════════════════════════════════════
+describe('Invoice and Security Deposit Calculations', () => {
+  it('should deduct paid security deposit from total rent for remaining payable amount', async () => {
+    const { owner } = await createTestOwner();
+    const { customer } = await createTestCustomer();
+    const car = await createTestCar(owner._id, { pricePerDay: 1000 });
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date(tomorrow);
+    dayAfter.setDate(dayAfter.getDate() + 2); // 2 days
+
+    const booking = await createTestBooking(customer._id, owner._id, car._id, {
+      startDate: tomorrow,
+      endDate: dayAfter,
+      totalPrice: 2000,
+      securityDeposit: 500,
+      amountPaid: 500,
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    });
+
+    const { getInvoiceData } = await import('../src/services/invoice.service.js');
+    const invoiceData = await getInvoiceData(booking._id, owner._id);
+
+    expect(invoiceData.totalPayable).toBe(2000);
+    expect(invoiceData.amountDue).toBe(1500);
+  });
+
+  it('should include security deposit in remaining payable if not paid yet', async () => {
+    const { owner } = await createTestOwner();
+    const { customer } = await createTestCustomer();
+    const car = await createTestCar(owner._id, { pricePerDay: 1000 });
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date(tomorrow);
+    dayAfter.setDate(dayAfter.getDate() + 2); // 2 days
+
+    const booking = await createTestBooking(customer._id, owner._id, car._id, {
+      startDate: tomorrow,
+      endDate: dayAfter,
+      totalPrice: 2000,
+      securityDeposit: 500,
+      amountPaid: 0,
+      status: 'confirmed',
+      paymentStatus: 'pending'
+    });
+
+    const { getInvoiceData } = await import('../src/services/invoice.service.js');
+    const invoiceData = await getInvoiceData(booking._id, owner._id);
+
+    expect(invoiceData.totalPayable).toBe(2500);
+    expect(invoiceData.amountDue).toBe(2500);
+  });
+});
+

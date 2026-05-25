@@ -1,6 +1,7 @@
 import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { logger } from '../utils/logger.js';
+import { captureException } from '../config/sentry.js';
 
 export const notFoundHandler = (req, res, next) => {
   const error = new AppError(`Cannot find ${req.method} ${req.originalUrl} on this server`, 404);
@@ -10,6 +11,17 @@ export const notFoundHandler = (req, res, next) => {
 export const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
+
+  if (err.statusCode === 401 || err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    logger.warn(`[API 401] Unauthorized access to ${req.method} ${req.originalUrl}. Message: ${err.message}. IP: ${req.ip}`);
+  }
+
+  if (err.name === 'MulterError' || err.code?.startsWith('LIMIT_')) {
+    return res.status(400).json({
+      success: false,
+      message: `Upload error: ${err.message || err.code}`
+    });
+  }
 
   if (err.isOperational) {
     return res.status(err.statusCode).json({
@@ -83,6 +95,14 @@ export const errorHandler = (err, req, res, next) => {
       stack: err.stack
     });
   }
+
+  // Report unhandled errors to Sentry for production monitoring
+  captureException(err, {
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    statusCode: err.statusCode
+  });
 
   return res.status(500).json({
     success: false,

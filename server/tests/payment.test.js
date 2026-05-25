@@ -21,9 +21,12 @@ jest.unstable_mockModule('../src/config/razorpay.js', () => ({
 }));
 
 jest.unstable_mockModule('../src/services/cloudinary.service.js', () => ({
-  uploadDocument: jest.fn(),
-  uploadCarImages: jest.fn(),
+  uploadImage: jest.fn(),
+  deleteImage: jest.fn(),
   deleteMultipleImages: jest.fn(),
+  uploadCarImages: jest.fn(),
+  uploadProfileImage: jest.fn(),
+  uploadDocument: jest.fn(),
 }));
 
 jest.unstable_mockModule('../src/config/email.js', () => ({

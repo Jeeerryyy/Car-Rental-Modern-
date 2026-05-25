@@ -3,6 +3,8 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
 import { sendEmail } from '../services/email.service.js';
+import { logAudit } from '../utils/auditLogger.js';
+import { blacklistToken } from '../utils/tokenRevocation.js';
 
 export const register = catchAsync(async (req, res) => {
   const { name, email, password, phone } = req.body;
@@ -16,7 +18,9 @@ export const register = catchAsync(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
   
-  return ApiResponse.success(res, 201, 'Registration successful', { customer: result.customer });
+  await logAudit('auth.customer_register', result.customer._id.toString(), 'customer', { email }, req);
+  
+  return ApiResponse.success(res, 201, 'Registration successful', { customer: result.customer, token: result.token });
 });
 
 export const login = catchAsync(async (req, res) => {
@@ -31,10 +35,24 @@ export const login = catchAsync(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
-  return ApiResponse.success(res, 200, 'Login successful', { customer: result.customer });
+  await logAudit('auth.customer_login', result.customer._id.toString(), 'customer', { email }, req);
+
+  return ApiResponse.success(res, 200, 'Login successful', { customer: result.customer, token: result.token });
 });
 
 export const logout = catchAsync(async (req, res) => {
+  let token = req.cookies?.customerToken;
+  if (!token && req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (token) {
+    await blacklistToken(token);
+  }
+  
+  if (req.customer) {
+    await logAudit('auth.customer_logout', req.customer._id.toString(), 'customer', {}, req);
+  }
+
   res.clearCookie('customerToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -56,7 +74,9 @@ export const googleAuth = catchAsync(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
-  return ApiResponse.success(res, 200, 'Google Login successful', { customer: result.customer });
+  await logAudit('auth.customer_google_login', result.customer._id.toString(), 'customer', { email: result.customer.email }, req);
+
+  return ApiResponse.success(res, 200, 'Google Login successful', { customer: result.customer, token: result.token });
 });
 
 export const getProfile = catchAsync(async (req, res) => {

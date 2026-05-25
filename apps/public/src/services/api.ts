@@ -9,6 +9,10 @@ const api: AxiosInstance = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = localStorage.getItem('customerToken');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -17,6 +21,13 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('customer');
+      localStorage.removeItem('customerToken');
+      
+      // Do not redirect if the request was checking the auth status
+      if (error.config && error.config.url && error.config.url.endsWith('/auth/profile')) {
+        return Promise.reject(error);
+      }
+
       if (window.location.pathname !== '/signin' && window.location.pathname !== '/signup') {
         window.location.href = '/signin';
       }
@@ -53,6 +64,7 @@ export const bookingAPI = {
   getMyBookings: (params?: Record<string, any>) => api.get('/bookings/my-bookings', { params }),
   getById: (id: string) => api.get(`/bookings/${id}`),
   cancel: (id: string) => api.put(`/bookings/${id}/cancel`),
+  getInvoiceHTML: (id: string) => api.get(`/bookings/${id}/invoice`),
 };
 
 export const reviewAPI = {

@@ -28,7 +28,7 @@ export default function Privacy() {
           <h3 className="font-bold text-base" style={{ color: '#19130E' }}>Contact</h3>
           <p style={{ color: '#6b5e50' }}>
             For any privacy concerns, reach us at{' '}
-            <a href="tel:+918792492717" className="font-semibold no-underline" style={{ color: '#19130E' }}>+91 87924 92717</a>.
+            <a href="tel:+919004460634" className="font-semibold no-underline" style={{ color: '#19130E' }}>+91 90044 60634</a>.
           </p>
         </div>
       </div>

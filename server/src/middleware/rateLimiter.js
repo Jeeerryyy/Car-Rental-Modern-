@@ -1,27 +1,60 @@
-import rateLimit from 'express-rate-limit';
 import { RATE_LIMIT } from '../utils/constants.js';
 import { config } from '../config/env.js';
+import { cacheService } from '../config/redis.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { logger } from '../utils/logger.js';
 
-export const authLimiter = rateLimit({
-  windowMs: RATE_LIMIT.AUTH_WINDOW_MS,
-  max: 1000, // Effectively removing the small limit (was 5 or 10)
-  skip: () => true, // Skipping the limit as requested
-  message: {
-    success: false,
-    message: 'Too many authentication attempts. Please try again after 15 minutes.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
+/**
+ * Creates an Express rate limiting middleware.
+ * Uses Redis/Memory cache for distributed/local rate limiting with graceful fail-open behaviour.
+ */
+const createRateLimiter = (options) => {
+  return async (req, res, next) => {
+    if (config.disableRateLimit) {
+      return next();
+    }
+
+    const { prefix, windowMs, max, message } = options;
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    
+    // Rate limit based on userId if authenticated, otherwise fallback to IP address
+    const identity = req.user ? req.user._id.toString() : ip;
+    const key = `ratelimit:${prefix}:${identity}`;
+
+    try {
+      const hits = await cacheService.get(key);
+
+      if (hits !== null && hits >= max) {
+        logger.warn(`[Rate Limit] Action blocked. Prefix: ${prefix}, Identity: ${identity}`);
+        return ApiResponse.error(res, 429, message);
+      }
+
+      if (hits === null) {
+        // Initialize the window counter with TTL matching windowMs
+        await cacheService.set(key, 1, Math.ceil(windowMs / 1000));
+      } else {
+        await cacheService.incr(key);
+      }
+
+      next();
+    } catch (err) {
+      // In case of any rate limiting storage failure, we fail-open to ensure service uptime
+      logger.error(`[Rate Limit] Processing failed: ${err.message}. Fail-open allowed request.`);
+      next();
+    }
+  };
+};
+
+export const authLimiter = createRateLimiter({
+  prefix: 'auth',
+  windowMs: RATE_LIMIT.AUTH_WINDOW_MS || 900000, // 15 minutes
+  max: RATE_LIMIT.AUTH_MAX || 5,
+  message: 'Too many authentication attempts. Please try again after 15 minutes.'
 });
 
-export const generalLimiter = rateLimit({
-  windowMs: RATE_LIMIT.GENERAL_WINDOW_MS,
-  max: config.disableRateLimit ? 999999 : RATE_LIMIT.GENERAL_MAX,
-  skip: () => config.disableRateLimit,
-  message: {
-    success: false,
-    message: 'Too many requests. Please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
+export const generalLimiter = createRateLimiter({
+  prefix: 'general',
+  windowMs: RATE_LIMIT.GENERAL_WINDOW_MS || 60000, // 1 minute
+  max: RATE_LIMIT.GENERAL_MAX || 100,
+  message: 'Too many requests. Please try again later.'
 });

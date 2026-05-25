@@ -110,7 +110,7 @@ export default function Navbar() {
               )}
 
               <Link to="/cars"
-                className="bg-secondary text-[#111] font-bold text-[11px] uppercase tracking-widest px-5 py-2.5 hover:bg-[#B08040] transition-colors"
+                className="inline-flex items-center justify-center bg-secondary text-[#111] font-bold text-[11px] uppercase tracking-widest px-5 py-2.5 hover:bg-[#B08040] transition-colors"
                 style={{ textDecoration: 'none' }}>
                 Book Now
               </Link>

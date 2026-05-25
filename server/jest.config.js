@@ -7,8 +7,8 @@ export default {
   testTimeout: 60000,
   forceExit: true,
   detectOpenHandles: true,
-  globalSetup: './tests/setup/globalSetup.js',
-  globalTeardown: './tests/setup/globalTeardown.js',
+  globalSetup: './tests/setup/globalSetup.cjs',
+  globalTeardown: './tests/setup/globalTeardown.cjs',
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },

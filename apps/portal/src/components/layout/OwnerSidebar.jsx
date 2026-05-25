@@ -1,24 +1,31 @@
 import { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import { useOwnerAuth } from '../../context/OwnerAuthContext.jsx';
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/fleet/add', label: 'Add Car', icon: 'directions_car' },
-  { path: '/fleet/add-bike', label: 'Add Bike', icon: 'two_wheeler' },
-  { path: '/fleet', label: 'Manage Fleet', icon: 'view_list' },
+  { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', ownerOnly: true },
+  { path: '/fleet/add', label: 'Add Car', icon: 'directions_car', ownerOnly: true },
+  { path: '/fleet/add-bike', label: 'Add Bike', icon: 'two_wheeler', ownerOnly: true },
+  { path: '/fleet', label: 'Manage Fleet', icon: 'view_list', ownerOnly: true },
   { path: '/bookings', label: 'Bookings', icon: 'list_alt' },
-  { path: '/calendar', label: 'Calendar', icon: 'calendar_today' },
-  { path: '/clients', label: 'Clients', icon: 'group' },
-  { path: '/promos', label: 'Promo Codes', icon: 'sell' },
-  { path: '/settings', label: 'Settings', icon: 'settings' },
+  { path: '/calendar', label: 'Calendar', icon: 'calendar_today', ownerOnly: true },
+  { path: '/clients', label: 'Clients', icon: 'group', ownerOnly: true },
+  { path: '/reports', label: 'Reports', icon: 'analytics', ownerOnly: true },
+  { path: '/promos', label: 'Promo Codes', icon: 'sell', ownerOnly: true },
+  { path: '/staff', label: 'Staff Management', icon: 'badge', ownerOnly: true },
+  { path: '/settings', label: 'Settings', icon: 'settings', ownerOnly: true },
 ];
 
 const bottomItems = [
-  { path: '/support', label: 'Support', icon: 'help_outline' },
+  { path: '/support', label: 'Support', icon: 'help_outline', ownerOnly: true },
   { path: '/profile', label: 'Account', icon: 'account_circle' },
 ];
 
 export default function OwnerSidebar({ mobileOpen, onClose }) {
+  const { isOwner, logout } = useOwnerAuth();
+
+  const filteredNavItems = navItems.filter(item => !item.ownerOnly || isOwner);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -50,27 +57,30 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
         {/* New Booking CTA */}
         <Link 
           to="/bookings/new"
-          className="bg-white border border-gray-200 text-dark rounded-xl py-3 px-6 w-full flex items-center justify-center gap-2 hover:bg-gray-50 transition-all mb-4 text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95"
+          className="bg-primary text-white rounded-xl py-3 px-6 w-full flex items-center justify-center gap-2 hover:bg-black transition-all mb-4 text-[11px] font-bold uppercase tracking-wider shadow-lg shadow-black/10 active:scale-95"
         >
-          <span className="material-symbols-outlined text-[18px] text-muted">add</span>
+          <span className="material-symbols-outlined text-[18px]">add</span>
           New Booking
         </Link>
+
 
         {/* Main nav - Scrollable area */}
         <div className="flex-1 overflow-y-auto -mx-2 px-2 custom-scrollbar">
           <div className="flex flex-col gap-1">
-            {navItems.map(({ path, label, icon }) => (
+            {filteredNavItems.map(({ path, label, icon }) => (
               <NavLink
                 key={path}
                 to={path}
                 onClick={onClose}
+                end={path === '/fleet'}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 active:scale-[0.98] ${
                     isActive
-                      ? 'text-primary font-bold bg-surface-container'
-                      : 'text-secondary hover:bg-surface-container-low'
+                      ? 'text-primary font-bold bg-white shadow-sm border border-black/5'
+                      : 'text-on-surface-variant hover:bg-black/5'
                   }`
                 }
+
               >
                 {({ isActive }) => (
                   <>
@@ -88,19 +98,26 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
           </div>
         </div>
 
-        {/* Bottom nav */}
         <div className="flex flex-col gap-1 pt-4 border-t border-outline-variant">
-          {bottomItems.map(({ path, label, icon }) => (
+          {bottomItems.filter(item => !item.ownerOnly || isOwner).map(({ path, label, icon }) => (
             <Link
               key={label}
               to={path}
-              className="flex items-center gap-3 text-secondary px-4 py-2.5 hover:bg-surface-container-low transition-all duration-200 rounded-lg"
+              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-black/5 transition-all duration-200 rounded-xl"
             >
               <span className="material-symbols-outlined text-[20px]">{icon}</span>
               <span className="font-body-sm text-body-sm">{label}</span>
             </Link>
           ))}
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 text-red-500 px-4 py-3 hover:bg-red-50 transition-all duration-200 rounded-xl w-full text-left mt-2 font-bold"
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <span className="font-body-sm text-body-sm">Logout</span>
+          </button>
         </div>
+
       </nav>
     </>
   );

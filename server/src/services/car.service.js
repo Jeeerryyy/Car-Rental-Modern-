@@ -4,8 +4,27 @@ import { getIO } from '../config/socket.js';
 import { SOCKET_EVENTS } from '../config/socket.events.js';
 import { deleteMultipleImages } from './cloudinary.service.js';
 import { logger } from '../utils/logger.js';
+import cacheService from '../config/redis.js';
+
+const invalidateCarCache = async () => {
+  try {
+    await cacheService.delPattern('cars:*');
+  } catch (err) {
+    logger.error('Car cache invalidation failed:', err);
+  }
+};
 
 export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10 }) => {
+  const cacheKey = `cars:all:${JSON.stringify(filters)}:${JSON.stringify(pagination)}`;
+  try {
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  } catch (err) {
+    logger.warn('Cache get failed in getAllCars:', err);
+  }
+
   const query = { isActive: true, isDeleted: false };
 
   if (filters.type) {
@@ -57,8 +76,7 @@ export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10
 
   const { injectBookingStatus } = await import('../utils/carUtils.js');
   const carsWithStatus = await injectBookingStatus(cars);
-
-  return {
+  const result = {
     cars: carsWithStatus,
     pagination: {
       page: pagination.page,
@@ -67,6 +85,15 @@ export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10
       pages: Math.ceil(total / pagination.limit)
     }
   };
+
+  try {
+    // Cache the list of cars for 60 seconds (1 minute) to boost loading speeds
+    await cacheService.set(cacheKey, result, 60);
+  } catch (err) {
+    logger.warn('Cache set failed in getAllCars:', err);
+  }
+
+  return result;
 };
 
 export const getCarById = async (carId) => {
@@ -92,6 +119,7 @@ export const createCar = async (carData, ownerId, imageFiles = []) => {
   } catch (err) {
     logger.error('Socket emit error: ', err);
   }
+  invalidateCarCache();
   return car;
 };
 
@@ -120,6 +148,7 @@ export const updateCar = async (carId, ownerId, updates, newImageFiles = [], rem
   } catch (err) {
     logger.error('Socket emit error:', err);
   }
+  invalidateCarCache();
   return car;
 };
 
@@ -149,6 +178,7 @@ export const deleteCar = async (carId, ownerId) => {
   } catch (err) {
     logger.error('Socket emit error:', err);
   }
+  invalidateCarCache();
   return car;
 };
 
@@ -166,6 +196,7 @@ export const toggleAvailability = async (carId, ownerId) => {
   } catch (err) {
     logger.error('Socket emit error:', err);
   }
+  invalidateCarCache();
   return car;
 };
 
@@ -183,6 +214,7 @@ export const addBlockedDates = async (carId, ownerId, startDate, endDate, reason
   } catch (err) {
     logger.error('Socket emit error:', err);
   }
+  invalidateCarCache();
   return car;
 };
 
@@ -201,6 +233,7 @@ export const removeBlockedDates = async (carId, ownerId, blockId) => {
   } catch (err) {
     logger.error('Socket emit error:', err);
   }
+  invalidateCarCache();
   return car;
 };
 

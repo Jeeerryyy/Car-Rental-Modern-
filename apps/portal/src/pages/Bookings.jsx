@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getBookings, updateBookingStatus } from '../api/bookings.js';
+import { getBookings, updateBookingStatus, uploadOwnerDocuments, deleteBooking, getInvoiceHTML } from '../api/bookings.js';
 import toast from 'react-hot-toast';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-import { getInvoiceHtml } from '../utils/invoiceTemplate.js';
-import * as XLSX from 'xlsx';
+
 
 const STATUS_OPTIONS = ['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'];
+
+const CANCELLATION_REASONS = [
+  { value: 'invalid_documents', label: 'Invalid Documents', icon: 'description_off' },
+  { value: 'vehicle_not_available', label: 'Vehicle Not Available', icon: 'no_crash' },
+  { value: 'customer_no_show', label: 'Customer No-Show', icon: 'person_off' },
+  { value: 'payment_issue', label: 'Payment Issue', icon: 'money_off' },
+  { value: 'other', label: 'Other', icon: 'more_horiz' },
+];
 
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
@@ -17,10 +22,25 @@ export default function Bookings() {
 
   const [selectedBooking, setSelectedBooking] = useState(null);
 
+  // Cancel modal state
+  const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null, bookingName: '' });
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNote, setCancelNote] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({ open: false, bookingId: null, bookingName: '' });
+  const [deleting, setDeleting] = useState(false);
+  
+  // Owner Verification state
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [docPreviews, setDocPreviews] = useState([]);
+
+
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 20 }; // Show more on list
+      const params = { page, limit: 20 };
       if (filter !== 'all') params.status = filter;
       const res = await getBookings(params);
       setBookings(res.data.data || res.data || []);
@@ -46,6 +66,92 @@ export default function Bookings() {
     }
   };
 
+  const openCancelModal = (bookingId, customerName) => {
+    setCancelModal({ open: true, bookingId, bookingName: customerName || 'this booking' });
+    setCancelReason('');
+    setCancelNote('');
+  };
+
+  const handleCancel = async () => {
+    if (!cancelReason) { toast.error('Please select a reason'); return; }
+    setCancelling(true);
+    try {
+      await updateBookingStatus(cancelModal.bookingId, {
+        status: 'cancelled',
+        cancellationReason: cancelReason,
+        cancellationNote: cancelReason === 'other' ? cancelNote : undefined,
+      });
+      toast.success('Booking cancelled');
+      setCancelModal({ open: false, bookingId: null, bookingName: '' });
+      fetchBookings();
+      if (selectedBooking?._id === cancelModal.bookingId) {
+        setSelectedBooking(prev => ({ ...prev, status: 'cancelled', cancellationReason: cancelReason, cancellationNote: cancelNote, cancelledBy: 'owner' }));
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Cancellation failed');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const openDeleteModal = (bookingId, customerName) => {
+    setDeleteModal({ open: true, bookingId, bookingName: customerName || 'this booking' });
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteBooking(deleteModal.bookingId);
+      toast.success('Booking deleted successfully');
+      setDeleteModal({ open: false, bookingId: null, bookingName: '' });
+      setSelectedBooking(null);
+      fetchBookings();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Deletion failed');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDocUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Show previews
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setDocPreviews(prev => [...prev, ...newPreviews]);
+
+    setUploadingDocs(true);
+    try {
+      const base64Files = await Promise.all(
+        files.map(file => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        }))
+      );
+
+      const res = await uploadOwnerDocuments(selectedBooking._id, { documents: base64Files });
+      toast.success('Documents uploaded successfully');
+      
+      const updatedBooking = res.data?.data?.booking || res.data?.booking;
+      
+      if (updatedBooking) {
+        setSelectedBooking(updatedBooking);
+      }
+      
+      setDocPreviews([]); // Clear previews after success
+      fetchBookings(); // Refresh list to get updated data
+
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed');
+      setDocPreviews([]);
+    } finally {
+      setUploadingDocs(false);
+    }
+  };
+
+
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
     confirmed: 'bg-blue-100 text-blue-800',
@@ -60,130 +166,9 @@ export default function Bookings() {
     active: 'completed',
   };
 
-  const generateInvoice = async (booking) => {
-    const toastId = toast.loading('Generating invoice...');
-    try {
-      // 1. Create a hidden container for rendering
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      container.innerHTML = getInvoiceHtml(booking);
-      document.body.appendChild(container);
 
-      // 2. Give it time to render and load the logo
-      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const page1 = container.querySelector('#page-1');
-      const page2 = container.querySelector('#page-2');
-      
-      // 3. Capture with html2canvas (both pages)
-      const canvas1 = await html2canvas(page1, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: 800,
-        height: 1120,
-        windowWidth: 800
-      });
 
-      const canvas2 = await html2canvas(page2, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: 800,
-        height: 1120,
-        windowWidth: 800
-      });
-
-      // 4. Convert to PDF
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'pt',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      
-      // Add Page 1
-      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
-      const pdfHeight1 = (canvas1.height * pdfWidth) / canvas1.width;
-      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight1, '', 'FAST');
-
-      // Add Page 2
-      pdf.addPage();
-      const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
-      const pdfHeight2 = (canvas2.height * pdfWidth) / canvas2.width;
-      pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight2, '', 'FAST');
-
-      pdf.save(`ModernSelfDrive_Invoice_${booking._id?.slice(-6).toUpperCase()}.pdf`);
-
-      // 5. Cleanup
-      document.body.removeChild(container);
-      toast.success('Invoice downloaded!', { id: toastId });
-    } catch (error) {
-      console.error('Invoice generation error:', error);
-      toast.error('Failed to generate invoice', { id: toastId });
-    }
-  };
-
-  const handleExportExcel = async () => {
-    const toastId = toast.loading('Preparing export...');
-    try {
-      // Fetch all bookings (limited to 1000 for safety) matching current filter
-      const params = { limit: 1000 };
-      if (filter !== 'all') params.status = filter;
-      const res = await getBookings(params);
-      const allBookings = res.data.data || [];
-
-      const exportData = allBookings.map(b => {
-        const getLink = (url) => url ? { f: `HYPERLINK("${url}", "View Photo")` } : 'N/A';
-        
-        return {
-          'Booking ID': b._id,
-          'Status': b.status?.toUpperCase(),
-          'Payment': b.paymentStatus === 'pay_at_car' ? 'PAY AT CAR' : b.paymentStatus?.toUpperCase(),
-          'Customer Name': b.customer?.name || 'N/A',
-          'Phone': b.customer?.phone || 'N/A',
-          'Email': b.customer?.email || 'N/A',
-          'Car': `${b.car?.make || ''} ${b.car?.model || ''}`,
-          'Registration': b.car?.registrationNumber || 'N/A',
-          'Pickup Date': b.startDate ? new Date(b.startDate).toLocaleDateString('en-IN') : 'N/A',
-          'Dropoff Date': b.endDate ? new Date(b.endDate).toLocaleDateString('en-IN') : 'N/A',
-          'Total Days': b.totalDays || 0,
-          'Base Price': b.totalPrice + (b.discountAmount || 0),
-          'Discount': b.discountAmount || 0,
-          'Total Paid': b.totalPrice,
-          'Aadhaar Front': getLink(b.documents?.aadhaar?.front?.url || b.customer?.documents?.aadhaar?.front?.url),
-          'Aadhaar Back': getLink(b.documents?.aadhaar?.back?.url || b.customer?.documents?.aadhaar?.back?.url),
-          'License Front': getLink(b.documents?.license?.front?.url || b.customer?.documents?.license?.front?.url),
-          'License Back': getLink(b.documents?.license?.back?.url || b.customer?.documents?.license?.back?.url),
-          'Signature': getLink(b.signature?.url),
-          'Booking Date': new Date(b.createdAt).toLocaleString('en-IN')
-        };
-      });
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
-      
-      // Auto-size columns
-      const colWidths = Object.keys(exportData[0] || {}).map(key => ({
-        wch: Math.max(key.length, ...exportData.map(row => String(row[key]).length)) + 2
-      }));
-      ws['!cols'] = colWidths;
-
-      XLSX.writeFile(wb, `ModernSelfDrive_Bookings_${filter}_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Excel exported successfully!', { id: toastId });
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export Excel', { id: toastId });
-    }
-  };
 
   return (
     <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6 relative">
@@ -192,19 +177,13 @@ export default function Bookings() {
           <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">Manage all your car rental bookings</p>
         </div>
-        <button 
-          onClick={handleExportExcel}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-dark rounded-xl text-xs font-bold hover:bg-gray-50 transition-all active:scale-95 shadow-sm"
-        >
-          <span className="material-symbols-outlined text-[18px] text-muted">description</span>
-          Export to Excel
-        </button>
+
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {STATUS_OPTIONS.map(s => (
           <button key={s} onClick={() => { setFilter(s); setPage(1); }}
-            className={`px-4 py-2 rounded-full text-sm font-semibold capitalize transition-colors ${filter === s ? 'bg-dark text-white' : 'bg-surface hover:bg-surface-tint'}`}>
+            className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold capitalize transition-colors ${filter === s ? 'bg-dark text-white' : 'bg-surface hover:bg-surface-tint border border-outline-variant/50'}`}>
             {s === 'all' ? 'All' : s}
           </button>
         ))}
@@ -231,9 +210,13 @@ export default function Bookings() {
                     <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full ${statusColors[b.status] || 'bg-gray-100'}`}>{b.status}</span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px]">mail</span>
-                      {b.customer?.email}
+                    <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
+                      <span className="material-symbols-outlined text-[14px] shrink-0">mail</span>
+                      <span className="truncate break-all">{b.customer?.email}</span>
+                    </p>
+                    <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
+                      <span className="material-symbols-outlined text-[14px] shrink-0">call</span>
+                      <span className="truncate">{b.phone || b.customer?.phone || 'Not Provided'}</span>
                     </p>
                     <p className="text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2">
                       <span className="font-bold text-on-surface">{b.car?.make} {b.car?.model}</span>
@@ -244,23 +227,34 @@ export default function Bookings() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-6 flex-shrink-0 pt-4 sm:pt-0 border-t sm:border-0 border-outline-variant">
-                  <div className="text-left sm:text-right">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-0 border-outline-variant">
+                  <div className="text-left sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end w-full sm:w-auto">
                     <p className="font-black text-xl text-primary">₹{Number(b.totalPrice).toLocaleString('en-IN')}</p>
                     <p className={`text-[10px] font-bold uppercase tracking-wider ${b.paymentStatus === 'paid' ? 'text-green-600' : b.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b.paymentStatus}</p>
                   </div>
                   {nextStatus[b.status] ? (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStatusChange(b._id, nextStatus[b.status]);
-                      }}
-                      className="px-6 py-3 text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10"
-                    >
-                      {nextStatus[b.status]}
-                    </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCancelModal(b._id, b.customer?.name);
+                        }}
+                        className="flex-1 sm:flex-none px-4 py-3 text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(b._id, nextStatus[b.status]);
+                        }}
+                        className="flex-1 sm:flex-none px-6 py-3 text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10"
+                      >
+                        {nextStatus[b.status]}
+                      </button>
+                    </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary self-end sm:self-auto">
                       <span className="material-symbols-outlined">chevron_right</span>
                     </div>
                   )}
@@ -298,18 +292,18 @@ export default function Bookings() {
                   <span className="material-symbols-outlined text-primary">person</span>
                   <h4 className="font-bold text-lg uppercase tracking-wider">Customer Information</h4>
                 </div>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                   <div>
                     <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Name</p>
                     <p className="text-lg font-bold">{selectedBooking.customer?.name}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Phone</p>
-                    <p className="text-lg font-bold">{selectedBooking.customer?.phone || 'N/A'}</p>
+                    <p className="text-lg font-bold">{selectedBooking.phone || selectedBooking.customer?.phone || 'Not Provided'}</p>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Email</p>
-                    <p className="text-lg font-bold">{selectedBooking.customer?.email}</p>
+                    <p className="text-lg font-bold break-all">{selectedBooking.customer?.email}</p>
                   </div>
                 </div>
 
@@ -318,7 +312,7 @@ export default function Bookings() {
                   <div className="mt-8 space-y-8">
                     <div>
                       <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Verification Documents</p>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {(selectedBooking.documents?.aadhaar?.front?.url || selectedBooking.customer?.documents?.aadhaar?.front?.url) && (
                           <div className="space-y-2">
                             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Aadhaar Card</p>
@@ -359,14 +353,66 @@ export default function Bookings() {
                     {selectedBooking.signature?.url && (
                       <div>
                         <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Digital Signature</p>
-                        <div className="bg-surface-container p-4 rounded-xl border border-outline-variant inline-block">
+                        <div className="bg-surface-container p-4 rounded-xl border border-outline-variant inline-block w-full sm:w-auto overflow-x-auto">
                           <img src={selectedBooking.signature.url} className="h-20 w-auto opacity-80" alt="Signature" />
                         </div>
                       </div>
                     )}
                   </div>
                 )}
+
+                {/* Owner Verification Documents (Pickup) */}
+                <div className="mt-10 pt-8 border-t border-outline-variant">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h4 className="font-bold text-lg text-primary flex items-center gap-2">
+                        <span className="material-symbols-outlined">verified_user</span>
+                        Pickup Verification
+                      </h4>
+                      <p className="text-xs text-on-surface-variant">Owner-uploaded documents for customer pickup</p>
+                    </div>
+                    {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'active') && (
+                      <label className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
+                        <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
+                        Upload Photos
+                        <input type="file" multiple accept="image/*" onChange={handleDocUpload} className="hidden" disabled={uploadingDocs} />
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {/* Existing Owner Documents */}
+                    {selectedBooking.ownerVerification?.documents?.map((doc, idx) => (
+                      <div key={idx} className="relative aspect-square bg-surface rounded-xl border border-outline-variant overflow-hidden group">
+
+                        <img src={doc.url} className="w-full h-full object-cover" alt={`Verification ${idx + 1}`} />
+                        <a href={doc.url} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white">open_in_new</span>
+                        </a>
+                      </div>
+                    ))}
+
+                    {/* Previews (Uploading) */}
+                    {uploadingDocs && docPreviews.map((url, idx) => (
+                      <div key={`preview-${idx}`} className="relative aspect-square bg-surface rounded-xl border border-primary/50 overflow-hidden animate-pulse">
+                        <img src={url} className="w-full h-full object-cover opacity-50" alt="Uploading..." />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {(!selectedBooking.ownerVerification?.documents || selectedBooking.ownerVerification.documents.length === 0) && !uploadingDocs && (
+
+                      <div className="col-span-full py-8 text-center bg-surface-container-low rounded-2xl border border-dashed border-outline-variant">
+                        <span className="material-symbols-outlined text-outline text-4xl mb-2">no_photography</span>
+                        <p className="text-sm text-on-surface-variant">No pickup documents uploaded yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </section>
+
 
               {/* Vehicle Section */}
               <section>
@@ -374,8 +420,8 @@ export default function Bookings() {
                   <span className="material-symbols-outlined text-primary">directions_car</span>
                   <h4 className="font-bold text-lg uppercase tracking-wider">Vehicle Details</h4>
                 </div>
-                <div className="flex gap-6">
-                  <div className="w-32 h-24 bg-surface rounded-xl border border-outline-variant overflow-hidden flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                  <div className="w-full sm:w-32 h-40 sm:h-24 bg-surface rounded-xl border border-outline-variant overflow-hidden flex-shrink-0">
                     {selectedBooking.car?.images?.[0]?.url ? (
                       <img src={selectedBooking.car.images[0].url} className="w-full h-full object-cover" alt="" />
                     ) : (
@@ -418,18 +464,22 @@ export default function Bookings() {
                       <span className="font-bold text-green-600">{selectedBooking.promoCode} ({selectedBooking.discountAmount > 0 ? `-₹${selectedBooking.discountAmount}` : ''})</span>
                     </div>
                   )}
+                  <div className="flex justify-between items-center text-secondary">
+                    <span>Security Deposit</span>
+                    <span className="font-bold text-on-surface">₹{Number(selectedBooking.securityDeposit || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-secondary">
+                    <span>Paid Amount</span>
+                    <span className="font-bold text-on-surface">₹{Number(selectedBooking.amountPaid || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-secondary">
+                    <span>Remaining Amount</span>
+                    <span className="font-bold text-primary">₹{Number(Math.max(0, (selectedBooking.amountPaid || 0) >= (selectedBooking.securityDeposit || 0) ? (selectedBooking.totalPrice - (selectedBooking.amountPaid || 0)) : (selectedBooking.totalPrice + (selectedBooking.securityDeposit || 0) - (selectedBooking.amountPaid || 0)))).toLocaleString('en-IN')}</span>
+                  </div>
                   <div className="pt-4 border-t border-outline-variant flex justify-between items-center mb-4">
                     <span className="font-bold text-lg">Total Amount</span>
                     <span className="font-black text-2xl text-primary">₹{Number(selectedBooking.totalPrice).toLocaleString('en-IN')}</span>
                   </div>
-                  
-                  <button 
-                    onClick={() => generateInvoice(selectedBooking)}
-                    className="w-full py-4 bg-dark text-white rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">download</span>
-                    Download Invoice
-                  </button>
                 </div>
               </section>
 
@@ -455,17 +505,172 @@ export default function Bookings() {
               )}
             </div>
 
-            <div className="p-8 border-t border-outline-variant bg-surface-container-low flex gap-4">
-              {nextStatus[selectedBooking.status] && (
-                <button 
-                  onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
-                  className="flex-1 py-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
+            <div className="p-6 pb-12 md:pb-8 border-t border-outline-variant bg-surface-container-low flex flex-col gap-4">
+              {/* Download Invoice Button */}
+              {['confirmed', 'active', 'completed'].includes(selectedBooking.status) && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await getInvoiceHTML(selectedBooking._id);
+                      const newWindow = window.open('', '_blank');
+                      if (newWindow) {
+                        newWindow.document.write(res.data);
+                        newWindow.document.close();
+                      } else {
+                        toast.error('Pop-up blocked. Please allow pop-ups for this site.');
+                      }
+                    } catch (err) {
+                      toast.error(err.response?.data?.message || 'Failed to load invoice');
+                    }
+                  }}
+                  className="w-full py-3.5 bg-[#19130E] text-white rounded-xl font-bold text-sm shadow-lg shadow-black/10 hover:bg-black/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
-                  Mark {nextStatus[selectedBooking.status].toUpperCase()}
+                  <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                  Download Invoice {selectedBooking.invoiceNumber ? `(${selectedBooking.invoiceNumber})` : ''}
                 </button>
               )}
-              <button onClick={() => setSelectedBooking(null)} className="flex-1 py-4 bg-surface border border-outline-variant rounded-xl font-bold hover:bg-surface-tint transition-all">
-                Close
+              <div className="flex gap-4">
+                {nextStatus[selectedBooking.status] && (
+                  <>
+                    <button 
+                      onClick={() => openCancelModal(selectedBooking._id, selectedBooking.customer?.name)}
+                      className="px-6 py-3.5 border border-red-200 text-red-600 rounded-xl font-bold text-sm hover:bg-red-50 transition-all active:scale-[0.98]"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
+                      className="flex-1 py-3.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/10 hover:bg-primary/90 transition-all active:scale-[0.98]"
+                    >
+                      Mark {nextStatus[selectedBooking.status].toUpperCase()}
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="flex gap-4 w-full">
+                <button 
+                  onClick={() => openDeleteModal(selectedBooking._id, selectedBooking.customer?.name)}
+                  className="py-3.5 px-6 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[20px]">delete</span>
+                  Delete
+                </button>
+                <button onClick={() => setSelectedBooking(null)} className="flex-1 py-3.5 bg-surface border border-outline-variant rounded-xl font-bold text-sm hover:bg-surface-tint transition-all active:scale-[0.98]">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Booking Modal */}
+      {cancelModal.open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !cancelling && setCancelModal({ open: false, bookingId: null, bookingName: '' })} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-red-500">cancel</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Cancel Booking</h3>
+                  <p className="text-sm text-gray-500">For {cancelModal.bookingName}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm font-semibold text-gray-700">Select a reason for cancellation</p>
+              <div className="grid grid-cols-1 gap-2">
+                {CANCELLATION_REASONS.map(r => (
+                  <button
+                    key={r.value}
+                    onClick={() => setCancelReason(r.value)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all border ${
+                      cancelReason === r.value
+                        ? 'border-red-300 bg-red-50 text-red-700'
+                        : 'border-gray-100 bg-gray-50 text-gray-700 hover:border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{r.icon}</span>
+                    {r.label}
+                    {cancelReason === r.value && (
+                      <span className="material-symbols-outlined text-[18px] ml-auto text-red-500">check_circle</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {cancelReason === 'other' && (
+                <textarea
+                  value={cancelNote}
+                  onChange={e => setCancelNote(e.target.value)}
+                  placeholder="Provide additional details..."
+                  maxLength={300}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:border-red-300 focus:ring-1 focus:ring-red-200"
+                />
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setCancelModal({ open: false, bookingId: null, bookingName: '' })}
+                disabled={cancelling}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={!cancelReason || cancelling}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Booking Modal */}
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !deleting && setDeleteModal({ open: false, bookingId: null, bookingName: '' })} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-red-500">delete</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Delete Booking</h3>
+                  <p className="text-sm text-gray-500">For {deleteModal.bookingName}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete this booking? This action is permanent and cannot be undone. All booking information will be removed from the system.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setDeleteModal({ open: false, bookingId: null, bookingName: '' })}
+                disabled={deleting}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import razorpay from '../config/razorpay.js';
 import { config } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../utils/logger.js';
 
 export const createOrder = async (amount, currency, receipt) => {
   if (!config.payment.enabled) {
@@ -18,12 +19,13 @@ export const createOrder = async (amount, currency, receipt) => {
     const order = await razorpay.orders.create({
       amount,
       currency,
-      receipt,
-      payment_capture: 1
+      receipt
     });
     return order;
   } catch (error) {
-    throw new AppError('Failed to create payment order', 500);
+    logger.error('Razorpay order creation failed:', error);
+    const detailedError = error.error?.description || error.description || error.message || (typeof error === 'object' ? JSON.stringify(error) : error);
+    throw new AppError(`Failed to create payment order: ${detailedError}`, 500);
   }
 };
 

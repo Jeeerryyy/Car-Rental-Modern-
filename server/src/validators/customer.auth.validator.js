@@ -4,7 +4,8 @@ export const registerRules = [
   body('name')
     .trim()
     .notEmpty().withMessage('Name is required')
-    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
+    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s'-]+$/).withMessage('Name can only contain letters, spaces, and hyphens'),
   body('email')
     .trim()
     .notEmpty().withMessage('Email is required')
@@ -17,8 +18,8 @@ export const registerRules = [
     .matches(/[0-9]/).withMessage('Password must contain at least one number')
     .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character'),
   body('phone')
-    .optional()
     .trim()
+    .notEmpty().withMessage('Phone number is required')
     .matches(/^[6-9]\d{9}$/).withMessage('Please enter a valid Indian mobile number')
 ];
 

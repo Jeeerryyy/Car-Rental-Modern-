@@ -12,9 +12,9 @@ router.post('/register', authLimiter, registerRules, validate, register);
 router.post('/login', authLimiter, loginRules, validate, login);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
-router.get('/profile', protect, restrictTo(USER_ROLES.OWNER), getProfile);
-router.put('/profile', protect, restrictTo(USER_ROLES.OWNER), updateProfile);
-router.post('/change-password', protect, restrictTo(USER_ROLES.OWNER), changePassword);
-router.post('/logout', protect, restrictTo(USER_ROLES.OWNER), logout);
+router.get('/profile', protect, restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), getProfile);
+router.put('/profile', protect, restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), updateProfile);
+router.post('/change-password', protect, restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), changePassword);
+router.post('/logout', protect, restrictTo(USER_ROLES.OWNER, USER_ROLES.STAFF), logout);
 
 export default router;
