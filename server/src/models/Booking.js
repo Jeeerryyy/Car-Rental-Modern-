@@ -135,6 +135,8 @@ bookingSchema.pre('validate', function(next) {
   if (this.isNew && this.startDate) {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Allow same-day bookings
+    // Subtract 1 day to allow same-day bookings across all timezones
+    today.setDate(today.getDate() - 1);
     if (this.startDate < today) {
       this.invalidate('startDate', 'Start date cannot be in the past');
     }

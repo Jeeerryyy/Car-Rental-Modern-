@@ -18,12 +18,21 @@ function Navbar() {
   const { pathname } = useLocation();
   const { customer } = useAuth();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const drawerRef = useRef(null);
 
   const close = useCallback(() => setOpen(false), []);
 
   /* Close drawer on every route change (UI-only side-effect) */
   useEffect(() => { close(); }, [pathname, close]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -48,12 +57,16 @@ function Navbar() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-[100]"
+        className={`fixed top-4 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[calc(100%-2rem)] max-w-[1320px] z-[100] transition-all duration-300 ${
+          scrolled ? 'navbar-scrolled' : ''
+        }`}
         style={{
-          backgroundColor: 'rgba(220,207,186,0.60)',
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          borderBottom: '1px solid rgba(182,124,61,0.15)',
+          backgroundColor: 'rgba(214,208,199, 0.40)',
+          backdropFilter: 'blur(40px) saturate(220%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(220%)',
+          border: '1px solid rgba(182, 124, 61, 0.18)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px 0 rgba(18,18,18, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingRight: 'env(safe-area-inset-right)',
           paddingLeft: 'env(safe-area-inset-left)',
@@ -64,8 +77,8 @@ function Navbar() {
           <Link to="/" className="flex items-center gap-3 no-underline leading-tight" aria-label={`${BUSINESS_NAME} home`}>
             <img src="/irck-removebg-preview.png" alt="Logo" className="h-8 w-auto object-contain" />
             <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tighter uppercase leading-none" style={{ color: '#19130E' }}>modern</span>
-              <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#B67C3D' }}>self drive</span>
+              <span className="text-lg font-black tracking-tighter uppercase leading-none" style={{ color: '#121212' }}>modern</span>
+              <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#A56A43' }}>self drive</span>
             </div>
           </Link>
 
@@ -75,17 +88,13 @@ function Navbar() {
               return (
                 <li key={name}>
                   <Link to={path} aria-current={active ? 'page' : undefined}
-                    className={`text-[14px] relative no-underline ${
-                      active ? 'font-semibold after:content-[""] after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:rounded-full'
-                      : 'font-medium'
-                    }`}
+                    className="text-[13.5px] font-medium tracking-tight no-underline nav-link-premium"
                     style={{
-                      color: active ? '#B67C3D' : '#19130E',
-                      ...(active ? { '--tw-after-bg': '#B67C3D' } : {}),
+                      color: active ? '#A56A43' : '#121212',
                     }}
                   >
                     {name}
-                    {active && <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full" style={{ background: '#B67C3D' }} />}
+                    {active && <span className="absolute -bottom-[4px] left-0 right-0 h-[2px] rounded-full" style={{ background: '#A56A43' }} />}
                   </Link>
                 </li>
               );
@@ -93,12 +102,18 @@ function Navbar() {
           </ul>
 
           <DesktopActions customer={customer} />
-
-          <button className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full border"
-            style={{ borderColor: 'rgba(182,124,61,0.15)', background: 'rgba(220,207,186,0.4)', color: '#19130E' }}
-            onClick={() => setOpen((p) => !p)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-menu">
-            {open ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-          </button>
+          <label className="lg:hidden bar" htmlFor="mobile-checkbox" aria-label="Toggle navigation menu">
+            <input 
+              type="checkbox" 
+              id="mobile-checkbox" 
+              className="bar-checkbox"
+              checked={open} 
+              onChange={() => setOpen((p) => !p)} 
+            />
+            <span className="top"></span>
+            <span className="middle"></span>
+            <span className="bottom"></span>
+          </label>
         </nav>
       </header>
 

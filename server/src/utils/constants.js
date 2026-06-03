@@ -77,7 +77,7 @@ export const VEHICLE_TYPES = {
   BIKE: 'bike'
 };
 
-export const CAR_CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van', 'bike', 'scooter', 'cruiser', 'sportsbike'];
+export const CAR_CATEGORIES = ['hatchback', 'sedan', 'suv', 'luxury', 'sports', 'van', 'bike', 'scooter', 'cruiser', 'sportsbike'];
 
 export const UPLOAD_LIMITS = {
   IMAGES: 5 * 1024 * 1024,

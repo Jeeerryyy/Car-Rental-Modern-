@@ -169,8 +169,8 @@ export const getDashboardStats = async (ownerId) => {
   };
 
   try {
-    // Cache owner dashboard statistics for 60 seconds (1 minute)
-    await cacheService.set(cacheKey, stats, 60);
+    // Cache owner dashboard statistics for 3600 seconds (1 hour)
+    await cacheService.set(cacheKey, stats, 3600);
   } catch (err) {
     logger.warn('Cache write error in getDashboardStats:', err);
   }

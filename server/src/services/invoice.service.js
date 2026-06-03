@@ -67,8 +67,8 @@ export const getInvoiceData = async (bookingId, userId) => {
     _id: bookingId,
     $or: [{ customer: userId }, { owner: userId }]
   })
-    .populate('car', 'make model images pricePerDay category fuelType transmission year registrationNumber color')
-    .populate('customer', 'name email phone address drivingLicenceNumber documents');
+    .populate('car', 'type make model images pricePerDay category fuelType transmission year registrationNumber color')
+    .populate('customer', 'name email phone address drivingLicenceNumber aadhaarNumber documents');
 
   if (!booking) {
     throw new AppError('Booking not found', 404);
@@ -81,6 +81,10 @@ export const getInvoiceData = async (bookingId, userId) => {
 
   const car = booking.car;
   const customer = booking.customer;
+
+  // Determine KM limit based on type (bike vs car)
+  const isBike = car.type === 'bike' || ['bike', 'scooter', 'cruiser', 'sportsbike'].includes(car.category?.toLowerCase());
+  const kmLimit = isBike ? 50 : 300;
 
   // Calculate totals
   const totalDays = booking.totalDays || Math.ceil((new Date(booking.endDate) - new Date(booking.startDate)) / (1000 * 60 * 60 * 24)) || 1;
@@ -122,6 +126,8 @@ export const getInvoiceData = async (bookingId, userId) => {
     amountPaid,
     amountDue,
     totalPayable,
+    kmLimit,
+    isBike,
     // KYC Documents
     aadhaarFront: booking.documents?.aadhaar?.front?.url || customer?.documents?.aadhaar?.front?.url || '',
     aadhaarBack: booking.documents?.aadhaar?.back?.url || customer?.documents?.aadhaar?.back?.url || '',

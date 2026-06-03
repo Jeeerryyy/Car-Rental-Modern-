@@ -43,7 +43,7 @@ export function Modal({
     ? 'bg-green-600 text-white'
     : '';
   const confirmStyle = confirmVariant !== 'danger' && confirmVariant !== 'success'
-    ? { background: '#19130E', color: '#FFFFFF' } : {};
+    ? { background: '#121212', color: '#FFFFFF' } : {};
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -54,7 +54,7 @@ export function Modal({
       <div 
         ref={modalRef}
         className={`relative rounded-t-3xl sm:rounded-[12px] ${maxWidth} w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto`}
-        style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}
+        style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -63,7 +63,7 @@ export function Modal({
           <button
             onClick={onClose}
             className="absolute top-4 right-4 z-20"
-            style={{ color: '#6b5e50' }}
+            style={{ color: '#5C5C5C' }}
             aria-label="Close modal"
           >
             <span className="material-symbols-outlined">close</span>
@@ -71,12 +71,12 @@ export function Modal({
         )}
         
         {title && (
-          <h2 id="modal-title" className="text-xl font-bold mb-6" style={{ color: '#19130E' }}>
+          <h2 id="modal-title" className="text-xl font-bold mb-6" style={{ color: '#121212' }}>
             {title}
           </h2>
         )}
         
-        <div className="mb-2" style={{ color: '#6b5e50' }}>
+        <div className="mb-2" style={{ color: '#5C5C5C' }}>
           {children}
         </div>
         
@@ -85,7 +85,7 @@ export function Modal({
             <button
               onClick={onClose}
               className="px-6 py-2.5 rounded-full font-medium"
-              style={{ border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }}
+              style={{ border: '1px solid #D6D0C7', color: '#121212' }}
             >
               Cancel
             </button>
@@ -128,7 +128,7 @@ export function ConfirmModal({
     >
       <p className="mb-2">{message}</p>
       {itemName && (
-        <p className="font-bold" style={{ color: '#19130E' }}>"{itemName}"</p>
+        <p className="font-bold" style={{ color: '#121212' }}>"{itemName}"</p>
       )}
     </Modal>
   );

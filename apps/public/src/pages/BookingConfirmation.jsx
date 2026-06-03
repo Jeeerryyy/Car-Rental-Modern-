@@ -95,7 +95,7 @@ export default function BookingConfirmation() {
           contact: booking.phone || '',
         },
         theme: {
-          color: '#B67C3D',
+          color: '#A56A43',
         },
         handler: async (response) => {
           const toastId = toast.loading('Verifying payment signature...');
@@ -151,18 +151,18 @@ export default function BookingConfirmation() {
 
   if (loading) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center" style={{ background: '#F9F8F3' }}>
-        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(25,19,14,0.15)', borderTopColor: '#19130E' }}></div>
+      <div className="min-h-[80vh] flex items-center justify-center" style={{ background: '#F4F1EA' }}>
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(18,18,18,0.15)', borderTopColor: '#121212' }}></div>
       </div>
     );
   }
 
   if (!booking) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-6" style={{ background: '#F9F8F3' }}>
+      <div className="min-h-[80vh] flex items-center justify-center px-6" style={{ background: '#F4F1EA' }}>
         <div className="text-center max-w-sm">
-          <h1 className="text-2xl font-bold mb-4" style={{ color: '#19130E' }}>Booking Not Found</h1>
-          <Link to="/my-bookings" className="text-sm font-bold underline" style={{ color: '#19130E' }}>Go to My Bookings</Link>
+          <h1 className="text-2xl font-bold mb-4" style={{ color: '#121212' }}>Booking Not Found</h1>
+          <Link to="/my-bookings" className="text-sm font-bold underline" style={{ color: '#121212' }}>Go to My Bookings</Link>
         </div>
       </div>
     );
@@ -171,7 +171,7 @@ export default function BookingConfirmation() {
   const isPaid = booking.paymentStatus === 'paid' || booking.paymentStatus === 'pay_at_car';
 
   return (
-    <div className="min-h-screen pb-20 pt-32" style={{ background: '#F9F8F3' }}>
+    <div className="min-h-screen pb-20 pt-32" style={{ background: '#F4F1EA' }}>
       <SEO title={isPaid ? "Confirmed | Modern Selfdrive" : "Complete Payment | Modern Selfdrive"} noIndex />
 
       <div className="max-w-xl mx-auto px-6">
@@ -188,8 +188,8 @@ export default function BookingConfirmation() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                 </svg>
               </motion.div>
-              <h1 className="text-3xl font-bold mb-2" style={{ color: '#19130E' }}>Booking Confirmed!</h1>
-              <p className="text-sm" style={{ color: '#6b5e50' }}>Your ride is ready for your next adventure.</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: '#121212' }}>Booking Confirmed!</h1>
+              <p className="text-sm" style={{ color: '#5C5C5C' }}>Your ride is ready for your next adventure.</p>
             </>
           ) : (
             <>
@@ -197,45 +197,45 @@ export default function BookingConfirmation() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-                style={{ background: 'rgba(182,124,61,0.15)', color: '#B67C3D' }}
+                style={{ background: '#D6D0C7', color: '#A56A43' }}
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </motion.div>
-              <h1 className="text-3xl font-bold mb-2" style={{ color: '#19130E' }}>Payment Pending</h1>
-              <p className="text-sm" style={{ color: '#6b5e50' }}>To secure your ride, complete the advance payment.</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: '#121212' }}>Payment Pending</h1>
+              <p className="text-sm" style={{ color: '#5C5C5C' }}>To secure your ride, complete the advance payment.</p>
             </>
           )}
         </div>
 
-        <div className="space-y-8 py-10 mb-10" style={{ borderTop: '1px solid rgba(182,124,61,0.15)', borderBottom: '1px solid rgba(182,124,61,0.15)' }}>
+        <div className="space-y-8 py-10 mb-10" style={{ borderTop: '1px solid #D6D0C7', borderBottom: '1px solid #D6D0C7' }}>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Vehicle</span>
-            <span className="text-sm font-bold text-right" style={{ color: '#19130E' }}>{booking.car?.make} {booking.car?.model}</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Vehicle</span>
+            <span className="text-sm font-bold text-right" style={{ color: '#121212' }}>{booking.car?.make} {booking.car?.model}</span>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Dates</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Dates</span>
             <div className="text-right">
-              <p className="text-sm font-bold" style={{ color: '#19130E' }}>{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {new Date(booking.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-              <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#6b5e50' }}>{booking.totalDays || 1} Day(s)</p>
+              <p className="text-sm font-bold" style={{ color: '#121212' }}>{new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {new Date(booking.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#5C5C5C' }}>{booking.totalDays || 1} Day(s)</p>
             </div>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Rental Price</span>
-            <span className="text-sm font-bold" style={{ color: '#19130E' }}>₹{booking.totalPrice.toLocaleString('en-IN')}</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Rental Price</span>
+            <span className="text-sm font-bold" style={{ color: '#121212' }}>₹{booking.totalPrice.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Security Deposit</span>
-            <span className="text-sm font-bold" style={{ color: '#19130E' }}>₹{Number(booking.securityDeposit || 500).toLocaleString('en-IN')}</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Security Deposit</span>
+            <span className="text-sm font-bold" style={{ color: '#121212' }}>₹{Number(booking.securityDeposit || 500).toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Paid Amount</span>
-            <span className="text-sm font-bold" style={{ color: '#19130E' }}>₹{Number(booking.amountPaid || (isPaid ? 500 : 0)).toLocaleString('en-IN')}</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Paid Amount</span>
+            <span className="text-sm font-bold" style={{ color: '#121212' }}>₹{Number(booking.amountPaid || (isPaid ? 500 : 0)).toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest animate-pulse" style={{ color: '#B67C3D' }}>Remaining Payable</span>
-            <span className="text-lg font-bold" style={{ color: '#B67C3D' }}>
+            <span className="text-xs font-bold uppercase tracking-widest animate-pulse" style={{ color: '#A56A43' }}>Remaining Payable</span>
+            <span className="text-lg font-bold" style={{ color: '#A56A43' }}>
               ₹{Number(
                 (booking.amountPaid || (isPaid ? 500 : 0)) >= (booking.securityDeposit || 500)
                   ? Math.max(0, booking.totalPrice - (booking.amountPaid || (isPaid ? 500 : 0)))
@@ -244,8 +244,8 @@ export default function BookingConfirmation() {
             </span>
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#6b5e50' }}>Booking ID</span>
-            <span className="text-xs font-mono" style={{ color: '#6b5e50' }}>#{booking._id?.slice(-8).toUpperCase()}</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Booking ID</span>
+            <span className="text-xs font-mono" style={{ color: '#5C5C5C' }}>#{booking._id?.slice(-8).toUpperCase()}</span>
           </div>
         </div>
 
@@ -253,20 +253,28 @@ export default function BookingConfirmation() {
           {isPaid ? (
             <button 
               onClick={generateInvoice}
-              className="w-full py-4 text-sm font-bold rounded-[8px] flex items-center justify-center gap-2"
-              style={{ background: '#19130E', color: '#FFFFFF' }}
+              className="w-full cursor-pointer group relative flex gap-1.5 px-8 py-4 bg-black bg-opacity-80 text-[#f1f1f1] rounded-3xl hover:bg-opacity-70 transition font-semibold shadow-md items-center justify-center"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="20px" width="20px">
+                <g strokeWidth="0" id="SVGRepo_bgCarrier" />
+                <g strokeLinejoin="round" strokeLinecap="round" id="SVGRepo_tracerCarrier" />
+                <g id="SVGRepo_iconCarrier">
+                  <g id="Interface / Download">
+                    <path strokeLinejoin="round" strokeLinecap="round" strokeWidth="2" stroke="#f1f1f1" d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12" id="Vector" />
+                  </g>
+                </g>
               </svg>
               Download Invoice
+              <div className="absolute opacity-0 -bottom-full rounded-md py-2 px-2 bg-black bg-opacity-70 left-1/2 -translate-x-1/2 group-hover:opacity-100 transition-opacity shadow-lg text-[10px] pointer-events-none whitespace-nowrap">
+                Download Invoice
+              </div>
             </button>
           ) : (
             <button 
               onClick={handlePayment}
               disabled={paymentLoading}
               className="w-full py-4 text-sm font-bold rounded-[8px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
-              style={{ background: '#B67C3D', color: '#19130E' }}
+              style={{ background: '#A56A43', color: '#121212' }}
             >
               {paymentLoading ? (
                 <>
@@ -288,22 +296,22 @@ export default function BookingConfirmation() {
             <Link 
               to="/my-bookings" 
               className="py-4 text-sm font-bold rounded-[8px] text-center no-underline"
-              style={{ background: '#F2EEE5', color: '#19130E', border: '1px solid rgba(182,124,61,0.15)' }}
+              style={{ background: '#E7E0D4', color: '#121212', border: '1px solid #D6D0C7' }}
             >
               My Bookings
             </Link>
             <Link 
               to="/" 
               className="py-4 text-sm font-bold rounded-[8px] text-center no-underline"
-              style={{ background: '#F2EEE5', color: '#19130E', border: '1px solid rgba(182,124,61,0.15)' }}
+              style={{ background: '#E7E0D4', color: '#121212', border: '1px solid #D6D0C7' }}
             >
               Home
             </Link>
           </div>
         </div>
 
-        <p className="text-center text-[11px] mt-12 px-6 leading-relaxed" style={{ color: '#6b5e50' }}>
-          Need help? Contact our 24/7 support at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#19130E' }}>+91 90044 60634</a> or visit the support section.
+        <p className="text-center text-[11px] mt-12 px-6 leading-relaxed" style={{ color: '#5C5C5C' }}>
+          Need help? Contact our 24/7 support at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#121212' }}>+91 90044 60634</a> / <a href="tel:+918469265000" className="font-bold underline" style={{ color: '#121212' }}>+91 8469265000</a> or visit the support section.
         </p>
       </div>
     </div>

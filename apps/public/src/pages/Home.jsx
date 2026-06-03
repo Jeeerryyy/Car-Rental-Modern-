@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { carAPI, promoAPI } from '../services/api';
 import { 
   ShieldIcon, 
@@ -79,18 +80,25 @@ function Home() {
   };
 
   return (
-    <main id="main-content" className="overflow-x-hidden" style={{ background: '#F9F8F3' }}>
+    <main id="main-content" className="overflow-x-hidden" style={{ background: '#F4F1EA' }}>
       <HeroSection />
       <AboutSection />
 
-      <section className="py-6 overflow-hidden" style={{ borderTop: '1px solid rgba(182,124,61,0.15)', borderBottom: '1px solid rgba(182,124,61,0.15)', background: '#F2EEE5' }}>
+      <motion.section 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        className="py-6 overflow-hidden" 
+        style={{ borderTop: '1px solid #D6D0C7', borderBottom: '1px solid #D6D0C7', background: '#E7E0D4' }}
+      >
         <div className="relative w-full flex items-center">
-          <div className="flex gap-4 w-max animate-marquee text-lg font-bold" style={{ color: '#19130E' }}>
+          <div className="flex gap-4 w-max animate-marquee text-lg font-bold" style={{ color: '#121212' }}>
             {[0, 1].flatMap((set) =>
               DESTINATIONS.map((d, i) => (
                 <div key={`${set}-${i}`} className="flex items-center gap-4">
                   <span className="whitespace-nowrap">
-                    {d.name} <span className="font-medium text-sm" style={{ color: '#6b5e50' }}>({d.distance})</span>
+                    {d.name} <span className="font-medium text-sm" style={{ color: '#5C5C5C' }}>({d.distance})</span>
                   </span>
                   <span className="mx-2 text-sm" style={{ color: 'rgba(182,124,61,0.3)' }}>•</span>
                 </div>
@@ -98,7 +106,7 @@ function Home() {
             )}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <PopularFleetSection loading={loading} cars={featuredCars} promo={featuredPromo} copied={copied} handleCopyCode={handleCopyCode} />
       <FeaturesSection features={FEATURES} />

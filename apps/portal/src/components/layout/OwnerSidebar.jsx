@@ -38,8 +38,8 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
 
       <nav
         className={`
-          fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest
-          border-r border-outline-variant py-8 px-4 z-50
+          fixed left-0 top-0 h-screen w-64 bg-[#141414]
+          border-r border-[#1D1D1D] py-8 px-4 z-50
           flex flex-col gap-6 transition-transform duration-300
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
@@ -49,15 +49,15 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
         <div className="flex items-center gap-3 px-4 mb-6">
           <img src="/irck-removebg-preview.png" alt="Logo" className="h-10 w-auto object-contain" />
           <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tighter uppercase leading-none" style={{ color: '#19130E' }}>modern</span>
-            <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#B67C3D' }}>self drive</span>
+            <span className="text-xl font-black tracking-tighter uppercase leading-none" style={{ color: '#F4F1EA' }}>modern</span>
+            <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#A56A43' }}>self drive</span>
           </div>
         </div>
 
         {/* New Booking CTA */}
         <Link 
           to="/bookings/new"
-          className="bg-primary text-white rounded-xl py-3 px-6 w-full flex items-center justify-center gap-2 hover:bg-black transition-all mb-4 text-[11px] font-bold uppercase tracking-wider shadow-lg shadow-black/10 active:scale-95"
+          className="bg-[#A56A43] hover:bg-[#8B5534] text-[#F8F6F1] rounded-btn py-3 px-6 w-full flex items-center justify-center gap-2 transition-all mb-4 text-[11px] font-bold uppercase tracking-wider active:scale-95"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           New Booking
@@ -74,10 +74,10 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
                 onClick={onClose}
                 end={path === '/fleet'}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                  `flex items-center gap-3 px-4 py-3 rounded-btn transition-all duration-200 active:scale-[0.98] ${
                     isActive
-                      ? 'text-primary font-bold bg-white shadow-sm border border-black/5'
-                      : 'text-on-surface-variant hover:bg-black/5'
+                      ? 'text-[#F8F6F1] font-bold bg-[#2B241F] border border-[#A56A43]'
+                      : 'text-[#C6C1B8] hover:bg-[#1F1F1F] hover:text-white bg-transparent'
                   }`
                 }
 
@@ -86,7 +86,10 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
                   <>
                     <span
                       className="material-symbols-outlined text-[20px]"
-                      style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
+                      style={{
+                        fontVariationSettings: isActive ? "'FILL' 1" : "",
+                        color: isActive ? '#C99663' : '#B8B2A7'
+                      }}
                     >
                       {icon}
                     </span>
@@ -98,20 +101,33 @@ export default function OwnerSidebar({ mobileOpen, onClose }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 pt-4 border-t border-outline-variant">
-          {bottomItems.filter(item => !item.ownerOnly || isOwner).map(({ path, label, icon }) => (
-            <Link
-              key={label}
-              to={path}
-              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-black/5 transition-all duration-200 rounded-xl"
-            >
-              <span className="material-symbols-outlined text-[20px]">{icon}</span>
-              <span className="font-body-sm text-body-sm">{label}</span>
-            </Link>
-          ))}
+        <div className="flex flex-col gap-1 pt-4 border-t border-[#1D1D1D]">
+          {bottomItems.filter(item => !item.ownerOnly || isOwner).map(({ path, label, icon }) => {
+            const loc = useLocation();
+            const isActive = loc.pathname === path;
+            return (
+              <Link
+                key={label}
+                to={path}
+                className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-btn ${
+                  isActive
+                    ? 'text-[#F8F6F1] font-bold bg-[#2B241F] border border-[#A56A43]'
+                    : 'text-[#C6C1B8] hover:bg-[#1F1F1F] hover:text-white bg-transparent'
+                }`}
+              >
+                <span 
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ color: isActive ? '#C99663' : '#B8B2A7' }}
+                >
+                  {icon}
+                </span>
+                <span className="font-body-sm text-body-sm">{label}</span>
+              </Link>
+            );
+          })}
           <button
             onClick={logout}
-            className="flex items-center gap-3 text-red-500 px-4 py-3 hover:bg-red-50 transition-all duration-200 rounded-xl w-full text-left mt-2 font-bold"
+            className="flex items-center gap-3 text-red-500 px-4 py-3 hover:bg-red-500/10 transition-all duration-200 rounded-btn w-full text-left mt-2 font-bold"
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>
             <span className="font-body-sm text-body-sm">Logout</span>

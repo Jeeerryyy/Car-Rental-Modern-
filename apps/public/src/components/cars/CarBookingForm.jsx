@@ -57,13 +57,20 @@ export default function CarBookingForm({ car }) {
     } catch (e) {}
   }, []);
 
+  // Reset window scroll to top when booking step transitions to prevent browser layout scrolling to bottom
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [step]);
+
   const calculateTotal = () => {
     const p = Number(car?.pricePerDay || 0);
     if (!bookingData.startDate || !bookingData.endDate) return p;
-    const start = new Date(bookingData.startDate);
-    const end = new Date(bookingData.endDate);
+    const start = new Date(`${bookingData.startDate}T${bookingData.pickupTime}`);
+    const end = new Date(`${bookingData.endDate}T${bookingData.returnTime}`);
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return p;
-    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 1;
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs <= 0) return p;
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) || 1;
     return diffDays * p;
   };
 
@@ -101,6 +108,12 @@ export default function CarBookingForm({ car }) {
     if (step === 1) {
       if (!bookingData.startDate || !bookingData.endDate) {
         toast.error('Please select dates');
+        return;
+      }
+      const startDateTime = new Date(`${bookingData.startDate}T${bookingData.pickupTime}`);
+      const endDateTime = new Date(`${bookingData.endDate}T${bookingData.returnTime}`);
+      if (endDateTime <= startDateTime) {
+        toast.error('Return date & time must be later than pickup date & time');
         return;
       }
       if (!bookingData.phone || bookingData.phone.trim() === '') {
@@ -158,10 +171,8 @@ export default function CarBookingForm({ car }) {
 
       const bookingPayload = {
         carId: car._id,
-        startDate: bookingData.startDate,
-        pickupTime: bookingData.pickupTime,
-        endDate: bookingData.endDate,
-        returnTime: bookingData.returnTime,
+        startDate: `${bookingData.startDate}T${bookingData.pickupTime}`,
+        endDate: `${bookingData.endDate}T${bookingData.returnTime}`,
         phone: bookingData.phone,
         notes: bookingData.notes,
         promoCode: bookingData.promoCode || undefined,
@@ -234,7 +245,7 @@ export default function CarBookingForm({ car }) {
           contact: bookingPayload.phone || '',
         },
         theme: {
-          color: '#B67C3D',
+          color: '#A56A43',
         },
         handler: async (response) => {
           const toastId = toast.loading('Verifying payment signature...');
@@ -282,29 +293,29 @@ export default function CarBookingForm({ car }) {
 
   const total = calculateTotal() - discount;
   const days = bookingData.startDate && bookingData.endDate
-    ? Math.ceil((new Date(bookingData.endDate) - new Date(bookingData.startDate)) / (1000 * 60 * 60 * 24)) || 1
+    ? Math.ceil((new Date(`${bookingData.endDate}T${bookingData.returnTime}`) - new Date(`${bookingData.startDate}T${bookingData.pickupTime}`)) / (1000 * 60 * 60 * 24)) || 1
     : 1;
 
   const today = new Date().toISOString().split('T')[0];
 
   const DocumentField = ({ label, value, onChange }) => (
     <div className="relative group">
-      <label className="text-[10px] font-black uppercase tracking-widest mb-2 block" style={{ color: '#6b5e50' }}>{label}</label>
+      <label className="text-[10px] font-black uppercase tracking-widest mb-2 block" style={{ color: '#5C5C5C' }}>{label}</label>
       <div className="relative h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer"
-        style={{ borderColor: value ? '#B67C3D' : 'rgba(182,124,61,0.2)', background: value ? 'rgba(182,124,61,0.05)' : '#EBE6DE' }}>
+        style={{ borderColor: value ? '#A56A43' : 'rgba(182,124,61,0.2)', background: value ? 'rgba(182,124,61,0.05)' : '#E7E0D4' }}>
         <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" 
           onChange={e => onChange(e.target.files[0])} />
         {value ? (
           <>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2" style={{ background: '#B67C3D' }}>
-              <CheckIcon className="w-5 h-5" style={{ color: '#F9F8F3' }} />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2" style={{ background: '#A56A43' }}>
+              <CheckIcon className="w-5 h-5" style={{ color: '#F4F1EA' }} />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-2" style={{ color: '#19130E' }}>Uploaded</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-full px-2" style={{ color: '#121212' }}>Uploaded</span>
           </>
         ) : (
           <>
-            <CameraIcon className="w-6 h-6 mb-1" style={{ color: '#6b5e50' }} />
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#6b5e50' }}>Tap to Upload</span>
+            <CameraIcon className="w-6 h-6 mb-1" style={{ color: '#5C5C5C' }} />
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5C5C5C' }}>Tap to Upload</span>
           </>
         )}
       </div>
@@ -312,12 +323,12 @@ export default function CarBookingForm({ car }) {
   );
 
   return (
-    <div className="rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 lg:p-8 relative overflow-hidden" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
+    <div className="rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 lg:p-8 relative overflow-hidden" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
       {/* Progress Tracker */}
       <div className="mb-6 sm:mb-10 px-2 sm:px-4">
         <div className="flex w-full relative items-center">
           {/* Connecting Line Background */}
-          <div className="absolute top-4 left-[12.5%] right-[12.5%] h-[2px]" style={{ background: 'rgba(182,124,61,0.15)' }} />
+          <div className="absolute top-4 left-[12.5%] right-[12.5%] h-[2px]" style={{ background: '#D6D0C7' }} />
           
           {[
             { n: 1, label: 'Dates' },
@@ -330,17 +341,17 @@ export default function CarBookingForm({ car }) {
                 {/* Active/Completed Line */}
                 {i > 0 && (
                   <div className="absolute right-[50%] top-1/2 -translate-y-1/2 h-[2px] w-full"
-                    style={{ background: step >= n ? '#B67C3D' : 'transparent', display: step > i ? 'block' : 'none' }} />
+                    style={{ background: step >= n ? '#A56A43' : 'transparent', display: step > i ? 'block' : 'none' }} />
                 )}
                 
                 <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[11px] font-black relative z-20 transition-all duration-500"
-                  style={step === n ? { background: '#B67C3D', borderColor: '#B67C3D', color: '#19130E', transform: 'scale(1.1)' } :
-                    step > n ? { background: '#B67C3D', borderColor: '#B67C3D', color: '#19130E' } : { background: '#EBE6DE', borderColor: 'rgba(182,124,61,0.15)', color: '#6b5e50' }}>
-                  {step > n ? <CheckIcon className="w-4 h-4 text-[#19130E]" /> : n}
+                  style={step === n ? { background: '#A56A43', borderColor: '#A56A43', color: '#121212', transform: 'scale(1.1)' } :
+                    step > n ? { background: '#A56A43', borderColor: '#A56A43', color: '#121212' } : { background: '#E7E0D4', borderColor: '#D6D0C7', color: '#5C5C5C' }}>
+                  {step > n ? <CheckIcon className="w-4 h-4 text-[#121212]" /> : n}
                 </div>
               </div>
               <span className="text-[9px] font-black uppercase tracking-wider mt-2 transition-colors duration-500"
-                style={{ color: step >= n ? '#19130E' : '#6b5e50' }}>{label}</span>
+                style={{ color: step >= n ? '#121212' : '#5C5C5C' }}>{label}</span>
             </div>
           ))}
         </div>
@@ -352,20 +363,20 @@ export default function CarBookingForm({ car }) {
       {step === 1 && (
         <div className="space-y-4 sm:space-y-6">
           <div>
-            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#19130E' }}>Select Rental Schedule</h3>
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#6b5e50' }}>Choose your preferred dates and pickup point</p>
+            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#121212' }}>Select Rental Schedule</h3>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#5C5C5C' }}>Choose your preferred dates and pickup point</p>
           </div>
 
           {/* Quick Presets */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#6b5e50' }}>Quick Select Duration</label>
+            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#5C5C5C' }}>Quick Select Duration</label>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[1, 2, 3].map(d => (
                 <button key={d} onClick={() => applyDayPreset(d)}
                   className="flex flex-col items-center justify-center py-3 sm:py-4 rounded-xl sm:rounded-2xl"
-                  style={days === d ? { border: '1px solid #B67C3D', background: 'rgba(182,124,61,0.05)' } : { border: '1px solid rgba(182,124,61,0.15)', background: '#EBE6DE' }}>
-                  <span className="text-xl sm:text-2xl font-display font-bold" style={{ color: days === d ? '#B67C3D' : '#19130E' }}>{d}</span>
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest" style={{ color: days === d ? '#B67C3D' : '#6b5e50' }}>Day{d > 1 ? 's' : ''}</span>
+                  style={days === d ? { border: '1px solid #A56A43', background: 'rgba(182,124,61,0.05)' } : { border: '1px solid #D6D0C7', background: '#E7E0D4' }}>
+                  <span className="text-xl sm:text-2xl font-display font-bold" style={{ color: days === d ? '#A56A43' : '#121212' }}>{d}</span>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest" style={{ color: days === d ? '#A56A43' : '#5C5C5C' }}>Day{d > 1 ? 's' : ''}</span>
                 </button>
               ))}
             </div>
@@ -373,46 +384,46 @@ export default function CarBookingForm({ car }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#6b5e50' }}>Pickup Date</label>
+              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Pickup Date</label>
               <input type="date" min={today} value={bookingData.startDate}
                 onChange={e => setBookingData({ ...bookingData, startDate: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }} />
+                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#6b5e50' }}>Pickup Time</label>
+              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Pickup Time</label>
               <input type="time" value={bookingData.pickupTime}
                 onChange={e => setBookingData({ ...bookingData, pickupTime: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }} />
+                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#6b5e50' }}>Return Date</label>
+              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Return Date</label>
               <input type="date" min={bookingData.startDate || today} value={bookingData.endDate}
                 onChange={e => setBookingData({ ...bookingData, endDate: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }} />
+                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#6b5e50' }}>Return Time</label>
+              <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Return Time</label>
               <input type="time" value={bookingData.returnTime}
                 onChange={e => setBookingData({ ...bookingData, returnTime: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }} />
+                className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
           </div>
 
           {/* Pickup Location */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#6b5e50' }}>Pickup Location</label>
-            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2" style={{ borderColor: '#B67C3D', background: 'rgba(182,124,61,0.05)' }}>
+            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#5C5C5C' }}>Pickup Location</label>
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2" style={{ borderColor: '#A56A43', background: 'rgba(182,124,61,0.05)' }}>
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-accent" style={{ color: '#B67C3D' }}>Primary Office</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-accent" style={{ color: '#A56A43' }}>Primary Office</span>
                   <h4 className="text-sm font-bold text-dark">Junagadh Office</h4>
-                  <p className="text-xs leading-relaxed text-muted" style={{ color: '#6b5e50' }}>
-                    GIDC 1, Joshipara, Junagadh - 362002, Gujarat, India
+                  <p className="text-xs leading-relaxed text-muted" style={{ color: '#5C5C5C' }}>
+                    GIDC-1 , NEAR MAHAVEER MARBLE, DOLATPARA,JUNAGADH 362037
                   </p>
-                  <a href="https://g.page/modern-selfdrive" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider mt-2 hover:underline" style={{ color: '#B67C3D' }}>
+                  <a href="https://g.page/modern-selfdrive" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider mt-2 hover:underline" style={{ color: '#A56A43' }}>
                     <span>📍 View on Google Maps</span>
                   </a>
                 </div>
@@ -420,43 +431,44 @@ export default function CarBookingForm({ car }) {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#6b5e50' }}>Contact Phone Number *</label>
+          <div className="space-y-1.5 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm" style={{ background: 'rgba(165,106,67,0.05)', border: '2px solid #A56A43' }}>
+            <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#A56A43' }}>Contact Phone Number *</label>
             <input type="tel" value={bookingData.phone} maxLength={10}
               placeholder="Enter 10-digit mobile number"
               onChange={e => setBookingData({ ...bookingData, phone: e.target.value.replace(/\D/g, '') })}
-              className="w-full rounded-xl px-4 py-3.5 text-sm font-bold outline-none" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#19130E' }} />
+              className="w-full rounded-xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-[#A56A43]/30 transition-all" style={{ background: '#FFFFFF', border: '1px solid #D6D0C7', color: '#121212' }} />
+            <p className="text-[9px] font-bold text-muted ml-1" style={{ color: '#5C5C5C' }}>We need this to contact you regarding your booking</p>
           </div>
 
           {/* Live Summary */}
           {bookingData.startDate && bookingData.endDate && (
-            <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.2)' }}>
+            <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5" style={{ background: '#E7E0D4', border: '1px solid rgba(182,124,61,0.2)' }}>
               <div className="space-y-3">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#5C5C5C' }}>
                   <span>Daily Rate</span>
-                  <span style={{ color: '#19130E' }}>₹{Number(car?.pricePerDay || 0).toLocaleString('en-IN')} / Day</span>
+                  <span style={{ color: '#121212' }}>₹{Number(car?.pricePerDay || 0).toLocaleString('en-IN')} / Day</span>
                 </div>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#5C5C5C' }}>
                   <span>Duration</span>
-                  <span style={{ color: '#B67C3D' }}>{days} Day{days > 1 ? 's' : ''}</span>
+                  <span style={{ color: '#A56A43' }}>{days} Day{days > 1 ? 's' : ''}</span>
                 </div>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#5C5C5C' }}>
                   <span>Location</span>
-                  <span className="truncate max-w-[150px]" style={{ color: '#19130E' }}>{bookingData.pickupLocation}</span>
+                  <span className="truncate max-w-[150px]" style={{ color: '#121212' }}>{bookingData.pickupLocation}</span>
                 </div>
-                <div className="h-px my-1" style={{ background: 'rgba(182,124,61,0.15)' }} />
+                <div className="h-px my-1" style={{ background: '#D6D0C7' }} />
                 <div className="flex justify-between items-center">
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#19130E' }}>Total Rental</span>
-                    <span className="text-[9px] font-bold uppercase" style={{ color: '#6b5e50' }}>Balance at pickup: ₹{(total - 500).toLocaleString('en-IN')}</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#121212' }}>Total Rental</span>
+                    <span className="text-[9px] font-bold uppercase" style={{ color: '#5C5C5C' }}>Balance at pickup: ₹{(total - 500).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-lg font-display font-bold" style={{ color: '#19130E' }}>₹{total.toLocaleString('en-IN')}</span>
+                    <span className="text-lg font-display font-bold" style={{ color: '#121212' }}>₹{total.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center pt-2 mt-1" style={{ borderTop: '1px solid rgba(182,124,61,0.15)' }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#B67C3D' }}>Due Now (Advance)</span>
-                  <span className="text-lg font-display font-bold" style={{ color: '#B67C3D' }}>₹500</span>
+                <div className="flex justify-between items-center pt-2 mt-1" style={{ borderTop: '1px solid #D6D0C7' }}>
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#A56A43' }}>Due Now (Advance)</span>
+                  <span className="text-lg font-display font-bold" style={{ color: '#A56A43' }}>₹500</span>
                 </div>
               </div>
             </div>
@@ -464,7 +476,7 @@ export default function CarBookingForm({ car }) {
 
           <button onClick={handleProceed}
             className="w-full py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4"
-            style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
+            style={{ background: '#A56A43', color: '#121212', border: '1px solid #A56A43' }}>
             <span>Continue to Verification</span>
             <ArrowRightIcon className="w-4 h-4" />
           </button>
@@ -475,15 +487,15 @@ export default function CarBookingForm({ car }) {
       {step === 2 && (
         <div className="space-y-4 sm:space-y-6">
           <div>
-            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#19130E' }}>Identity Verification</h3>
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#6b5e50' }}>Upload clear photos of your documents</p>
+            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#121212' }}>Identity Verification</h3>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#5C5C5C' }}>Upload clear photos of your documents</p>
             
             <div className="p-4 rounded-xl mb-6 flex gap-3 items-start" style={{ background: 'rgba(182,124,61,0.1)', border: '1px solid rgba(182,124,61,0.2)' }}>
-              <ShieldIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#B67C3D' }} />
+              <ShieldIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#A56A43' }} />
               <div className="space-y-1">
-                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#19130E' }}>Document Policy</p>
-                <p className="text-[10px] sm:text-[11px] font-bold leading-relaxed" style={{ color: '#6b5e50' }}>
-                  All documents must be <span className="text-[#19130E]">original and legitimate</span>. We only accept <span className="text-[#19130E]">Aadhaar Card and Driving Licence</span>. Any invalid or incorrect uploads will result in the booking not being processed or immediate cancellation.
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#121212' }}>Document Policy</p>
+                <p className="text-[10px] sm:text-[11px] font-bold leading-relaxed" style={{ color: '#5C5C5C' }}>
+                  All documents must be <span className="text-[#121212]">original and legitimate</span>. We only accept <span className="text-[#121212]">Aadhaar Card and Driving Licence</span>. Any invalid or incorrect uploads will result in the booking not being processed or immediate cancellation.
                 </p>
               </div>
             </div>
@@ -501,7 +513,7 @@ export default function CarBookingForm({ car }) {
           </div>
 
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#6b5e50' }}>Digital Signature</label>
+            <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#5C5C5C' }}>Digital Signature</label>
             <SignaturePad 
               defaultValue={verificationData.signature}
               onSave={sig => setVerificationData({ ...verificationData, signature: sig })}
@@ -512,12 +524,12 @@ export default function CarBookingForm({ car }) {
           <div className="flex gap-2 sm:gap-3 pt-2">
             <button onClick={() => setStep(1)}
               className="px-6 py-3.5 sm:py-4 rounded-xl font-black text-[10px] uppercase tracking-widest"
-              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#6b5e50' }}>
+              style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#5C5C5C' }}>
               Back
             </button>
             <button onClick={handleProceed}
               className="flex-1 py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3"
-              style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
+              style={{ background: '#A56A43', color: '#121212', border: '1px solid #A56A43' }}>
               <span>Review & Pay</span>
               <ArrowRightIcon className="w-4 h-4" />
             </button>
@@ -529,67 +541,84 @@ export default function CarBookingForm({ car }) {
       {step === 3 && (
         <div className="space-y-4 sm:space-y-6">
           <div>
-            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#19130E' }}>Review & Finalize</h3>
-            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#6b5e50' }}>Confirm your booking details and payment</p>
+            <h3 className="text-lg sm:text-xl font-display font-bold mb-1" style={{ color: '#121212' }}>Review & Finalize</h3>
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#5C5C5C' }}>Confirm your booking details and payment</p>
           {/* Summary Card */}
-          <div className="rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 overflow-hidden relative" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.2)' }}>
+          <div className="rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 overflow-hidden relative" style={{ background: '#E7E0D4', border: '1px solid rgba(182,124,61,0.2)' }}>
             
             <div className="relative z-10">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-full" style={{ background: 'rgba(182,124,61,0.15)', color: '#B67C3D', border: '1px solid rgba(182,124,61,0.25)' }}>
+                    <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-full" style={{ background: '#D6D0C7', color: '#A56A43', border: '1px solid #DDE8DE' }}>
                       Premium Selection
                     </span>
                   </div>
-                  <h4 className="text-xl sm:text-2xl font-display font-bold leading-tight" style={{ color: '#19130E' }}>{car.make} {car.model}</h4>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#6b5e50' }}>{car.category} • {car.fuelType}</p>
+                  <h4 className="text-xl sm:text-2xl font-display font-bold leading-tight" style={{ color: '#121212' }}>{car.make} {car.model}</h4>
+                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#5C5C5C' }}>{car.category} • {car.fuelType}</p>
                 </div>
                 <div className="text-right">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-2" style={{ background: 'rgba(182,124,61,0.1)', border: '1px solid rgba(182,124,61,0.2)' }}>
-                    <ShieldIcon className="w-6 h-6" style={{ color: '#B67C3D' }} />
+                    <ShieldIcon className="w-6 h-6" style={{ color: '#A56A43' }} />
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest block" style={{ color: '#B67C3D' }}>Secure Booking</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest block" style={{ color: '#A56A43' }}>Secure Booking</span>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div className="space-y-1">
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#6b5e50' }}>Pickup</span>
-                  <p className="text-[11px] sm:text-xs font-bold" style={{ color: '#19130E' }}>{new Date(bookingData.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                  <p className="text-[9px] sm:text-[10px] truncate" style={{ color: '#6b5e50' }}>{bookingData.pickupTime} • {bookingData.pickupLocation}</p>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#5C5C5C' }}>Pickup</span>
+                  <p className="text-[11px] sm:text-xs font-bold" style={{ color: '#121212' }}>{new Date(bookingData.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-[9px] sm:text-[10px] truncate" style={{ color: '#5C5C5C' }}>{bookingData.pickupTime} • {bookingData.pickupLocation}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#6b5e50' }}>Return</span>
-                  <p className="text-[11px] sm:text-xs font-bold" style={{ color: '#19130E' }}>{new Date(bookingData.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                  <p className="text-[9px] sm:text-[10px]" style={{ color: '#6b5e50' }}>{bookingData.returnTime}</p>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#5C5C5C' }}>Return</span>
+                  <p className="text-[11px] sm:text-xs font-bold" style={{ color: '#121212' }}>{new Date(bookingData.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-[9px] sm:text-[10px]" style={{ color: '#5C5C5C' }}>{bookingData.returnTime}</p>
                 </div>
               </div>
 
               {/* Signature Preview */}
-              <div className="mb-6 sm:mb-8 p-4 rounded-2xl flex items-center gap-4" style={{ background: 'rgba(25,19,14,0.05)', border: '1px solid rgba(182,124,61,0.15)' }}>
+              <div className="mb-6 sm:mb-8 p-4 rounded-2xl flex items-center gap-4" style={{ background: 'rgba(18,18,18,0.05)', border: '1px solid #D6D0C7' }}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(182,124,61,0.1)', border: '1px solid rgba(182,124,61,0.2)' }}>
-                  <svg className="w-6 h-6" style={{ color: '#B67C3D' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6" style={{ color: '#A56A43' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#6b5e50' }}>Verified Signature</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: '#5C5C5C' }}>Verified Signature</span>
                   <div className="h-10 w-full bg-white rounded-lg flex items-center justify-center p-1">
                     {verificationData.signature ? (
                       <img src={verificationData.signature} alt="Signature Preview" className="h-full object-contain opacity-80" />
                     ) : (
-                      <span className="text-[10px] italic" style={{ color: '#6b5e50' }}>No signature captured</span>
+                      <span className="text-[10px] italic" style={{ color: '#5C5C5C' }}>No signature captured</span>
                     )}
                   </div>
                 </div>
               </div>
 
+              {/* Promo Code */}
+              <div className="mb-6 sm:mb-8">
+                <label className="text-[10px] font-black uppercase tracking-widest block mb-2" style={{ color: '#5C5C5C' }}>Promo Code (Optional)</label>
+                <div className="flex gap-2">
+                  <input type="text" value={bookingData.promoCode} 
+                    onChange={e => setBookingData({ ...bookingData, promoCode: e.target.value.toUpperCase() })}
+                    placeholder="ENTER CODE"
+                    className="flex-1 rounded-xl px-4 py-3 text-sm font-bold outline-none uppercase" 
+                    style={{ background: '#FFFFFF', border: '1px solid #D6D0C7', color: '#121212' }} />
+                  <button onClick={handlePromoCheck}
+                    className="px-6 rounded-xl font-black uppercase tracking-widest text-[10px] hover:opacity-80 transition-opacity"
+                    style={{ background: '#121212', color: '#FFFFFF' }}>
+                    Apply
+                  </button>
+                </div>
+              </div>
 
-              <div className="space-y-4 pt-6" style={{ borderTop: '1px solid rgba(182,124,61,0.15)' }}>
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#6b5e50' }}>
+
+              <div className="space-y-4 pt-6" style={{ borderTop: '1px solid #D6D0C7' }}>
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest" style={{ color: '#5C5C5C' }}>
                   <span>Rental Rate (x{days} Days)</span>
-                  <span style={{ color: '#19130E' }}>₹{total.toLocaleString('en-IN')}</span>
+                  <span style={{ color: '#121212' }}>₹{total.toLocaleString('en-IN')}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-600">
@@ -598,13 +627,13 @@ export default function CarBookingForm({ car }) {
                   </div>
                 )}
 
-                <div className="mt-6 p-5 rounded-2xl flex justify-between items-center" style={{ background: 'rgba(182,124,61,0.12)', border: '1px solid rgba(182,124,61,0.25)' }}>
+                <div className="mt-6 p-5 rounded-2xl flex justify-between items-center" style={{ background: 'rgba(165,106,67,0.12)', border: '1px solid #DDE8DE' }}>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#B67C3D' }}>Booking Advance</span>
-                    <span className="text-[9px] font-bold uppercase" style={{ color: '#6b5e50' }}>Non-Refundable Fee</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest block mb-0.5" style={{ color: '#A56A43' }}>Booking Advance</span>
+                    <span className="text-[9px] font-bold uppercase" style={{ color: '#5C5C5C' }}>Non-Refundable Fee</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-3xl font-display font-bold" style={{ color: '#B67C3D' }}>₹500</span>
+                    <span className="text-3xl font-display font-bold" style={{ color: '#A56A43' }}>₹500</span>
                   </div>
                 </div>
               </div>
@@ -661,11 +690,11 @@ export default function CarBookingForm({ car }) {
           </div>
 
           {/* Agreement Checkbox */}
-          <label className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)' }}>
+          <label className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
             <div className="relative flex items-center">
               <input type="checkbox" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} className="sr-only" />
               <div className="w-6 h-6 rounded-lg border-2 flex items-center justify-center"
-                style={agreedTerms ? { background: '#19130E', borderColor: '#19130E' } : { borderColor: '#6b5e50' }}>
+                style={agreedTerms ? { background: '#121212', borderColor: '#121212' } : { borderColor: '#5C5C5C' }}>
                 {agreedTerms && <CheckIcon className="w-4 h-4 text-white" />}
               </div>
             </div>
@@ -678,12 +707,12 @@ export default function CarBookingForm({ car }) {
           <div className="flex gap-2 sm:gap-3 pt-2">
             <button onClick={() => setStep(2)}
               className="px-6 py-3.5 sm:py-4 rounded-xl font-black text-[10px] uppercase tracking-widest"
-              style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.15)', color: '#6b5e50' }}>
+              style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#5C5C5C' }}>
               Back
             </button>
             <button onClick={handleFinalBooking} disabled={isBooking || !agreedTerms}
               className="flex-1 py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50"
-              style={{ background: '#B67C3D', color: '#19130E', border: '1px solid #B67C3D' }}>
+              style={{ background: '#A56A43', color: '#121212', border: '1px solid #A56A43' }}>
               <LockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-dark/40" />
               <span>{isBooking ? 'Processing...' : 'Pay ₹500'}</span>
             </button>
@@ -697,11 +726,11 @@ export default function CarBookingForm({ car }) {
           <div className="relative mb-12">
             <div className="w-32 h-32 rounded-full bg-accent/10 flex items-center justify-center relative">
               <div className="absolute inset-0 rounded-full border-4 border-accent border-t-transparent animate-spin duration-[3000ms]" />
-              <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#B67C3D' }}>
-                <CheckIcon className="w-14 h-14" style={{ color: '#19130E' }} />
+              <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#A56A43' }}>
+                <CheckIcon className="w-14 h-14" style={{ color: '#121212' }} />
               </div>
             </div>
-            <div className="absolute -top-4 -right-4 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest" style={{ background: '#19130E', color: '#B67C3D', border: '2px solid #B67C3D' }}>
+            <div className="absolute -top-4 -right-4 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest" style={{ background: '#121212', color: '#A56A43', border: '2px solid #A56A43' }}>
               Success
             </div>
           </div>
@@ -710,7 +739,7 @@ export default function CarBookingForm({ car }) {
             <h4 className="text-4xl font-display font-bold text-dark tracking-tight leading-none">Booking Confirmed!</h4>
             <div className="flex flex-col items-center gap-2">
               <span className="text-[10px] font-black text-muted uppercase tracking-[0.3em]">Reference Number</span>
-              <div className="px-8 py-3 text-2xl font-display font-bold rounded-2xl tracking-widest" style={{ background: '#19130E', color: '#B67C3D', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="px-8 py-3 text-2xl font-display font-bold rounded-2xl tracking-widest" style={{ background: '#121212', color: '#A56A43', border: '1px solid rgba(255,255,255,0.1)' }}>
                 {bookingRef}
               </div>
             </div>
@@ -743,7 +772,7 @@ export default function CarBookingForm({ car }) {
       )}
 
       {/* Trust Footer */}
-      <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex flex-wrap items-center justify-center sm:justify-between gap-3 sm:gap-6" style={{ borderTop: '1px solid rgba(182,124,61,0.15)' }}>
+      <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex flex-wrap items-center justify-center sm:justify-between gap-3 sm:gap-6" style={{ borderTop: '1px solid #D6D0C7' }}>
         <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ShieldIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />

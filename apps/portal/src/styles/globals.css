@@ -6,23 +6,30 @@
 @layer base {
   :root {
     /* 1. Primary Brand Color Palette (Public Site Match) */
-    --clr-dark:        #19130E; /* Deep Dark */
-    --clr-accent:      #B67C3D; /* Public Accent Gold */
-    --clr-soft-white:  #F9F8F3; /* Public Main Background */
-    --clr-white:       #F2EEE5; /* Card/Panel Backgrounds */
-    --clr-light-gray:  #EBE6DE; /* Alternate backgrounds */
-    --clr-border:      rgba(25, 19, 14, 0.15); /* Darker borders */
-    --clr-text:        #19130E; /* Dark Text */
-    --clr-muted:       #6b5e50; /* Muted Text */
-    --clr-text-light:  #8a7f72; /* Lighter Text */
+    --clr-dark:        #141414; /* Deep Dark */
+    --clr-accent:      #A56A43; /* Public Accent Gold */
+    --clr-soft-white:  #F4F1EA; /* Public Main Background */
+    --clr-white:       #F8F6F1; /* Card/Panel Backgrounds */
+    --clr-light-gray:  #E7E0D4; /* Alternate backgrounds */
+    --clr-border:      #D6D0C7; /* Darker borders */
+    --clr-text:        #121212; /* Dark Text */
+    --clr-muted:       #5C5C5C; /* Muted Text */
+    --clr-text-light:  #8B8B8B; /* Lighter Text */
 
     /* Typography */
-    --font-body:    'Inter', system-ui, -apple-system, sans-serif;
-    --font-display: 'Poppins', 'Sora', 'Manrope', sans-serif;
+    --font-body:    'General Sans', 'Satoshi', 'Neue Montreal', 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Clash Display', 'Cabinet Grotesk', 'Plus Jakarta Sans', 'Inter', sans-serif;
 
     /* Radii */
-    --radius-btn:  12px;
-    --radius-card: 20px;
+    --radius-btn:  24px;
+    --radius-card: 24px;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    overflow-x: hidden;
   }
 
   html {

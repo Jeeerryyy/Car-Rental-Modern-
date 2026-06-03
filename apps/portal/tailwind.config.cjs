@@ -8,49 +8,49 @@ module.exports = {
     extend: {
       colors: {
         // ── Owner CRM Design System (Public Site Match) ──
-        'primary':              '#19130E',
-        'primary-container':    '#2c241b',
-        'on-primary':           '#F9F8F3',
-        'on-primary-container': '#D1D5DB',
+        'primary':              '#121212', // Obsidian
+        'primary-container':    '#1D1D1D', // Graphite Black
+        'on-primary':           '#F8F6F1', // Matte Ivory
+        'on-primary-container': '#D6D0C7', // Dust Border
 
-        'secondary':            '#B67C3D',
-        'secondary-container':  '#F2EEE5',
-        'on-secondary':         '#19130E',
+        'secondary':            '#A56A43', // Burnt Copper
+        'secondary-container':  '#F8F6F1', // Matte Ivory
+        'on-secondary':         '#121212',
 
-        'surface':              '#F9F8F3',
-        'surface-dim':          'rgba(25, 19, 14, 0.05)',
-        'surface-bright':       '#F9F8F3',
-        'surface-variant':      '#F2EEE5',
-        'surface-container-lowest': '#F2EEE5',
-        'surface-container-low':'#F9F8F3',
-        'surface-container':    '#F2EEE5',
-        'surface-container-high':'rgba(25, 19, 14, 0.1)',
+        'surface':              '#F8F6F1', // Matte Ivory
+        'surface-dim':          '#E7E0D4', // Soft Sandstone
+        'surface-bright':       '#F8F6F1',
+        'surface-variant':      '#E7E0D4',
+        'surface-container-lowest': '#F8F6F1',
+        'surface-container-low':'#F4F1EA',
+        'surface-container':    '#F8F6F1',
+        'surface-container-high':'#E7E0D4',
 
-        'on-surface':           '#19130E',
-        'on-surface-variant':   '#6b5e50',
+        'on-surface':           '#121212',
+        'on-surface-variant':   '#5C5C5C', // Ash Graphite
 
-        'background':           '#F9F8F3',
-        'on-background':        '#19130E',
+        'background':           '#F4F1EA', // Mineral White
+        'on-background':        '#121212',
 
-        'outline':              'rgba(25, 19, 14, 0.3)',
-        'outline-variant':      'rgba(25, 19, 14, 0.15)',
+        'outline':              '#D6D0C7', // Dust Border
+        'outline-variant':      'rgba(18, 18, 18, 0.15)',
 
-        'error':                '#ba1a1a',
-        'error-container':      '#ffdad6',
+        'error':                '#9C4B45', // Oxide Red
+        'error-container':      '#F0D9D6',
 
         // Utility colors
-        dark:    '#19130E',
-        accent:  '#B67C3D',
-        muted:   '#6b5e50',
-        off:     '#F9F8F3',
-        border:  'rgba(25, 19, 14, 0.15)',
+        dark:    '#141414',
+        accent:  '#A56A43',
+        muted:   '#5C5C5C',
+        off:     '#F4F1EA',
+        border:  '#D6D0C7',
       },
       fontFamily: {
-        'body-md':     ['Inter', 'sans-serif'],
-        'body-sm':     ['Inter', 'sans-serif'],
-        'headline-lg': ['Poppins', 'Sora', 'sans-serif'],
-        'headline-xl': ['Poppins', 'Sora', 'sans-serif'],
-        'label-caps':  ['Poppins', 'Sora', 'sans-serif'],
+        'body-md':     ['General Sans', 'Satoshi', 'Neue Montreal', 'Inter', 'sans-serif'],
+        'body-sm':     ['General Sans', 'Satoshi', 'Neue Montreal', 'Inter', 'sans-serif'],
+        'headline-lg': ['Clash Display', 'Cabinet Grotesk', 'Poppins', 'Sora', 'sans-serif'],
+        'headline-xl': ['Clash Display', 'Cabinet Grotesk', 'Poppins', 'Sora', 'sans-serif'],
+        'label-caps':  ['Clash Display', 'Cabinet Grotesk', 'Poppins', 'Sora', 'sans-serif'],
         'data-tabular':['Inter', 'sans-serif'],
       },
       fontSize: {
@@ -69,14 +69,14 @@ module.exports = {
         'unit':              '4px',
       },
       borderRadius: {
-        sm:   '4px',
-        md:   '8px',
-        btn:  '12px',
-        card: '20px',
-        lg:   '0.5rem',
-        xl:   '0.75rem',
-        '2xl':'1rem',
-        '3xl':'1.5rem',
+        sm:   '6px',
+        md:   '12px',
+        btn:  '24px',
+        card: '24px',
+        lg:   '24px',
+        xl:   '24px',
+        '2xl': '24px',
+        '3xl': '28px',
         full: '9999px',
       },
       transitionDuration: {

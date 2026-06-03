@@ -11,46 +11,46 @@ function CarCard({ id, car }) {
   const totalReviews = car?.rating?.count || car?.totalBookings || 0;
 
   return (
-    <div className={`rounded-[12px] overflow-hidden flex flex-col h-full ${car?.isBooked ? 'opacity-85' : ''}`}
-      style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)', boxShadow: '0 1px 3px rgba(25,19,14,0.06)' }}
+    <div className={`rounded-card overflow-hidden flex flex-col h-full hover:bg-[#EFE8DD] transition-colors duration-200 ${car?.isBooked ? 'opacity-85' : ''}`}
+      style={{ background: '#F8F6F1', border: '1px solid #D6D0C7', boxShadow: '0 1px 3px rgba(18,18,18,0.04)' }}
     >
-      <div className="h-[220px] relative overflow-hidden" style={{ background: 'rgba(213,201,180,0.3)' }}>
+      <div className="h-[220px] relative overflow-hidden" style={{ background: 'rgba(214,208,199,0.15)' }}>
         <img src={image} alt={name} loading="lazy" width="360" height="200"
           className={`w-full h-full object-cover ${car?.isBooked ? 'blur-[3px] grayscale' : ''}`}
         />
         {car?.isBooked && (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(220,207,186,0.1)', backdropFilter: 'blur(1px)' }}>
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(20,20,20,0.4)', backdropFilter: 'blur(2px)' }}>
             <div className="px-6 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase transform -rotate-3"
-              style={{ background: 'rgba(25,19,14,0.9)', color: '#F9F8F3', border: '1px solid rgba(220,207,186,0.2)' }}
+              style={{ background: '#141414', color: '#F8F6F1', border: '1px solid rgba(214,208,199,0.2)' }}
             >Currently Booked</div>
           </div>
         )}
       </div>
       <div className="p-6 flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
-        <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ color: '#19130E' }}>{name}</h3>
-        <div className="flex items-center justify-center sm:justify-start flex-wrap gap-x-2 gap-y-1 text-xs font-medium mb-4 uppercase tracking-wider" style={{ color: '#6b5e50' }}>
-          <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: '#EBE6DE' }}>{car?.fuelType || car?.category || 'Sedan'}</span>
+        <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ color: '#121212' }}>{name}</h3>
+        <div className="flex items-center justify-center sm:justify-start flex-wrap gap-x-2 gap-y-1 text-xs font-medium mb-4 uppercase tracking-wider" style={{ color: '#5C5C5C' }}>
+          <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: '#E7E0D4' }}>{car?.fuelType || car?.category || 'Sedan'}</span>
           <span className="text-[8px]">•</span>
           <span>{car?.year || new Date().getFullYear()}</span>
           <span className="text-[8px]">•</span>
           <span>{car?.location || 'Junagadh'}</span>
         </div>
         {totalReviews > 0 && (
-          <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#8a7d6f' }}>{totalReviews} verified bookings</p>
+          <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#8B8B8B' }}>{totalReviews} verified bookings</p>
         )}
-        <div className="mt-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 w-full" style={{ borderTop: '1px solid rgba(182,124,61,0.15)' }}>
+        <div className="mt-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 w-full" style={{ borderTop: '1px solid #D6D0C7' }}>
           <div>
-            <span className="text-2xl font-bold" style={{ color: '#19130E' }}>₹{Number(price).toLocaleString('en-IN')}</span>
-            <span className="text-[10px] font-bold ml-1 uppercase tracking-tighter" style={{ color: '#6b5e50' }}>/ day</span>
+            <span className="text-2xl font-bold" style={{ color: '#121212' }}>₹{Number(price).toLocaleString('en-IN')}</span>
+            <span className="text-[10px] font-bold ml-1 uppercase tracking-tighter" style={{ color: '#5C5C5C' }}>/ day</span>
           </div>
           <Link
             to={`/cars/${car?._id || id}`}
-            className={`inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-[8px] uppercase tracking-widest no-underline ${
+            className={`inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-btn uppercase tracking-widest no-underline ${
               car?.isBooked ? 'cursor-not-allowed pointer-events-none' : ''
             }`}
             style={car?.isBooked
-              ? { background: '#EBE6DE', color: '#6b5e50', border: '1px solid rgba(182,124,61,0.15)' }
-              : { background: '#19130E', color: '#F9F8F3', border: '1px solid #19130E' }
+              ? { background: '#E7E0D4', color: '#5C5C5C', border: '1px solid #D6D0C7' }
+              : { background: '#141414', color: '#F8F6F1', border: '1px solid #141414' }
             }
           >
             {car?.isBooked ? 'Unavailable' : 'Book Now'}

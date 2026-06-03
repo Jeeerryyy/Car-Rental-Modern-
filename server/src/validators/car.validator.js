@@ -26,7 +26,11 @@ export const createCarRules = [
   body('location')
     .trim()
     .notEmpty().withMessage('Location is required')
-    .isLength({ min: 2, max: 100 }).withMessage('Location must be between 2 and 100 characters')
+    .isLength({ min: 2, max: 100 }).withMessage('Location must be between 2 and 100 characters'),
+  body('color')
+    .optional()
+    .trim()
+    .isLength({ max: 30 }).withMessage('Color cannot exceed 30 characters')
 ];
 
 export const updateCarRules = [
@@ -54,5 +58,9 @@ export const updateCarRules = [
   body('location')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 100 }).withMessage('Location must be between 2 and 100 characters')
+    .isLength({ min: 2, max: 100 }).withMessage('Location must be between 2 and 100 characters'),
+  body('color')
+    .optional()
+    .trim()
+    .isLength({ max: 30 }).withMessage('Color cannot exceed 30 characters')
 ];

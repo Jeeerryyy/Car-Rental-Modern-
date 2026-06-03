@@ -7,8 +7,8 @@ export const initSentry = () => {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: config.nodeEnv,
-      tracesSampleRate: 1.0,
-      profilesSampleRate: 1.0,
+      tracesSampleRate: 0.1,
+      profilesSampleRate: 0.0,
       integrations: [
         Sentry.httpIntegration(),
         Sentry.expressIntegration()

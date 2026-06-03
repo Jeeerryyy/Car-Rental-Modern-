@@ -167,7 +167,7 @@ export default function SignaturePad({ onSave, onClear, defaultValue }) {
 
   return (
     <div className="space-y-3">
-      <div className="relative rounded-2xl border-2 border-dashed overflow-hidden cursor-crosshair select-none" style={{ background: '#F2EEE5', borderColor: 'rgba(182,124,61,0.25)' }}>
+      <div className="relative rounded-2xl border-2 border-dashed overflow-hidden cursor-crosshair select-none" style={{ background: '#E7E0D4', borderColor: '#DDE8DE' }}>
         <canvas
           ref={canvasRef}
           className="w-full h-[180px] touch-none block"
@@ -182,17 +182,17 @@ export default function SignaturePad({ onSave, onClear, defaultValue }) {
         />
         {isEmpty && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: '#EBE6DE' }}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#8a7d6f' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: '#E7E0D4' }}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#8B8B8B' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black" style={{ color: '#8a7d6f' }}>Sign Here</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black" style={{ color: '#8B8B8B' }}>Sign Here</p>
           </div>
         )}
       </div>
       <div className="flex justify-between items-center px-1">
-        <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#8a7d6f' }}>Legal Digital Signature</p>
+        <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#8B8B8B' }}>Legal Digital Signature</p>
         <button
           type="button"
           onClick={clear}

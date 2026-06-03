@@ -63,6 +63,8 @@ export const generateInvoiceHTML = (data) => {
     amountPaid = 0,
     amountDue = 0,
     totalPayable = 0,
+    kmLimit = 300,
+    isBike = false,
     aadhaarFront = '',
     aadhaarBack = '',
     licenseFront = '',
@@ -804,8 +806,8 @@ export const generateInvoiceHTML = (data) => {
             <div class="brand-name">Modern Selfdrive</div>
             <div class="brand-tagline">Car Rentals &middot; Est. 2017</div>
             <div class="brand-address">
-              GIDC 1, Joshipara, Junagadh &ndash; 362002, Gujarat, India<br>
-              +91 90044 60634 &nbsp;&middot;&nbsp; +91 97255 50693<br>
+              GIDC-1 , NEAR MAHAVEER MARBLE, DOLATPARA,JUNAGADH 362037<br>
+              +91 90044 60634 &nbsp;&middot;&nbsp; +91 97255 50693 &nbsp;&middot;&nbsp; +91 8469265000<br>
               booking@modernselfdrive.in
             </div>
           </div>
@@ -850,12 +852,14 @@ export const generateInvoiceHTML = (data) => {
           <div class="rental-col">
             <div class="rental-item">
               <div class="r-label">KM Limit / Day</div>
-              <div class="r-value">300 KM</div>
+              <div class="r-value">${kmLimit} KM</div>
             </div>
+            ${!isBike ? `
             <div class="rental-item">
               <div class="r-label">Extra KM Rate</div>
               <div class="r-value">&#8377;7 per KM</div>
             </div>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -918,8 +922,8 @@ export const generateInvoiceHTML = (data) => {
           <div class="note-text">
             All rentals are subject to Terms &amp; Conditions (see page 2).<br>
             Please record a video of the vehicle before pickup.<br>
-            Max 300 KM/day; extra kilometres charged at &#8377;7/KM.<br>
-            Emergency support: +91 97255 50693 &mdash; available 24/7.
+            Max ${kmLimit} KM/day; extra kilometres charged at &#8377;7/KM.<br>
+            Emergency support: +91 97255 50693, +91 8469265000 &mdash; available 24/7.
           </div>
         </div>
         <div class="signature-box">
@@ -946,12 +950,12 @@ export const generateInvoiceHTML = (data) => {
       <div class="footer-divider"></div>
       <div class="footer-center">
         <div class="fc-label">Questions &amp; Support</div>
-        <div>booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044 60634</div>
+        <div>booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044 60634 &nbsp;&middot;&nbsp; +91 8469265000</div>
       </div>
       <div class="footer-divider"></div>
       <div class="footer-center">
         <div class="fc-label">Payment Help</div>
-        <div>booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044 60634</div>
+        <div>booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044 60634 &nbsp;&middot;&nbsp; +91 8469265000</div>
       </div>
     </div>
   </div>
@@ -973,10 +977,12 @@ export const generateInvoiceHTML = (data) => {
         </div>
         <div class="tc-title-block">
           <div class="tc-title">Terms &amp; Conditions</div>
-          <div class="tc-subtitle">Rental Agreement &nbsp;&middot;&nbsp; &#2349;&#2366;&#2337;&#2366;
-            &#2325;&#2352;&#2366;&#2352;&#2344;&#2368; &#2358;&#2352;&#2340;&#2379;</div>
+          <div class="tc-subtitle">
+            Rental Agreement &middot; ભાડા કરારની શરતો
+          </div>
         </div>
       </div>
+
 
       <!-- COLUMN HEADERS -->
       <div class="lang-header">
@@ -1034,9 +1040,9 @@ export const generateInvoiceHTML = (data) => {
 
       <div class="tc-item">
         <div class="tc-num">07</div>
-        <div class="tc-gu">\u0AB5\u0ABE\u0AB9\u0AA8 \u0AA6\u0ABF\u0AB5\u0AB8 \u0AA6\u0AC0\u0AA0 \u0AAE\u0AC7\u0A95\u0ACD\u0AB8. \u0AE9\u0AE6\u0AE6 \u0A95\u0AC0.\u0AAE\u0AC0. \u0AAE\u0AB0\u0ACD\u0AAF\u0ABE\u0AA6\u0ABE\u0AAE\u0ABE\u0A82 \u0A9A\u0AB2\u0ABE\u0AB5\u0AB5\u0AC1\u0A82. \u0AB5\u0AA7\u0ABE\u0AB0\u0AC7 \u0A95\u0AC0.\u0AAE\u0AC0. \u0AA6\u0AC0\u0AA0 \u20B97 \u0A8F\u0A95\u0ACD\u0AB8\u0ACD\u0A9F\u0ACD\u0AB0\u0ABE \u0A9A\u0ABE\u0AB0\u0ACD\u0A9C
+        <div class="tc-gu">\u0AB5\u0ABE\u0AB9\u0AA8 \u0AA6\u0ABF\u0AB5\u0AB8 \u0AA6\u0AC0\u0AA0 \u0AAE\u0AC7\u0A95\u0ACD\u0AB8. ${kmLimit === 50 ? '\u0AEB\u0AE6' : '\u0AE9\u0AE6\u0AE6'} \u0A95\u0AC0.\u0AAE\u0AC0. \u0AAE\u0AB0\u0ACD\u0AAF\u0ABE\u0AA6\u0ABE\u0AAE\u0ABE\u0A82 \u0A9A\u0AB2\u0ABE\u0AB5\u0AB5\u0AC1\u0A82. \u0AB5\u0AA7\u0ABE\u0AB0\u0AC7 \u0A95\u0AC0.\u0AAE\u0AC0. \u0AA6\u0AC0\u0AA0 \u20B97 \u0A8F\u0A95\u0ACD\u0AB8\u0ACD\u0A9F\u0ACD\u0AB0\u0ABE \u0A9A\u0ABE\u0AB0\u0ACD\u0A9C
           \u0AB2\u0ABE\u0A97\u0AB6\u0AC7.</div>
-        <div class="tc-en">Maximum 300 km per day. Additional kilometres beyond the limit will be charged at \u20B97
+        <div class="tc-en">Maximum ${kmLimit} km per day. Additional kilometres beyond the limit will be charged at \u20B97
           per km.</div>
       </div>
 
@@ -1050,9 +1056,9 @@ export const generateInvoiceHTML = (data) => {
 
       <div class="tc-item">
         <div class="tc-num">09</div>
-        <div class="tc-gu">\u0AB5\u0ABE\u0AB9\u0AA8 \u0AAC\u0A82\u0AA7 \u0AAA\u0AA1\u0AC7 \u0AA4\u0ACB \u0AA4\u0ABE\u0AA4\u0ACD\u0A95\u0ABE\u0AB2\u0ABF\u0A95 \u0A87\u0AAE\u0AB0\u0A9C\u0AA8\u0ACD\u0AB8\u0AC0 \u0AB8\u0AB0\u0ACD\u0AB5\u0ABF\u0AB8 \u0A9F\u0AC0\u0AAE\u0AA8\u0ACB \u0AB8\u0A82\u0AAA\u0AB0\u0ACD\u0A95 \u0A95\u0AB0\u0AB5\u0ACB. \u0AAE\u0ACB.: +91 97255 50693</div>
+        <div class="tc-gu">\u0AB5\u0ABE\u0AB9\u0AA8 \u0AAC\u0A82\u0AA7 \u0AAA\u0AA1\u0AC7 \u0AA4\u0ACB \u0AA4\u0ABE\u0AA4\u0ACD\u0A95\u0ABE\u0AB2\u0ABF\u0A95 \u0A87\u0AAE\u0AB0\u0A9C\u0AA8\u0ACD\u0AB8\u0AC0 \u0AB8\u0AB0\u0ACD\u0AB5\u0ABF\u0AB8 \u0A9F\u0AC0\u0AAE\u0AA8\u0ACB \u0AB8\u0A82\u0AAA\u0AB0\u0ACD\u0A95 \u0A95\u0AB0\u0AB5\u0ACB. \u0AAE\u0ACB.: +91 97255 50693, +91 8469265000</div>
         <div class="tc-en">If the vehicle breaks down, immediately contact our Emergency Support Team. Mobile:
-          +919725550693</div>
+          +919725550693, +918469265000</div>
       </div>
 
       <!-- ACKNOWLEDGEMENT -->
@@ -1082,8 +1088,7 @@ export const generateInvoiceHTML = (data) => {
     <div class="tc-footer">
       <div class="tc-footer-left">
         By renting a vehicle, the customer agrees to all the above terms.<br>
-        <strong>Modern Selfdrive</strong> &nbsp;&middot;&nbsp; booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044
-        60634
+        <strong>Modern Selfdrive</strong> &nbsp;&middot;&nbsp; booking@modernselfdrive.in &nbsp;&middot;&nbsp; +91 90044 60634 &nbsp;&middot;&nbsp; +91 8469265000
       </div>
       <div class="tc-footer-right">Drive safe. Drive smart.</div>
     </div>

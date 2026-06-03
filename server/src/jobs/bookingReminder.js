@@ -22,7 +22,7 @@ export const initBookingReminders = () => {
       const upcomingBookings = await Booking.find({
         startDate: { $gte: tomorrowStart, $lte: tomorrowEnd },
         status: BOOKING_STATUS.CONFIRMED
-      }).populate('car', 'make model').populate('customer', 'name');
+      }).populate('car', 'make model').populate('customer', 'name').lean();
 
       logger.info(`[Job] Found ${upcomingBookings.length} bookings for tomorrow.`);
 

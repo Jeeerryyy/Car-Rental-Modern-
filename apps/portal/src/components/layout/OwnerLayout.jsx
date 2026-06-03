@@ -9,7 +9,7 @@ export default function OwnerLayout() {
   return (
     <div className="min-h-screen bg-background flex">
       <OwnerSidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
         <OwnerTopbar onMenuToggle={() => setMobileOpen(prev => !prev)} />
         <main className="flex-1 p-4 md:p-8 pb-8">
           <Outlet />

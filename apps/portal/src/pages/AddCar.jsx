@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createCar } from '../api/cars.js';
 import toast from 'react-hot-toast';
 
-const CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van'];
+const CATEGORIES = ['hatchback', 'sedan', 'suv', 'luxury', 'sports', 'van'];
 const FUEL_TYPES = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
 const TRANSMISSIONS = ['Manual', 'Automatic', 'AMT'];
 const DRIVE_OPTIONS = ['Self Drive', 'With Driver', 'Both'];
@@ -14,7 +14,8 @@ export default function AddCar() {
   const [form, setForm] = useState({
     make: '', model: '', year: new Date().getFullYear().toString(),
     category: 'sedan', pricePerDay: '', description: '', location: 'Junagadh',
-    fuelType: 'Petrol', transmission: 'Automatic', seats: '5', driveOption: 'Self Drive'
+    fuelType: 'Petrol', transmission: 'Automatic', seats: '5', driveOption: 'Self Drive',
+    color: '', registrationNumber: ''
   });
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
@@ -29,6 +30,7 @@ export default function AddCar() {
     if (!form.pricePerDay || form.pricePerDay <= 0) errs.pricePerDay = 'Valid price is required';
     if (!form.description.trim() || form.description.length < 20) errs.description = 'Description must be at least 20 characters';
     if (!form.location.trim()) errs.location = 'Location is required';
+    if (!form.registrationNumber.trim()) errs.registrationNumber = 'Registration No. is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -95,7 +97,7 @@ export default function AddCar() {
 
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-5">
           <h3 className="font-label-large font-semibold text-on-surface">Vehicle Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Fuel Type</label>
               <select value={form.fuelType} onChange={set('fuelType')} className={inputClass('fuelType')}>
@@ -113,6 +115,15 @@ export default function AddCar() {
               <select value={form.driveOption} onChange={set('driveOption')} className={inputClass('driveOption')}>
                 {DRIVE_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-dark mb-2">Color</label>
+              <input type="text" value={form.color} onChange={set('color')} placeholder="e.g. White" className={inputClass('color')} />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-dark mb-2">Registration No. *</label>
+              <input type="text" value={form.registrationNumber} onChange={set('registrationNumber')} placeholder="e.g. GJ 11 AB 1234" className={inputClass('registrationNumber')} />
+              {errors.registrationNumber && <p className="text-red-500 text-xs mt-1">{errors.registrationNumber}</p>}
             </div>
           </div>
         </div>

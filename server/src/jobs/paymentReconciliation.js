@@ -18,16 +18,16 @@ export const initPaymentReconciliation = () => {
     logger.info('[ReconciliationJob] Starting payment reconciliation...');
 
     try {
-      const thirtyMinutesAgo = new Date();
-      thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+      const fifteenMinutesAgo = new Date();
+      fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15);
 
-      // Find bookings that are still pending and were created more than 30 minutes ago
+      // Find bookings that are still pending and were created more than 15 minutes ago
       const staleBookings = await Booking.find({
         status: BOOKING_STATUS.PENDING,
         paymentStatus: PAYMENT_STATUS.PENDING,
         razorpayOrderId: { $exists: true, $ne: null },
-        createdAt: { $lt: thirtyMinutesAgo }
-      }).limit(100); // Process in batches to avoid overwhelming the DB
+        createdAt: { $lt: fifteenMinutesAgo }
+      }).limit(100).lean(); // Process in batches to avoid overwhelming the DB
 
       if (staleBookings.length === 0) {
         logger.info('[ReconciliationJob] No stale bookings found.');
@@ -39,12 +39,15 @@ export const initPaymentReconciliation = () => {
       let expiredCount = 0;
       for (const booking of staleBookings) {
         try {
-          booking.status = BOOKING_STATUS.CANCELLED;
-          booking.paymentStatus = PAYMENT_STATUS.PENDING;
-          booking.cancellationReason = 'payment_issue';
-          booking.cancellationNote = 'Auto-cancelled: payment not completed within 30 minutes';
-          booking.cancelledBy = null; // System cancellation
-          await booking.save();
+          await Booking.updateOne({ _id: booking._id }, {
+            $set: {
+              status: BOOKING_STATUS.CANCELLED,
+              paymentStatus: PAYMENT_STATUS.PENDING,
+              cancellationReason: 'payment_issue',
+              cancellationNote: 'Auto-cancelled: payment not completed within 15 minutes',
+              cancelledBy: null
+            }
+          });
           expiredCount++;
           logger.info(`[ReconciliationJob] Auto-cancelled booking ${booking._id} (order: ${booking.razorpayOrderId})`);
         } catch (err) {

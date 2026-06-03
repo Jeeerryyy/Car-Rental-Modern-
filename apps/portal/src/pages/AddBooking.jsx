@@ -13,7 +13,9 @@ export default function AddBooking() {
     booking: {
       carId: '',
       startDate: '',
+      pickupTime: '10:00',
       endDate: '',
+      returnTime: '10:00',
       paymentStatus: 'paid',
       notes: '',
       securityDeposit: '',
@@ -67,10 +69,22 @@ export default function AddBooking() {
       toast.error('Customer name is required');
       return;
     }
+
+    const startDateTime = new Date(`${formData.booking.startDate}T${formData.booking.pickupTime}`);
+    const endDateTime = new Date(`${formData.booking.endDate}T${formData.booking.returnTime}`);
+    if (endDateTime <= startDateTime) {
+      toast.error('Return date & time must be later than pickup date & time');
+      return;
+    }
     
     setLoading(true);
     try {
-      await createManualBooking({ customer: formData.customer, booking: formData.booking });
+      const bookingPayload = {
+        ...formData.booking,
+        startDate: `${formData.booking.startDate}T${formData.booking.pickupTime}`,
+        endDate: `${formData.booking.endDate}T${formData.booking.returnTime}`,
+      };
+      await createManualBooking({ customer: formData.customer, booking: bookingPayload });
       toast.success('Booking created');
       navigate('/bookings');
     } catch (err) {
@@ -162,9 +176,21 @@ export default function AddBooking() {
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" />
             </div>
             <div>
+              <label className="block text-sm font-semibold text-dark mb-2">Pickup Time *</label>
+              <input type="time" value={formData.booking.pickupTime} required
+                onChange={e => set('booking', { pickupTime: e.target.value })}
+                className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" />
+            </div>
+            <div>
               <label className="block text-sm font-semibold text-dark mb-2">End Date *</label>
               <input type="date" value={formData.booking.endDate} min={formData.booking.startDate || today} required
                 onChange={e => set('booking', { endDate: e.target.value })}
+                className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-dark mb-2">Return Time *</label>
+              <input type="time" value={formData.booking.returnTime} required
+                onChange={e => set('booking', { returnTime: e.target.value })}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" />
             </div>
           </div>

@@ -11,38 +11,49 @@ export const initBackupJob = () => {
     logger.info('[BackupJob] Starting daily Google Sheets backup...');
     
     try {
-      // 1. Fetch all bookings with relations
-      const bookings = await Booking.find()
+      // 1. Fetch all bookings with relations using cursor to prevent memory spikes
+      const bookingData = [];
+      const bookingCursor = Booking.find()
         .populate('car', 'make model registrationNumber fuelType')
         .populate('customer', 'name email phone')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean()
+        .cursor({ batchSize: 200 });
 
-      const bookingData = bookings.map(b => ({
-        'Booking ID': b._id.toString(),
-        'Date': new Date(b.createdAt).toLocaleDateString('en-IN'),
-        'Customer Name': b.customer?.name || 'N/A',
-        'Customer Phone': b.customer?.phone || 'N/A',
-        'Car Model': b.car ? `${b.car.make} ${b.car.model}` : 'N/A',
-        'Reg Number': b.car?.registrationNumber || 'N/A',
-        'Start Date': new Date(b.startDate).toLocaleDateString('en-IN'),
-        'End Date': new Date(b.endDate).toLocaleDateString('en-IN'),
-        'Total Price': b.totalPrice,
-        'Status': b.status,
-        'Payment': b.paymentStatus
-      }));
+      for (let doc = await bookingCursor.next(); doc != null; doc = await bookingCursor.next()) {
+        bookingData.push({
+          'Booking ID': doc._id.toString(),
+          'Date': new Date(doc.createdAt).toLocaleDateString('en-IN'),
+          'Customer Name': doc.customer?.name || 'N/A',
+          'Customer Phone': doc.customer?.phone || 'N/A',
+          'Car Model': doc.car ? `${doc.car.make} ${doc.car.model}` : 'N/A',
+          'Reg Number': doc.car?.registrationNumber || 'N/A',
+          'Start Date': new Date(doc.startDate).toLocaleDateString('en-IN'),
+          'End Date': new Date(doc.endDate).toLocaleDateString('en-IN'),
+          'Total Price': doc.totalPrice,
+          'Status': doc.status,
+          'Payment': doc.paymentStatus
+        });
+      }
 
-      // 2. Fetch all cars
-      const cars = await Car.find({ isDeleted: false });
-      const carData = cars.map(c => ({
-        'ID': c._id.toString(),
-        'Make': c.make,
-        'Model': c.model,
-        'Year': c.year,
-        'Reg Number': c.registrationNumber,
-        'Fuel': c.fuelType,
-        'Price/Day': c.pricePerDay,
-        'Status': c.isActive ? 'Active' : 'Inactive'
-      }));
+      // 2. Fetch all cars using cursor to prevent memory spikes
+      const carData = [];
+      const carCursor = Car.find({ isDeleted: false })
+        .lean()
+        .cursor({ batchSize: 200 });
+
+      for (let doc = await carCursor.next(); doc != null; doc = await carCursor.next()) {
+        carData.push({
+          'ID': doc._id.toString(),
+          'Make': doc.make,
+          'Model': doc.model,
+          'Year': doc.year,
+          'Reg Number': doc.registrationNumber,
+          'Fuel': doc.fuelType,
+          'Price/Day': doc.pricePerDay,
+          'Status': doc.isActive ? 'Active' : 'Inactive'
+        });
+      }
 
       // 3. Sync to Google Sheets (Different tabs)
       await syncToGoogleSheet('Backup_Bookings', bookingData);

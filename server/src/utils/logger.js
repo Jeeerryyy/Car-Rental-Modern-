@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const logDir = path.join(__dirname, '../../logs');
 
-if (!existsSync(logDir)) {
+if (process.env.NODE_ENV !== 'production' && !existsSync(logDir)) {
   mkdirSync(logDir, { recursive: true });
 }
 
@@ -57,17 +57,14 @@ const consoleFormat = printf(({ level, message, timestamp, stack, correlationId,
   return `${timestamp} [${level}]${tracePart}${correlationPart}: ${stack || message}`;
 });
 
-export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    errors({ stack: true }),
-    sanitizeFormat()
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: combine(colorize(), consoleFormat)
-    }),
+const transports = [
+  new winston.transports.Console({
+    format: combine(colorize(), consoleFormat)
+  })
+];
+
+if (process.env.NODE_ENV !== 'production') {
+  transports.push(
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
@@ -81,7 +78,17 @@ export const logger = winston.createLogger({
       maxFiles: 10,
       format: json()
     })
-  ]
+  );
+}
+
+export const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    errors({ stack: true }),
+    sanitizeFormat()
+  ),
+  transports
 });
 
 export default logger;

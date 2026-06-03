@@ -7,11 +7,22 @@ export const getAll = catchAsync(async (req, res) => {
   const filters = { category: req.query.category, type: req.query.type, minPrice: req.query.minPrice, maxPrice: req.query.maxPrice, search: req.query.search, fuelType: req.query.fuelType, transmission: req.query.transmission };
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
   const result = await getAllCars(filters, pagination);
-  return ApiResponse.success(res, 200, 'Cars retrieved', result.cars, result.pagination);
+  
+  const publicCars = result.cars.map(c => {
+    const { registrationNumber, ...rest } = c;
+    return rest;
+  });
+
+  return ApiResponse.success(res, 200, 'Cars retrieved', publicCars, result.pagination);
 });
 
 export const getOne = catchAsync(async (req, res) => {
   const car = await getCarById(req.params.id);
+  
+  if (!req.ownerId) {
+    delete car.registrationNumber;
+  }
+  
   return ApiResponse.success(res, 200, 'Car retrieved', { car });
 });
 

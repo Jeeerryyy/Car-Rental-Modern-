@@ -91,7 +91,7 @@ export default function BookingDetail() {
           contact: booking.phone || '',
         },
         theme: {
-          color: '#B67C3D',
+          color: '#A56A43',
         },
         handler: async (response) => {
           const toastId = toast.loading('Verifying payment signature...');
@@ -143,45 +143,45 @@ export default function BookingDetail() {
   };
 
   if (loading) return (
-    <div className="min-h-screen py-16 flex items-center justify-center" style={{ background: '#F9F8F3' }}>
-      <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(25,19,14,0.15)', borderTopColor: '#19130E' }}></div>
+    <div className="min-h-screen py-16 flex items-center justify-center" style={{ background: '#F4F1EA' }}>
+      <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(18,18,18,0.15)', borderTopColor: '#121212' }}></div>
     </div>
   );
 
   if (!booking) return (
-    <div className="min-h-screen py-20 px-6 text-center" style={{ background: '#F9F8F3' }}>
-      <h1 className="text-2xl font-bold mb-4" style={{ color: '#19130E' }}>Booking Not Found</h1>
-      <Link to="/my-bookings" className="text-sm font-bold underline" style={{ color: '#19130E' }}>Back to My Bookings</Link>
+    <div className="min-h-screen py-20 px-6 text-center" style={{ background: '#F4F1EA' }}>
+      <h1 className="text-2xl font-bold mb-4" style={{ color: '#121212' }}>Booking Not Found</h1>
+      <Link to="/my-bookings" className="text-sm font-bold underline" style={{ color: '#121212' }}>Back to My Bookings</Link>
     </div>
   );
 
   return (
-    <div className="min-h-screen pb-24 pt-32" style={{ background: '#F9F8F3' }}>
+    <div className="min-h-screen pb-24 pt-32" style={{ background: '#F4F1EA' }}>
       <SEO title={`${booking.car?.make} ${booking.car?.model} | Booking Details`} noIndex />
       
       <div className="max-w-4xl mx-auto px-6">
         <div className="flex items-center justify-between mb-10">
-          <Link to="/my-bookings" className="flex items-center gap-2 no-underline" style={{ color: '#6b5e50' }}>
+          <Link to="/my-bookings" className="flex items-center gap-2 no-underline" style={{ color: '#5C5C5C' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
             </svg>
             <span className="text-xs font-bold uppercase tracking-widest">Back</span>
           </Link>
           <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest"
-            style={booking.status === 'pending' ? { background: 'rgba(182,124,61,0.15)', color: '#8a6d2d' } :
-              booking.status === 'confirmed' ? { background: 'rgba(25,19,14,0.08)', color: '#19130E' } :
-              booking.status === 'active' ? { background: 'rgba(182,124,61,0.25)', color: '#7a5c24' } :
-              booking.status === 'completed' ? { background: '#EBE6DE', color: '#6b5e50' } :
-              { background: 'rgba(185,28,28,0.1)', color: '#b91c1c' }}>
+            style={booking.status === 'pending' ? { background: '#D6D0C7', color: '#9B6A3C' } :
+              booking.status === 'confirmed' ? { background: '#DDE8DE', color: '#121212' } :
+              booking.status === 'active' ? { background: '#DDE8DE', color: '#556B57' } :
+              booking.status === 'completed' ? { background: '#E7E0D4', color: '#5C5C5C' } :
+              { background: '#F0D9D6', color: '#9C4B45' }}>
             {booking.status}
           </span>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-10">
           <div className="lg:col-span-3 space-y-6">
-            <div className="rounded-[12px] p-8 overflow-hidden" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
+            <div className="rounded-[12px] p-8 overflow-hidden" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
               <div className="flex items-start gap-6 mb-10">
-                <div className="w-24 h-18 rounded-[8px] p-2 flex-shrink-0 overflow-hidden" style={{ background: '#EBE6DE', border: '1px solid rgba(182,124,61,0.1)' }}>
+                <div className="w-24 h-18 rounded-[8px] p-2 flex-shrink-0 overflow-hidden" style={{ background: '#E7E0D4', border: '1px solid rgba(182,124,61,0.1)' }}>
                   <img 
                     src={booking.car?.images?.[0]?.url || '/no-car-image.png'} 
                     alt="" 
@@ -189,47 +189,47 @@ export default function BookingDetail() {
                   />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold" style={{ color: '#19130E' }}>{booking.car?.make} {booking.car?.model}</h1>
-                  <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: '#6b5e50' }}>
-                    {booking.car?.category} · {booking.car?.transmission}
+                  <h1 className="text-2xl font-bold" style={{ color: '#121212' }}>{booking.car?.make} {booking.car?.model}</h1>
+                  <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: '#5C5C5C' }}>
+                    {booking.car?.category} · {booking.car?.transmission}{booking.car?.color ? ` · ${booking.car?.color}` : ''}
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 pt-8" style={{ borderTop: '1px solid rgba(182,124,61,0.15)' }}>
+              <div className="grid grid-cols-2 gap-8 pt-8" style={{ borderTop: '1px solid #D6D0C7' }}>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#6b5e50' }}>Pick-up Date</p>
-                  <p className="text-sm font-bold" style={{ color: '#19130E' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#5C5C5C' }}>Pick-up Date</p>
+                  <p className="text-sm font-bold" style={{ color: '#121212' }}>
                     {new Date(booking.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#6b5e50' }}>Drop-off Date</p>
-                  <p className="text-sm font-bold" style={{ color: '#19130E' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#5C5C5C' }}>Drop-off Date</p>
+                  <p className="text-sm font-bold" style={{ color: '#121212' }}>
                     {new Date(booking.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[12px] p-8" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: '#6b5e50' }}>Booking Information</h3>
+            <div className="rounded-[12px] p-8" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+              <h3 className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: '#5C5C5C' }}>Booking Information</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(182,124,61,0.1)' }}>
-                  <span className="text-xs" style={{ color: '#6b5e50' }}>Booking ID</span>
-                  <span className="text-xs font-mono" style={{ color: '#19130E' }}>#{booking._id}</span>
+                  <span className="text-xs" style={{ color: '#5C5C5C' }}>Booking ID</span>
+                  <span className="text-xs font-mono" style={{ color: '#121212' }}>#{booking._id}</span>
                 </div>
                 <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(182,124,61,0.1)' }}>
-                  <span className="text-xs" style={{ color: '#6b5e50' }}>Duration</span>
-                  <span className="text-xs font-bold" style={{ color: '#19130E' }}>{booking.totalDays || 1} Day(s)</span>
+                  <span className="text-xs" style={{ color: '#5C5C5C' }}>Duration</span>
+                  <span className="text-xs font-bold" style={{ color: '#121212' }}>{booking.totalDays || 1} Day(s)</span>
                 </div>
                 <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(182,124,61,0.1)' }}>
-                  <span className="text-xs" style={{ color: '#6b5e50' }}>Payment Status</span>
-                  <span className="text-xs font-bold capitalize" style={{ color: '#19130E' }}>{booking.paymentStatus}</span>
+                  <span className="text-xs" style={{ color: '#5C5C5C' }}>Payment Status</span>
+                  <span className="text-xs font-bold capitalize" style={{ color: '#121212' }}>{booking.paymentStatus}</span>
                 </div>
                 {booking.promoCode && (
                   <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(182,124,61,0.1)' }}>
-                    <span className="text-xs" style={{ color: '#6b5e50' }}>Promo Applied</span>
+                    <span className="text-xs" style={{ color: '#5C5C5C' }}>Promo Applied</span>
                     <span className="text-xs font-bold text-green-600 uppercase">{booking.promoCode}</span>
                   </div>
                 )}
@@ -238,12 +238,12 @@ export default function BookingDetail() {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-[12px] p-8" style={{ background: '#FFFFFF', border: '1px solid rgba(25,19,14,0.08)', boxShadow: 'var(--shadow-sm)' }}>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-6" style={{ color: '#6b5e50' }}>Payment Summary</h3>
+            <div className="rounded-[12px] p-8" style={{ background: '#FFFFFF', border: '1px solid #DDE8DE', boxShadow: 'var(--shadow-sm)' }}>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-6" style={{ color: '#5C5C5C' }}>Payment Summary</h3>
               <div className="space-y-3 mb-8">
-                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between text-xs" style={{ color: '#5C5C5C' }}>
                   <span>Subtotal</span>
-                  <span className="font-bold" style={{ color: '#19130E' }}>₹{(booking.totalPrice + (booking.discountAmount || 0)).toLocaleString('en-IN')}</span>
+                  <span className="font-bold" style={{ color: '#121212' }}>₹{(booking.totalPrice + (booking.discountAmount || 0)).toLocaleString('en-IN')}</span>
                 </div>
                 {booking.discountAmount > 0 && (
                   <div className="flex justify-between text-xs text-green-600">
@@ -251,15 +251,15 @@ export default function BookingDetail() {
                     <span>-₹{booking.discountAmount.toLocaleString('en-IN')}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between text-xs" style={{ color: '#5C5C5C' }}>
                   <span>Security Deposit</span>
-                  <span className="font-bold" style={{ color: '#19130E' }}>₹{Number(booking.securityDeposit || 500).toLocaleString('en-IN')}</span>
+                  <span className="font-bold" style={{ color: '#121212' }}>₹{Number(booking.securityDeposit || 500).toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between text-xs" style={{ color: '#5C5C5C' }}>
                   <span>Paid Amount</span>
-                  <span className="font-bold" style={{ color: '#19130E' }}>₹{Number(booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)).toLocaleString('en-IN')}</span>
+                  <span className="font-bold" style={{ color: '#121212' }}>₹{Number(booking.amountPaid || (booking.paymentStatus === 'paid' ? 500 : 0)).toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between text-xs" style={{ color: '#6b5e50' }}>
+                <div className="flex justify-between text-xs" style={{ color: '#5C5C5C' }}>
                   <span>Remaining Payable</span>
                   <span className="font-bold text-primary">
                     ₹{Number(
@@ -269,9 +269,9 @@ export default function BookingDetail() {
                     ).toLocaleString('en-IN')}
                   </span>
                 </div>
-                <div className="pt-4 border-t flex justify-between items-end" style={{ borderColor: 'rgba(182,124,61,0.15)' }}>
-                  <span className="text-sm font-bold" style={{ color: '#19130E' }}>Total Rent</span>
-                  <span className="text-2xl font-display font-bold tracking-tight" style={{ color: '#19130E' }}>₹{booking.totalPrice.toLocaleString('en-IN')}</span>
+                <div className="pt-4 border-t flex justify-between items-end" style={{ borderColor: '#D6D0C7' }}>
+                  <span className="text-sm font-bold" style={{ color: '#121212' }}>Total Rent</span>
+                  <span className="text-2xl font-display font-bold tracking-tight" style={{ color: '#121212' }}>₹{booking.totalPrice.toLocaleString('en-IN')}</span>
                 </div>
               </div>
               
@@ -280,7 +280,7 @@ export default function BookingDetail() {
                   onClick={handlePayment}
                   disabled={paymentLoading}
                   className="w-full mt-4 py-4 text-xs font-bold rounded-[8px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
-                  style={{ background: '#B67C3D', color: '#19130E' }}
+                  style={{ background: '#A56A43', color: '#121212' }}
                 >
                   {paymentLoading ? (
                     <>
@@ -316,37 +316,45 @@ export default function BookingDetail() {
                     toast.error(err.response?.data?.message || 'Failed to load invoice');
                   }
                 }}
-                className="w-full py-4 text-xs font-bold rounded-[8px] flex items-center justify-center gap-2"
-                style={{ background: '#19130E', color: '#F9F8F3' }}
+                className="w-full cursor-pointer group relative flex gap-1.5 px-8 py-4 bg-black bg-opacity-80 text-[#f1f1f1] rounded-3xl hover:bg-opacity-70 transition font-semibold shadow-md items-center justify-center"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="20px" width="20px">
+                  <g strokeWidth="0" id="SVGRepo_bgCarrier" />
+                  <g strokeLinejoin="round" strokeLinecap="round" id="SVGRepo_tracerCarrier" />
+                  <g id="SVGRepo_iconCarrier">
+                    <g id="Interface / Download">
+                      <path strokeLinejoin="round" strokeLinecap="round" strokeWidth="2" stroke="#f1f1f1" d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12" id="Vector" />
+                    </g>
+                  </g>
                 </svg>
                 Download Invoice
+                <div className="absolute opacity-0 -bottom-full rounded-md py-2 px-2 bg-black bg-opacity-70 left-1/2 -translate-x-1/2 group-hover:opacity-100 transition-opacity shadow-lg text-[10px] pointer-events-none whitespace-nowrap">
+                  Download Invoice
+                </div>
               </button>
             )}
 
             {booking.status === 'cancelled' && (booking.cancelledBy || booking.cancellationReason) && (
               <div className="rounded-[12px] p-6" style={{ background: 'rgba(185,28,28,0.05)', border: '1px solid rgba(185,28,28,0.15)' }}>
-                <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#b91c1c' }}>Cancellation Details</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#9C4B45' }}>Cancellation Details</h3>
                 <div className="space-y-3">
                   {booking.cancelledBy && (
                     <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: '#6b5e50' }}>Cancelled By</span>
-                      <span className="text-xs font-bold capitalize" style={{ color: '#b91c1c' }}>{booking.cancelledBy}</span>
+                      <span className="text-xs" style={{ color: '#5C5C5C' }}>Cancelled By</span>
+                      <span className="text-xs font-bold capitalize" style={{ color: '#9C4B45' }}>{booking.cancelledBy}</span>
                     </div>
                   )}
                   {booking.cancellationReason && (
                     <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: '#6b5e50' }}>Reason</span>
-                      <span className="text-xs font-bold" style={{ color: '#19130E' }}>
+                      <span className="text-xs" style={{ color: '#5C5C5C' }}>Reason</span>
+                      <span className="text-xs font-bold" style={{ color: '#121212' }}>
                         {{ invalid_documents: 'Invalid Documents', vehicle_not_available: 'Vehicle Not Available', customer_no_show: 'Customer No-Show', payment_issue: 'Payment Issue', other: 'Other' }[booking.cancellationReason] || booking.cancellationReason}
                       </span>
                     </div>
                   )}
                   {booking.cancellationNote && (
-                    <div className="pt-3" style={{ borderTop: '1px solid rgba(185,28,28,0.1)' }}>
-                      <p className="text-xs italic" style={{ color: '#6b5e50' }}>"{booking.cancellationNote}"</p>
+                    <div className="pt-3" style={{ borderTop: '1px solid #F0D9D6' }}>
+                      <p className="text-xs italic" style={{ color: '#5C5C5C' }}>"{booking.cancellationNote}"</p>
                     </div>
                   )}
                 </div>
@@ -357,15 +365,15 @@ export default function BookingDetail() {
               <button
                 onClick={handleCancel}
                 className="w-full py-4 text-xs font-bold rounded-[8px]"
-                style={{ color: '#b91c1c', border: '1px solid rgba(185,28,28,0.15)' }}
+                style={{ color: '#9C4B45', border: '1px solid rgba(185,28,28,0.15)' }}
               >
                 Cancel Booking
               </button>
             )}
 
-            <div className="rounded-[12px] p-6 text-center" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-              <p className="text-xs leading-relaxed" style={{ color: '#6b5e50' }}>
-                Need support? <br /> Call us at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#19130E' }}>+91 90044 60634</a>
+            <div className="rounded-[12px] p-6 text-center" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+              <p className="text-xs leading-relaxed" style={{ color: '#5C5C5C' }}>
+                Need support? <br /> Call us at <a href="tel:+919004460634" className="font-bold underline" style={{ color: '#121212' }}>+91 90044 60634</a> / <a href="tel:+918469265000" className="font-bold underline" style={{ color: '#121212' }}>+91 8469265000</a>
               </p>
             </div>
           </div>

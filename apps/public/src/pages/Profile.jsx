@@ -30,54 +30,54 @@ export default function Profile() {
     finally { setLoading(false); }
   };
 
-  const inputStyle = { background: '#F2EEE5', color: '#19130E', border: '1px solid rgba(182,124,61,0.15)' };
-  const readonlyStyle = { background: '#EBE6DE', color: '#19130E', border: '1px solid rgba(182,124,61,0.1)', cursor: 'not-allowed' };
+  const inputStyle = { background: '#E7E0D4', color: '#121212', border: '1px solid #D6D0C7' };
+  const readonlyStyle = { background: '#E7E0D4', color: '#121212', border: '1px solid rgba(182,124,61,0.1)', cursor: 'not-allowed' };
 
   return (
-    <div className="min-h-screen py-20 px-6" style={{ background: '#F9F8F3' }}>
+    <div className="min-h-screen py-20 px-6" style={{ background: '#F4F1EA' }}>
       <div className="max-w-[800px] mx-auto">
-        <div className="rounded-[12px] p-8 mb-8" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-          <h1 className="font-display text-3xl font-bold mb-8" style={{ color: '#19130E' }}>My Profile</h1>
+        <div className="rounded-[12px] p-8 mb-8" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+          <h1 className="font-display text-3xl font-bold mb-8" style={{ color: '#121212' }}>My Profile</h1>
           <form onSubmit={handleUpdateProfile} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>Full Name</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>Full Name</label>
               <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 className="w-full px-4 py-3 rounded-[8px] font-medium outline-none" style={inputStyle} />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>Email</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>Email</label>
               <input type="email" value={customer.email} readOnly className="w-full px-4 py-3 rounded-[8px] font-medium" style={readonlyStyle} />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>Phone</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>Phone</label>
               <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
                 className="w-full px-4 py-3 rounded-[8px] font-medium outline-none" style={inputStyle} />
             </div>
-            <button type="submit" disabled={loading} className="px-8 py-3 rounded-[8px] font-bold disabled:opacity-50" style={{ background: '#19130E', color: '#FFFFFF' }}>
+            <button type="submit" disabled={loading} className="px-8 py-3 rounded-[8px] font-bold disabled:opacity-50" style={{ background: '#121212', color: '#FFFFFF' }}>
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
         </div>
 
-        <div className="rounded-[12px] p-8" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-          <h2 className="font-display text-2xl font-bold mb-6" style={{ color: '#19130E' }}>Change Password</h2>
+        <div className="rounded-[12px] p-8" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+          <h2 className="font-display text-2xl font-bold mb-6" style={{ color: '#121212' }}>Change Password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>Current Password</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>Current Password</label>
               <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
                 className="w-full px-4 py-3 rounded-[8px] font-medium outline-none" style={inputStyle} />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>New Password</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>New Password</label>
               <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
                 className="w-full px-4 py-3 rounded-[8px] font-medium outline-none" style={inputStyle} />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#19130E' }}>Confirm New Password</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#121212' }}>Confirm New Password</label>
               <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
                 className="w-full px-4 py-3 rounded-[8px] font-medium outline-none" style={inputStyle} />
             </div>
-            <button type="submit" disabled={loading} className="px-8 py-3 rounded-[8px] font-bold disabled:opacity-50" style={{ background: '#19130E', color: '#FFFFFF' }}>
+            <button type="submit" disabled={loading} className="px-8 py-3 rounded-[8px] font-bold disabled:opacity-50" style={{ background: '#121212', color: '#FFFFFF' }}>
               {loading ? 'Changing...' : 'Change Password'}
             </button>
           </form>

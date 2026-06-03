@@ -15,6 +15,15 @@ const CANCELLATION_REASONS = [
 ];
 
 export default function Bookings() {
+  const formatUTCDate = (dateString) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -171,7 +180,7 @@ export default function Bookings() {
 
 
   return (
-    <div className="p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-8 pb-24 md:pb-6 relative">
+    <div className="p-4 sm:p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-6 sm:gap-8 pb-24 md:pb-6 relative w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
@@ -180,10 +189,10 @@ export default function Bookings() {
 
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex flex-wrap items-center gap-2 w-full pb-2">
         {STATUS_OPTIONS.map(s => (
           <button key={s} onClick={() => { setFilter(s); setPage(1); }}
-            className={`whitespace-nowrap flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold capitalize transition-colors ${filter === s ? 'bg-dark text-white' : 'bg-surface hover:bg-surface-tint border border-outline-variant/50'}`}>
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold capitalize transition-all ${filter === s ? 'bg-dark text-white shadow-sm' : 'bg-surface hover:bg-surface-tint border border-outline-variant/50'}`}>
             {s === 'all' ? 'All' : s}
           </button>
         ))}
@@ -196,50 +205,50 @@ export default function Bookings() {
           <p className="text-on-surface-variant">No bookings found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4 w-full max-w-full min-w-0">
           {bookings.map(b => (
             <div 
               key={b._id} 
               onClick={() => setSelectedBooking(b)}
-              className="p-5 bg-surface-container-lowest border border-outline-variant rounded-2xl cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden"
+              className="p-4 sm:p-5 bg-surface-container-lowest border border-outline-variant rounded-2xl cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden w-full max-w-full min-w-0"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <p className="font-bold text-on-surface text-lg group-hover:text-primary transition-colors truncate">{b.customer?.name || 'Customer'}</p>
-                    <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full ${statusColors[b.status] || 'bg-gray-100'}`}>{b.status}</span>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full min-w-0">
+                <div className="flex-1 min-w-0 w-full overflow-hidden">
+                  <div className="flex items-center justify-between lg:justify-start gap-3 mb-2 w-full min-w-0">
+                    <p className="font-bold text-on-surface text-base sm:text-lg group-hover:text-primary transition-colors truncate min-w-0 flex-1 lg:flex-none">{b.customer?.name || 'Customer'}</p>
+                    <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shrink-0 ${statusColors[b.status] || 'bg-gray-100'}`}>{b.status}</span>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 w-full min-w-0">
                     <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
                       <span className="material-symbols-outlined text-[14px] shrink-0">mail</span>
-                      <span className="truncate break-all">{b.customer?.email}</span>
+                      <span className="truncate break-all min-w-0">{b.customer?.email}</span>
                     </p>
                     <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
                       <span className="material-symbols-outlined text-[14px] shrink-0">call</span>
-                      <span className="truncate">{b.phone || b.customer?.phone || 'Not Provided'}</span>
+                      <span className="truncate min-w-0">{b.phone || b.customer?.phone || 'Not Provided'}</span>
                     </p>
-                    <p className="text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-on-surface">{b.car?.make} {b.car?.model}</span>
-                      <span className="opacity-50">·</span>
-                      <span className="bg-surface-container px-2 py-0.5 rounded text-[11px] font-bold">
-                        {b.startDate ? new Date(b.startDate).toLocaleDateString() : 'N/A'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : 'N/A'}
+                    <p className="text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2 w-full min-w-0">
+                      <span className="font-bold text-on-surface truncate min-w-0 max-w-full">{b.car?.make} {b.car?.model}</span>
+                      <span className="opacity-50 shrink-0">·</span>
+                      <span className="bg-surface-container px-2 py-0.5 rounded text-[11px] font-bold shrink-0">
+                        {b.startDate ? formatUTCDate(b.startDate) : 'N/A'} – {b.endDate ? formatUTCDate(b.endDate) : 'N/A'}
                       </span>
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-0 border-outline-variant">
-                  <div className="text-left sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end w-full sm:w-auto">
-                    <p className="font-black text-xl text-primary">₹{Number(b.totalPrice).toLocaleString('en-IN')}</p>
-                    <p className={`text-[10px] font-bold uppercase tracking-wider ${b.paymentStatus === 'paid' ? 'text-green-600' : b.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b.paymentStatus}</p>
+                <div className="flex flex-col sm:flex-row lg:flex-row sm:items-center justify-between sm:justify-end gap-4 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-0 border-outline-variant min-w-0">
+                  <div className="text-left sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end w-full sm:w-auto min-w-0 shrink-0 gap-2">
+                    <p className="font-black text-xl text-primary shrink-0">₹{Number(b.totalPrice).toLocaleString('en-IN')}</p>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${b.paymentStatus === 'paid' ? 'text-green-600' : b.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b.paymentStatus}</p>
                   </div>
                   {nextStatus[b.status] ? (
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end min-w-0">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           openCancelModal(b._id, b.customer?.name);
                         }}
-                        className="flex-1 sm:flex-none px-4 py-3 text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95"
+                        className="w-full sm:w-auto px-4 py-2.5 text-xs sm:text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95 text-center shrink-0"
                       >
                         Cancel
                       </button>
@@ -248,13 +257,13 @@ export default function Bookings() {
                           e.stopPropagation();
                           handleStatusChange(b._id, nextStatus[b.status]);
                         }}
-                        className="flex-1 sm:flex-none px-6 py-3 text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10"
+                        className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10 text-center shrink-0 capitalize"
                       >
                         {nextStatus[b.status]}
                       </button>
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary self-end sm:self-auto">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary self-end sm:self-auto shrink-0">
                       <span className="material-symbols-outlined">chevron_right</span>
                     </div>
                   )}
@@ -269,54 +278,54 @@ export default function Bookings() {
       {selectedBooking && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedBooking(null)} />
-          <div className="relative w-full md:max-w-2xl bg-surface-container-lowest h-full shadow-2xl flex flex-col border-l border-outline-variant animate-in slide-in-from-right duration-300">
-            <div className="px-6 py-4 md:px-8 md:py-6 border-b border-outline-variant flex items-center justify-between bg-surface-container-low sticky top-0 z-20">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl md:text-2xl font-bold text-primary">Booking Details</h3>
-                  <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${statusColors[selectedBooking.status] || 'bg-gray-100'}`}>
+          <div className="relative w-full md:max-w-xl lg:max-w-2xl bg-surface-container-lowest h-full shadow-2xl flex flex-col border-l border-outline-variant animate-in slide-in-from-right duration-300 max-w-full overflow-hidden">
+            <div className="px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-outline-variant flex items-center justify-between bg-surface-container-low sticky top-0 z-20 w-full">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="text-xl md:text-2xl font-bold text-primary truncate">Booking Details</h3>
+                  <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full shrink-0 ${statusColors[selectedBooking.status] || 'bg-gray-100'}`}>
                     {selectedBooking.status}
                   </span>
                 </div>
-                <p className="text-secondary text-[10px] md:text-sm mt-1">ID: {selectedBooking._id}</p>
+                <p className="text-secondary text-[10px] md:text-sm mt-1 truncate">ID: {selectedBooking._id}</p>
               </div>
-              <button onClick={() => setSelectedBooking(null)} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+              <button onClick={() => setSelectedBooking(null)} className="p-2 hover:bg-surface-container rounded-full transition-colors shrink-0">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-10">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-8 md:space-y-10 w-full min-w-0">
               {/* Customer Section */}
-              <section>
-                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2">
-                  <span className="material-symbols-outlined text-primary">person</span>
-                  <h4 className="font-bold text-lg uppercase tracking-wider">Customer Information</h4>
+              <section className="w-full min-w-0">
+                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2 w-full min-w-0">
+                  <span className="material-symbols-outlined text-primary shrink-0">person</span>
+                  <h4 className="font-bold text-lg uppercase tracking-wider truncate">Customer Information</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-                  <div>
-                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Name</p>
-                    <p className="text-lg font-bold">{selectedBooking.customer?.name}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1 truncate">Name</p>
+                    <p className="text-base sm:text-lg font-bold truncate">{selectedBooking.customer?.name}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Phone</p>
-                    <p className="text-lg font-bold">{selectedBooking.phone || selectedBooking.customer?.phone || 'Not Provided'}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1 truncate">Phone</p>
+                    <p className="text-base sm:text-lg font-bold truncate">{selectedBooking.phone || selectedBooking.customer?.phone || 'Not Provided'}</p>
                   </div>
-                  <div className="col-span-1 sm:col-span-2">
-                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1">Email</p>
-                    <p className="text-lg font-bold break-all">{selectedBooking.customer?.email}</p>
+                  <div className="col-span-1 sm:col-span-2 min-w-0">
+                    <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-1 truncate">Email</p>
+                    <p className="text-base sm:text-lg font-bold break-all">{selectedBooking.customer?.email}</p>
                   </div>
                 </div>
 
                 {/* Documents & Signature */}
                 {(selectedBooking.documents?.aadhaar?.front?.url || selectedBooking.customer?.documents?.aadhaar?.front?.url || selectedBooking.signature?.url) && (
-                  <div className="mt-8 space-y-8">
-                    <div>
-                      <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Verification Documents</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-8 space-y-8 w-full min-w-0">
+                    <div className="w-full min-w-0">
+                      <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4 truncate">Verification Documents</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full min-w-0">
                         {(selectedBooking.documents?.aadhaar?.front?.url || selectedBooking.customer?.documents?.aadhaar?.front?.url) && (
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Aadhaar Card</p>
-                            <div className="flex gap-2">
+                          <div className="space-y-2 w-full min-w-0">
+                            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest truncate">Aadhaar Card</p>
+                            <div className="grid grid-cols-2 gap-2 w-full">
                               {/* Front */}
                               <a href={selectedBooking.documents?.aadhaar?.front?.url || selectedBooking.customer?.documents?.aadhaar?.front?.url} target="_blank" rel="noreferrer" className="block w-full h-24 bg-surface rounded-lg border border-outline-variant overflow-hidden hover:border-primary transition-colors">
                                 <img src={selectedBooking.documents?.aadhaar?.front?.url || selectedBooking.customer?.documents?.aadhaar?.front?.url} className="w-full h-full object-cover" alt="Aadhaar Front" />
@@ -331,9 +340,9 @@ export default function Bookings() {
                           </div>
                         )}
                         {(selectedBooking.documents?.license?.front?.url || selectedBooking.customer?.documents?.license?.front?.url) && (
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Driving License</p>
-                            <div className="flex gap-2">
+                          <div className="space-y-2 w-full min-w-0">
+                            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest truncate">Driving License</p>
+                            <div className="grid grid-cols-2 gap-2 w-full">
                               {/* Front */}
                               <a href={selectedBooking.documents?.license?.front?.url || selectedBooking.customer?.documents?.license?.front?.url} target="_blank" rel="noreferrer" className="block w-full h-24 bg-surface rounded-lg border border-outline-variant overflow-hidden hover:border-primary transition-colors">
                                 <img src={selectedBooking.documents?.license?.front?.url || selectedBooking.customer?.documents?.license?.front?.url} className="w-full h-full object-cover" alt="License Front" />
@@ -351,9 +360,9 @@ export default function Bookings() {
                     </div>
 
                     {selectedBooking.signature?.url && (
-                      <div>
-                        <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4">Digital Signature</p>
-                        <div className="bg-surface-container p-4 rounded-xl border border-outline-variant inline-block w-full sm:w-auto overflow-x-auto">
+                      <div className="w-full min-w-0">
+                        <p className="text-xs font-bold text-secondary uppercase tracking-widest mb-4 truncate">Digital Signature</p>
+                        <div className="bg-surface-container p-4 rounded-xl border border-outline-variant inline-block w-full sm:w-auto max-w-full overflow-x-auto">
                           <img src={selectedBooking.signature.url} className="h-20 w-auto opacity-80" alt="Signature" />
                         </div>
                       </div>
@@ -362,17 +371,17 @@ export default function Bookings() {
                 )}
 
                 {/* Owner Verification Documents (Pickup) */}
-                <div className="mt-10 pt-8 border-t border-outline-variant">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                    <div>
-                      <h4 className="font-bold text-lg text-primary flex items-center gap-2">
-                        <span className="material-symbols-outlined">verified_user</span>
+                <div className="mt-10 pt-8 border-t border-outline-variant w-full min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 w-full min-w-0">
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-lg text-primary flex items-center gap-2 truncate">
+                        <span className="material-symbols-outlined shrink-0">verified_user</span>
                         Pickup Verification
                       </h4>
-                      <p className="text-xs text-on-surface-variant">Owner-uploaded documents for customer pickup</p>
+                      <p className="text-xs text-on-surface-variant truncate">Owner-uploaded documents for customer pickup</p>
                     </div>
                     {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'active') && (
-                      <label className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
+                      <label className="cursor-pointer bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 w-full sm:w-auto shrink-0">
                         <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
                         Upload Photos
                         <input type="file" multiple accept="image/*" onChange={handleDocUpload} className="hidden" disabled={uploadingDocs} />
@@ -380,10 +389,10 @@ export default function Bookings() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-full min-w-0">
                     {/* Existing Owner Documents */}
                     {selectedBooking.ownerVerification?.documents?.map((doc, idx) => (
-                      <div key={idx} className="relative aspect-square bg-surface rounded-xl border border-outline-variant overflow-hidden group">
+                      <div key={idx} className="relative aspect-square bg-surface rounded-xl border border-outline-variant overflow-hidden group min-w-0">
 
                         <img src={doc.url} className="w-full h-full object-cover" alt={`Verification ${idx + 1}`} />
                         <a href={doc.url} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -394,7 +403,7 @@ export default function Bookings() {
 
                     {/* Previews (Uploading) */}
                     {uploadingDocs && docPreviews.map((url, idx) => (
-                      <div key={`preview-${idx}`} className="relative aspect-square bg-surface rounded-xl border border-primary/50 overflow-hidden animate-pulse">
+                      <div key={`preview-${idx}`} className="relative aspect-square bg-surface rounded-xl border border-primary/50 overflow-hidden animate-pulse min-w-0">
                         <img src={url} className="w-full h-full object-cover opacity-50" alt="Uploading..." />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -415,13 +424,13 @@ export default function Bookings() {
 
 
               {/* Vehicle Section */}
-              <section>
-                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2">
-                  <span className="material-symbols-outlined text-primary">directions_car</span>
-                  <h4 className="font-bold text-lg uppercase tracking-wider">Vehicle Details</h4>
+              <section className="w-full min-w-0">
+                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2 w-full min-w-0">
+                  <span className="material-symbols-outlined text-primary shrink-0">directions_car</span>
+                  <h4 className="font-bold text-lg uppercase tracking-wider truncate">Vehicle Details</h4>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                  <div className="w-full sm:w-32 h-40 sm:h-24 bg-surface rounded-xl border border-outline-variant overflow-hidden flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full min-w-0">
+                  <div className="w-full sm:w-32 h-40 sm:h-24 bg-surface rounded-xl border border-outline-variant overflow-hidden flex-shrink-0 max-w-full">
                     {selectedBooking.car?.images?.[0]?.url ? (
                       <img src={selectedBooking.car.images[0].url} className="w-full h-full object-cover" alt="" />
                     ) : (
@@ -430,27 +439,27 @@ export default function Bookings() {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h5 className="text-xl font-bold">{selectedBooking.car?.make} {selectedBooking.car?.model}</h5>
-                    <p className="text-secondary font-medium">Rental Period: {new Date(selectedBooking.startDate).toLocaleDateString()} to {new Date(selectedBooking.endDate).toLocaleDateString()}</p>
+                  <div className="min-w-0 flex-1">
+                    <h5 className="text-xl font-bold truncate">{selectedBooking.car?.make} {selectedBooking.car?.model}</h5>
+                    <p className="text-secondary font-medium text-sm sm:text-base truncate">Rental Period: {formatUTCDate(selectedBooking.startDate)} to {formatUTCDate(selectedBooking.endDate)}</p>
                   </div>
                 </div>
               </section>
 
               {/* Financial Section */}
-              <section>
-                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2">
-                  <span className="material-symbols-outlined text-primary">payments</span>
-                  <h4 className="font-bold text-lg uppercase tracking-wider">Payment Summary</h4>
+              <section className="w-full min-w-0">
+                <div className="flex items-center gap-2 mb-6 border-b border-outline-variant pb-2 w-full min-w-0">
+                  <span className="material-symbols-outlined text-primary shrink-0">payments</span>
+                  <h4 className="font-bold text-lg uppercase tracking-wider truncate">Payment Summary</h4>
                 </div>
-                <div className="bg-surface-container-low p-6 rounded-2xl space-y-4">
-                  <div className="flex justify-between items-center text-secondary">
-                    <span>Rental Duration</span>
-                    <span className="font-bold text-on-surface">{selectedBooking.totalDays} Days</span>
+                <div className="bg-surface-container-low p-4 sm:p-6 rounded-2xl space-y-4 w-full min-w-0">
+                  <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                    <span className="truncate">Rental Duration</span>
+                    <span className="font-bold text-on-surface shrink-0">{selectedBooking.totalDays} Days</span>
                   </div>
-                  <div className="flex justify-between items-center text-secondary">
-                    <span>Payment Status</span>
-                    <span className={`font-bold uppercase tracking-widest text-[10px] px-3 py-1 rounded-full ${
+                  <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                    <span className="truncate">Payment Status</span>
+                    <span className={`font-bold uppercase tracking-widest text-[10px] px-3 py-1 rounded-full shrink-0 ${
                       selectedBooking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
                       selectedBooking.paymentStatus === 'pay_at_car' ? 'bg-blue-100 text-blue-700' :
                       'bg-yellow-100 text-yellow-700'
@@ -459,53 +468,53 @@ export default function Bookings() {
                     </span>
                   </div>
                   {selectedBooking.promoCode && (
-                    <div className="flex justify-between items-center text-secondary">
-                      <span>Promo Applied</span>
-                      <span className="font-bold text-green-600">{selectedBooking.promoCode} ({selectedBooking.discountAmount > 0 ? `-₹${selectedBooking.discountAmount}` : ''})</span>
+                    <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                      <span className="truncate">Promo Applied</span>
+                      <span className="font-bold text-green-600 shrink-0">{selectedBooking.promoCode} ({selectedBooking.discountAmount > 0 ? `-₹${selectedBooking.discountAmount}` : ''})</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-secondary">
-                    <span>Security Deposit</span>
-                    <span className="font-bold text-on-surface">₹{Number(selectedBooking.securityDeposit || 0).toLocaleString('en-IN')}</span>
+                  <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                    <span className="truncate">Security Deposit</span>
+                    <span className="font-bold text-on-surface shrink-0">₹{Number(selectedBooking.securityDeposit || 0).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between items-center text-secondary">
-                    <span>Paid Amount</span>
-                    <span className="font-bold text-on-surface">₹{Number(selectedBooking.amountPaid || 0).toLocaleString('en-IN')}</span>
+                  <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                    <span className="truncate">Paid Amount</span>
+                    <span className="font-bold text-on-surface shrink-0">₹{Number(selectedBooking.amountPaid || 0).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between items-center text-secondary">
-                    <span>Remaining Amount</span>
-                    <span className="font-bold text-primary">₹{Number(Math.max(0, (selectedBooking.amountPaid || 0) >= (selectedBooking.securityDeposit || 0) ? (selectedBooking.totalPrice - (selectedBooking.amountPaid || 0)) : (selectedBooking.totalPrice + (selectedBooking.securityDeposit || 0) - (selectedBooking.amountPaid || 0)))).toLocaleString('en-IN')}</span>
+                  <div className="flex justify-between items-center text-secondary gap-2 min-w-0">
+                    <span className="truncate">Remaining Amount</span>
+                    <span className="font-bold text-primary shrink-0">₹{Number(Math.max(0, (selectedBooking.amountPaid || 0) >= (selectedBooking.securityDeposit || 0) ? (selectedBooking.totalPrice - (selectedBooking.amountPaid || 0)) : (selectedBooking.totalPrice + (selectedBooking.securityDeposit || 0) - (selectedBooking.amountPaid || 0)))).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="pt-4 border-t border-outline-variant flex justify-between items-center mb-4">
-                    <span className="font-bold text-lg">Total Amount</span>
-                    <span className="font-black text-2xl text-primary">₹{Number(selectedBooking.totalPrice).toLocaleString('en-IN')}</span>
+                  <div className="pt-4 border-t border-outline-variant flex justify-between items-center mb-4 gap-2 min-w-0">
+                    <span className="font-bold text-lg truncate">Total Amount</span>
+                    <span className="font-black text-2xl text-primary shrink-0">₹{Number(selectedBooking.totalPrice).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </section>
 
               {/* Notes Section */}
               {(selectedBooking.notes || selectedBooking.promoCode) && (
-                <section>
-                  <div className="flex items-center gap-2 mb-4 border-b border-outline-variant pb-2">
-                    <span className="material-symbols-outlined text-primary">notes</span>
-                    <h4 className="font-bold text-lg uppercase tracking-wider">Additional Info</h4>
+                <section className="w-full min-w-0">
+                  <div className="flex items-center gap-2 mb-4 border-b border-outline-variant pb-2 w-full min-w-0">
+                    <span className="material-symbols-outlined text-primary shrink-0">notes</span>
+                    <h4 className="font-bold text-lg uppercase tracking-wider truncate">Additional Info</h4>
                   </div>
                   {selectedBooking.notes && (
-                    <div className="bg-surface-container-high/50 p-4 rounded-xl italic text-on-surface-variant mb-4">
+                    <div className="bg-surface-container-high/50 p-4 rounded-xl italic text-on-surface-variant mb-4 break-words w-full overflow-hidden">
                       "{selectedBooking.notes}"
                     </div>
                   )}
                   {selectedBooking.promoCode && (
-                    <div className="flex items-center gap-2 text-primary font-bold">
-                      <span className="material-symbols-outlined text-sm">sell</span>
-                      <span>Promo Used: {selectedBooking.promoCode}</span>
+                    <div className="flex items-center gap-2 text-primary font-bold w-full min-w-0">
+                      <span className="material-symbols-outlined text-sm shrink-0">sell</span>
+                      <span className="truncate">Promo Used: {selectedBooking.promoCode}</span>
                     </div>
                   )}
                 </section>
               )}
             </div>
 
-            <div className="p-6 pb-12 md:pb-8 border-t border-outline-variant bg-surface-container-low flex flex-col gap-4">
+            <div className="p-4 sm:p-6 pb-10 border-t border-outline-variant bg-surface-container-low flex flex-col gap-3 sm:gap-4 w-full">
               {/* Download Invoice Button */}
               {['confirmed', 'active', 'completed'].includes(selectedBooking.status) && (
                 <button
@@ -523,40 +532,38 @@ export default function Bookings() {
                       toast.error(err.response?.data?.message || 'Failed to load invoice');
                     }
                   }}
-                  className="w-full py-3.5 bg-[#19130E] text-white rounded-xl font-bold text-sm shadow-lg shadow-black/10 hover:bg-black/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#141414] text-white rounded-btn font-bold text-sm shadow-lg shadow-black/10 hover:bg-[#A56A43] transition-all active:scale-[0.98] flex items-center justify-center gap-2 px-4 text-center shrink-0"
                 >
                   <span className="material-symbols-outlined text-[20px]">receipt_long</span>
                   Download Invoice {selectedBooking.invoiceNumber ? `(${selectedBooking.invoiceNumber})` : ''}
                 </button>
               )}
-              <div className="flex gap-4">
-                {nextStatus[selectedBooking.status] && (
-                  <>
-                    <button 
-                      onClick={() => openCancelModal(selectedBooking._id, selectedBooking.customer?.name)}
-                      className="px-6 py-3.5 border border-red-200 text-red-600 rounded-xl font-bold text-sm hover:bg-red-50 transition-all active:scale-[0.98]"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
-                      className="flex-1 py-3.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/10 hover:bg-primary/90 transition-all active:scale-[0.98]"
-                    >
-                      Mark {nextStatus[selectedBooking.status].toUpperCase()}
-                    </button>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-4 w-full">
+              {nextStatus[selectedBooking.status] && (
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <button 
+                    onClick={() => openCancelModal(selectedBooking._id, selectedBooking.customer?.name)}
+                    className="w-full sm:flex-1 py-3 bg-surface hover:bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold text-sm transition-all active:scale-[0.98] text-center"
+                  >
+                    Cancel Booking
+                  </button>
+                  <button 
+                    onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
+                    className="w-full sm:flex-1 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/10 hover:bg-primary/90 transition-all active:scale-[0.98] text-center capitalize"
+                  >
+                    Mark as {nextStatus[selectedBooking.status]}
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button 
                   onClick={() => openDeleteModal(selectedBooking._id, selectedBooking.customer?.name)}
-                  className="py-3.5 px-6 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full sm:flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-center"
                 >
                   <span className="material-symbols-outlined text-[20px]">delete</span>
-                  Delete
+                  Delete Booking
                 </button>
-                <button onClick={() => setSelectedBooking(null)} className="flex-1 py-3.5 bg-surface border border-outline-variant rounded-xl font-bold text-sm hover:bg-surface-tint transition-all active:scale-[0.98]">
-                  Close
+                <button onClick={() => setSelectedBooking(null)} className="w-full sm:flex-1 py-3 bg-surface border border-outline-variant rounded-xl font-bold text-sm hover:bg-surface-tint transition-all active:scale-[0.98] text-center">
+                  Close Details
                 </button>
               </div>
             </div>

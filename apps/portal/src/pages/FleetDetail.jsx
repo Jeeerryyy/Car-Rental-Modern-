@@ -4,7 +4,7 @@ import { getCarById, updateCar, deleteCar, addBlockedDates, removeBlockedDates }
 import { useOwnerAuth } from '../context/OwnerAuthContext.jsx';
 import toast from 'react-hot-toast';
 
-const CATEGORIES = ['sedan', 'suv', 'luxury', 'sports', 'van'];
+const CATEGORIES = ['hatchback', 'sedan', 'suv', 'luxury', 'sports', 'van'];
 const BIKE_CATEGORIES = ['bike', 'scooter', 'cruiser', 'sportsbike'];
 const FUEL_TYPES = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
 const TRANSMISSIONS = ['Manual', 'Automatic', 'AMT'];
@@ -42,7 +42,9 @@ export default function FleetDetail() {
         fuelType: c.fuelType || 'Petrol',
         transmission: c.transmission || 'Automatic',
         seats: c.seats || 5,
-        driveOption: c.driveOption || 'Self Drive'
+        driveOption: c.driveOption || 'Self Drive',
+        color: c.color || '',
+        registrationNumber: c.registrationNumber || ''
       });
     } catch (err) {
       toast.error('Car not found');
@@ -150,19 +152,19 @@ export default function FleetDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Make</label>
-                  <input type="text" value={form.make} onChange={set('make')} disabled={!isOwner} />
+                  <input type="text" value={form.make} onChange={set('make')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Model</label>
-                  <input type="text" value={form.model} onChange={set('model')} disabled={!isOwner} />
+                  <input type="text" value={form.model} onChange={set('model')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Year</label>
-                  <input type="number" value={form.year} onChange={set('year')} disabled={!isOwner} />
+                  <input type="number" value={form.year} onChange={set('year')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Category</label>
-                  <select value={form.category} onChange={set('category')} disabled={!isOwner}>
+                  <select value={form.category} onChange={set('category')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface">
                     {(car.type === 'bike' ? BIKE_CATEGORIES : CATEGORIES).map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                   </select>
                 </div>
@@ -174,29 +176,37 @@ export default function FleetDetail() {
                 <span className="material-symbols-outlined text-primary">settings_input_component</span>
                 Technical Specs
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className={`grid grid-cols-1 ${car.type === 'bike' ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-6`}>
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Fuel Type</label>
-                  <select value={form.fuelType} onChange={set('fuelType')} disabled={!isOwner}>
+                  <select value={form.fuelType} onChange={set('fuelType')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface">
                     {FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
-                {car.type !== 'bike' && (
+                {car.type !== 'bike' ? (
                   <>
                     <div>
                       <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Transmission</label>
-                      <select value={form.transmission} onChange={set('transmission')} disabled={!isOwner}>
+                      <select value={form.transmission} onChange={set('transmission')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface">
                         {TRANSMISSIONS.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Drive Option</label>
-                      <select value={form.driveOption} onChange={set('driveOption')} disabled={!isOwner}>
+                      <select value={form.driveOption} onChange={set('driveOption')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface">
                         {DRIVE_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                   </>
-                )}
+                ) : null}
+                <div>
+                  <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Color</label>
+                  <input type="text" value={form.color} onChange={set('color')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Registration No.</label>
+                  <input type="text" value={form.registrationNumber} onChange={set('registrationNumber')} disabled={!isOwner} placeholder="e.g. GJ 11 AB 1234" className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
+                </div>
               </div>
             </div>
 
@@ -208,24 +218,24 @@ export default function FleetDetail() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Price/Day (₹)</label>
-                  <input type="number" value={form.pricePerDay} onChange={set('pricePerDay')} disabled={!isOwner} />
+                  <input type="number" value={form.pricePerDay} onChange={set('pricePerDay')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                 </div>
                 {car.type !== 'bike' && (
                   <div>
                     <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Seats</label>
-                    <input type="number" value={form.seats} onChange={set('seats')} disabled={!isOwner} />
+                    <input type="number" value={form.seats} onChange={set('seats')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                   </div>
                 )}
                 <div>
                   <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Location</label>
-                  <input type="text" value={form.location} onChange={set('location')} disabled={!isOwner} />
+                  <input type="text" value={form.location} onChange={set('location')} disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
                 </div>
               </div>
             </div>
 
             <div className="pt-6 border-t border-outline-variant">
               <label className="block text-xs font-black text-secondary uppercase tracking-widest mb-2">Description</label>
-              <textarea value={form.description} onChange={set('description')} rows="4" disabled={!isOwner} />
+              <textarea value={form.description} onChange={set('description')} rows="4" disabled={!isOwner} className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-60 disabled:bg-surface-container-low text-on-surface" />
             </div>
 
             <div className="pt-6 border-t border-outline-variant">

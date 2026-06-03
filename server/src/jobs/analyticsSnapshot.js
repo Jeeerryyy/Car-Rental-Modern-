@@ -10,8 +10,8 @@ import { getDashboardStats } from '../services/report.service.js';
  * served from cache rather than hitting heavy aggregation queries.
  */
 export const initAnalyticsSnapshot = () => {
-  // Run every 15 minutes
-  cron.schedule('*/15 * * * *', async () => {
+  // Run every 60 minutes (hourly)
+  cron.schedule('0 * * * *', async () => {
     logger.info('[AnalyticsJob] Starting dashboard stats pre-calculation...');
 
     try {
@@ -43,7 +43,7 @@ export const initAnalyticsSnapshot = () => {
     }
   });
 
-  logger.info('[AnalyticsJob] Dashboard stats pre-calculation scheduler initialized (every 15 minutes).');
+  logger.info('[AnalyticsJob] Dashboard stats pre-calculation scheduler initialized (hourly).');
 };
 
 export default initAnalyticsSnapshot;

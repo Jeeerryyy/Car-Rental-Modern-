@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getBookings } from '../api/bookings.js';
+import { getCars } from '../api/cars.js';
 import { useSocket } from '../context/SocketContext';
 import toast from 'react-hot-toast';
 
@@ -9,7 +10,19 @@ export default function BookingCalendar() {
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [cars, setCars] = useState([]);
+  const [selectedCarId, setSelectedCarId] = useState('all');
   const socket = useSocket();
+
+  useEffect(() => {
+    getCars({ page: 1, limit: 100 })
+      .then(res => {
+        setCars(res.data?.data || res.data?.cars || []);
+      })
+      .catch(err => {
+        console.error('Failed to fetch cars:', err);
+      });
+  }, []);
 
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
@@ -69,17 +82,39 @@ export default function BookingCalendar() {
     return day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
   };
 
+  const formatUTCDate = (dateString) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const getBookingsForDate = (day) => {
-    const targetDate = new Date(year, month, day);
-    targetDate.setHours(0, 0, 0, 0);
+    const targetDateUTC = Date.UTC(year, month, day);
 
     return bookings.filter(b => {
-      const start = new Date(b.startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(b.endDate);
-      end.setHours(23, 59, 59, 999);
+      if (selectedCarId !== 'all' && b.car?._id !== selectedCarId) {
+        return false;
+      }
+      if (!b.startDate || !b.endDate) {
+        return false;
+      }
+      const startDateObj = new Date(b.startDate);
+      const startUTC = Date.UTC(
+        startDateObj.getUTCFullYear(),
+        startDateObj.getUTCMonth(),
+        startDateObj.getUTCDate()
+      );
+      const endDateObj = new Date(b.endDate);
+      const endUTC = Date.UTC(
+        endDateObj.getUTCFullYear(),
+        endDateObj.getUTCMonth(),
+        endDateObj.getUTCDate()
+      );
       
-      return targetDate >= start && targetDate <= end;
+      return targetDateUTC >= startUTC && targetDateUTC <= endUTC;
     });
   };
 
@@ -116,7 +151,7 @@ export default function BookingCalendar() {
       <div 
         key={day} 
         onClick={() => handleDateClick(day)}
-        className={`h-16 sm:h-32 border-b border-r border-outline-variant p-1 sm:p-2 cursor-pointer transition-colors hover:bg-surface-container-low relative group ${isToday(day) ? 'bg-primary-container/10' : 'bg-surface-container-lowest'}`}
+        className={`h-16 sm:h-32 border-b border-r border-outline-variant p-1 sm:p-2 cursor-pointer transition-colors relative group ${hasBookings ? 'bg-red-50/75 border-l-2 border-red-500 hover:bg-red-100/50' : isToday(day) ? 'bg-primary-container/10 hover:bg-surface-container-low' : 'bg-surface-container-lowest hover:bg-surface-container-low'}`}
       >
         <span className={`text-[10px] sm:text-sm font-bold ${isToday(day) ? 'bg-primary text-white w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full' : 'text-secondary'}`}>
           {day}
@@ -125,16 +160,16 @@ export default function BookingCalendar() {
         {hasBookings && (
           <div className="mt-2 space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[9px] font-bold text-primary uppercase tracking-wider">{bookingsForDate.length} Booked</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+              <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider">{bookingsForDate.length} Booked</span>
             </div>
             <div className="hidden sm:block">
               {bookingsForDate.slice(0, 2).map((b, idx) => (
-                <p key={idx} className="text-[8px] text-secondary truncate font-medium bg-surface-container-high/50 px-1 rounded mb-0.5 border-l-2 border-primary">
+                <p key={idx} className="text-[8px] text-red-700 truncate font-semibold bg-red-50/50 px-1 rounded mb-0.5 border-l-2 border-red-500">
                   {b.car?.make} {b.car?.model}
                 </p>
               ))}
-              {bookingsForDate.length > 2 && <p className="text-[8px] text-primary font-bold">+{bookingsForDate.length - 2} more</p>}
+              {bookingsForDate.length > 2 && <p className="text-[8px] text-red-600 font-bold">+{bookingsForDate.length - 2} more</p>}
             </div>
           </div>
         )}
@@ -151,17 +186,36 @@ export default function BookingCalendar() {
             <h2 className="text-2xl font-bold text-primary font-headline-md">{monthNames[month]} {year}</h2>
             <p className="text-secondary text-sm font-body-md mt-1">Fleet schedule for offline & online bookings</p>
           </div>
-          <div className="flex items-center gap-2">
-            {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />}
-            <button onClick={prevMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-            <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-bold text-primary hover:bg-surface-container rounded-lg transition-colors border border-outline-variant">
-              Today
-            </button>
-            <button onClick={nextMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Vehicle Selector Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-secondary">Vehicle:</span>
+              <select
+                value={selectedCarId}
+                onChange={e => setSelectedCarId(e.target.value)}
+                className="px-4 py-2 border border-outline-variant rounded-xl text-xs bg-surface outline-none focus:border-primary cursor-pointer font-semibold text-primary min-w-[200px]"
+              >
+                <option value="all">All Vehicles (Cars & Bikes)</option>
+                {cars.map(c => (
+                  <option key={c._id} value={c._id}>
+                    {c.make} {c.model} - {c.registrationNumber || 'No Plate'} ({c.type})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />}
+              <button onClick={prevMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-bold text-primary hover:bg-surface-container rounded-lg transition-colors border border-outline-variant">
+                Today
+              </button>
+              <button onClick={nextMonth} className="p-2 hover:bg-surface-container rounded-full transition-colors">
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -225,7 +279,7 @@ export default function BookingCalendar() {
                         </div>
                         <div className="flex items-center gap-3 text-sm text-secondary">
                           <span className="material-symbols-outlined text-[18px]">date_range</span>
-                          <span>{new Date(b.startDate).toLocaleDateString()} - {new Date(b.endDate).toLocaleDateString()}</span>
+                          <span>{formatUTCDate(b.startDate)} - {formatUTCDate(b.endDate)}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-secondary">
                           <span className="material-symbols-outlined text-[18px]">payments</span>

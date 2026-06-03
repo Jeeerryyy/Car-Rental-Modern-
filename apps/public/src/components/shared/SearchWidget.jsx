@@ -40,7 +40,7 @@ export default function SearchWidget() {
     navigate(`/cars?${params}`);
   };
 
-  const fieldInputStyle = { background: '#F2EEE5', color: '#19130E', border: '1px solid rgba(182,124,61,0.15)' };
+  const fieldInputStyle = { background: '#F8F6F1', color: '#121212', border: '1px solid #D6D0C7' };
 
   return (
     <div className="w-full relative z-10">
@@ -50,7 +50,7 @@ export default function SearchWidget() {
             className="field-input appearance-none h-[54px] pr-10" style={fieldInputStyle}>
             {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
           </select>
-          <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#6b5e50' }} />
+          <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#5C5C5C' }} />
         </Field>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -70,11 +70,11 @@ export default function SearchWidget() {
             <option value="">All Types</option>
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#6b5e50' }} />
+          <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#5C5C5C' }} />
         </Field>
 
-        <button type="submit" className="w-full font-bold text-[16px] py-4 rounded-[8px] flex items-center justify-center gap-2 mt-2"
-          style={{ background: '#19130E', color: '#F9F8F3' }}>
+        <button type="submit" className="w-full font-bold text-[16px] py-4 rounded-btn flex items-center justify-center gap-2 mt-2 transition-colors duration-200 hover:bg-[#A56A43]"
+          style={{ background: '#141414', color: '#F8F6F1' }}>
           Search Cars
         </button>
       </form>
@@ -85,9 +85,9 @@ export default function SearchWidget() {
 function Field({ label, icon: Icon, children }) {
   return (
     <div className="w-full">
-      <label className="block text-[11px] font-bold uppercase tracking-widest mb-3 ml-1" style={{ color: '#6b5e50' }}>{label}</label>
+      <label className="block text-[11px] font-bold uppercase tracking-widest mb-3 ml-1" style={{ color: '#5C5C5C' }}>{label}</label>
       <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10" style={{ color: '#6b5e50' }}>
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10" style={{ color: '#5C5C5C' }}>
           <Icon className="w-5 h-5" />
         </div>
         {children}

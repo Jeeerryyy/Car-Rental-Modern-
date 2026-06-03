@@ -23,7 +23,6 @@ import routes from './routes/index.js';
 import { initBookingReminders } from './jobs/bookingReminder.js';
 import { initBackupJob } from './jobs/backupJob.js';
 import { initKeepAlive } from './jobs/keepAlive.js';
-import { swaggerDocs } from './config/swagger.js';
 import { initSentry } from './config/sentry.js';
 import { correlationMiddleware } from './middleware/correlation.middleware.js';
 import { requestLogger } from './middleware/requestLogger.middleware.js';
@@ -210,7 +209,31 @@ app.get('/metrics', metricsAuth, async (req, res) => {
 });
 
 if (config.nodeEnv === 'development') {
-  app.use('/api-docs', swaggerDocs);
+  let swaggerMiddleware = null;
+  app.use('/api-docs', async (req, res, next) => {
+    if (!swaggerMiddleware) {
+      try {
+        logger.info('Lazy-loading Swagger UI...');
+        const { swaggerDocs } = await import('./config/swagger.js');
+        swaggerMiddleware = swaggerDocs;
+      } catch (err) {
+        logger.error('Failed to load Swagger UI:', err);
+        return res.status(500).send('Failed to load documentation');
+      }
+    }
+    
+    let idx = 0;
+    const nextHandler = (err) => {
+      if (err) return next(err);
+      if (idx < swaggerMiddleware.length) {
+        const mw = swaggerMiddleware[idx++];
+        mw(req, res, nextHandler);
+      } else {
+        next();
+      }
+    };
+    nextHandler();
+  });
 }
 
 app.use('/api', routes);
@@ -239,14 +262,14 @@ const startServer = async () => {
     });
 
     const gracefulShutdown = (signal) => {
-      logger.info(`${signal} received. Starting graceful shutdown (10s connection draining)...`);
+      logger.info(`${signal} received. Starting graceful shutdown (3s connection draining)...`);
       
       // Stop accepting new requests
       server.close(() => {
         logger.info('HTTP server closed. Draining active connections completed.');
       });
 
-      // Wait 10 seconds before terminating resources
+      // Wait 3 seconds before terminating resources
       setTimeout(async () => {
         try {
           logger.info('Closing database and cache connections...');
@@ -265,7 +288,7 @@ const startServer = async () => {
           logger.error('Error during graceful shutdown:', err);
           process.exit(1);
         }
-      }, 10000);
+      }, 3000);
     };
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

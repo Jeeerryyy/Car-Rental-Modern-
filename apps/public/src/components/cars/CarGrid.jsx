@@ -7,7 +7,7 @@ export default function CarGrid({ loading, error, paginatedCars, localFilters, s
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="rounded-[12px] overflow-hidden flex flex-col h-[400px]" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
+          <div key={i} className="rounded-[12px] overflow-hidden flex flex-col h-[400px]" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
             <div className="h-[220px] skeleton" />
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div><div className="h-6 w-3/4 skeleton mb-2" /><div className="h-4 w-1/2 skeleton mb-4" /></div>
@@ -21,8 +21,8 @@ export default function CarGrid({ loading, error, paginatedCars, localFilters, s
 
   if (error) {
     return (
-      <div className="rounded-[12px] p-12 text-center" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-        <p className="font-bold mb-4" style={{ color: '#b91c1c' }}>{error}</p>
+      <div className="rounded-[12px] p-12 text-center" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+        <p className="font-bold mb-4" style={{ color: '#9C4B45' }}>{error}</p>
         <button onClick={() => setCommittedFilters({ ...localFilters })} className="btn-outline">Retry</button>
       </div>
     );
@@ -30,19 +30,19 @@ export default function CarGrid({ loading, error, paginatedCars, localFilters, s
 
   if (paginatedCars.length === 0) {
     return (
-      <div className="rounded-[12px] p-12 text-center" style={{ background: '#F2EEE5', border: '1px solid rgba(182,124,61,0.15)' }}>
-        <CarIcon className="w-12 h-12 mb-4 block mx-auto" style={{ color: 'rgba(25,19,14,0.15)' }} />
-        <h3 className="font-display text-2xl font-bold mb-2" style={{ color: '#19130E' }}>No vehicles found</h3>
-        <p className="mb-6" style={{ color: '#6b5e50' }}>We couldn't find any cars matching your current filters.</p>
+      <div className="rounded-[12px] p-12 text-center" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7' }}>
+        <CarIcon className="w-12 h-12 mb-4 block mx-auto" style={{ color: 'rgba(18,18,18,0.15)' }} />
+        <h3 className="font-display text-2xl font-bold mb-2" style={{ color: '#121212' }}>No vehicles found</h3>
+        <p className="mb-6" style={{ color: '#5C5C5C' }}>We couldn't find any cars matching your current filters.</p>
         <button onClick={clearFilters} className="btn-outline">Clear Filters</button>
       </div>
     );
   }
 
   const pagBtnStyle = (active) => ({
-    background: active ? '#19130E' : '#F2EEE5',
-    color: active ? '#F9F8F3' : '#19130E',
-    border: active ? '1px solid #19130E' : '1px solid rgba(182,124,61,0.15)',
+    background: active ? '#121212' : '#E7E0D4',
+    color: active ? '#F4F1EA' : '#121212',
+    border: active ? '1px solid #121212' : '1px solid #D6D0C7',
   });
 
   return (

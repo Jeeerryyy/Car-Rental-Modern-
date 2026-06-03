@@ -67,9 +67,9 @@ function DockIcon({ mouseX, item }) {
           style={{ width, height: width }}
           className={`flex items-center justify-center rounded-2xl transition-colors ${
             item.primary 
-              ? 'bg-[#19130E] text-white shadow-lg shadow-black/10' 
+              ? 'bg-[#141414] text-white shadow-lg shadow-black/10' 
               : isActive 
-                ? 'bg-black/5 text-[#B67C3D]' 
+                ? 'bg-black/5 text-[#A56A43]' 
                 : 'bg-transparent text-gray-500 hover:bg-black/5'
           }`}
         >

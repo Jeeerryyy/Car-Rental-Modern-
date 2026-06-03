@@ -33,11 +33,20 @@ export const checkAvailability = async (carId, startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
+  const tenMinutesAgo = new Date();
+  tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
+
   const conflictingBookings = await Booking.findOne({
     car: carId,
-    status: { $nin: [BOOKING_STATUS.CANCELLED, BOOKING_STATUS.COMPLETED] },
     startDate: { $lt: end },
-    endDate: { $gt: start }
+    endDate: { $gt: start },
+    $or: [
+      { status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACTIVE] } },
+      { 
+        status: BOOKING_STATUS.PENDING,
+        createdAt: { $gte: tenMinutesAgo }
+      }
+    ]
   });
 
   if (conflictingBookings) {

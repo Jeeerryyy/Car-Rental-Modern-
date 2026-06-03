@@ -408,5 +408,21 @@ describe('Invoice and Security Deposit Calculations', () => {
     expect(invoiceData.totalPayable).toBe(2500);
     expect(invoiceData.amountDue).toBe(2500);
   });
+
+  it('should populate and return the customer\'s Aadhaar number on getInvoiceData', async () => {
+    const { owner } = await createTestOwner();
+    const { customer } = await createTestCustomer({
+      aadhaarNumber: '123456789012'
+    });
+    const car = await createTestCar(owner._id);
+    const booking = await createTestBooking(customer._id, owner._id, car._id, {
+      status: 'confirmed'
+    });
+
+    const { getInvoiceData } = await import('../src/services/invoice.service.js');
+    const invoiceData = await getInvoiceData(booking._id, owner._id);
+
+    expect(invoiceData.aadhaarNumber).toBe('123456789012');
+  });
 });
 

@@ -110,7 +110,9 @@ export const getAllPromos = async (ownerId, pagination = { page: 1, limit: 10 })
 };
 
 export const getFeaturedPromo = async () => {
-  return await Promo.findOne({ isFeatured: true, isActive: true }).sort({ updatedAt: -1 });
+  const featured = await Promo.findOne({ isFeatured: true, isActive: true }).sort({ updatedAt: -1 });
+  if (featured) return featured;
+  return await Promo.findOne({ isActive: true }).sort({ createdAt: -1 });
 };
 
 export const toggleFeatured = async (promoId) => {

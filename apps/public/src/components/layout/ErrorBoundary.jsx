@@ -17,18 +17,18 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center px-6" style={{ background: '#F9F8F3' }}>
+        <div className="min-h-screen flex items-center justify-center px-6" style={{ background: '#F4F1EA' }}>
           <div className="text-center max-w-md">
-            <h1 className="text-3xl font-extrabold mb-4" style={{ color: '#19130E' }}>
+            <h1 className="text-3xl font-extrabold mb-4" style={{ color: '#121212' }}>
               Something went wrong
             </h1>
-            <p className="mb-8" style={{ color: '#6b5e50' }}>
+            <p className="mb-8" style={{ color: '#5C5C5C' }}>
               An unexpected error occurred. Please try refreshing the page.
             </p>
             <button
               onClick={() => window.location.reload()}
               className="px-8 py-3 rounded-[8px] font-bold text-sm"
-              style={{ background: '#19130E', color: '#F9F8F3' }}
+              style={{ background: '#121212', color: '#F4F1EA' }}
             >
               Reload Page
             </button>

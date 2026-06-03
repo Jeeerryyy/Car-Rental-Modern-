@@ -10,6 +10,8 @@ export default function CustomerSignUp() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = () => {
     const errs = {};
@@ -38,96 +40,201 @@ export default function CustomerSignUp() {
     finally { setLoading(false); }
   };
 
-  const inputStyle = (hasError) => ({
-    background: '#F2EEE5', color: '#19130E',
-    border: hasError ? '1px solid #b91c1c' : '1px solid rgba(182,124,61,0.15)',
-  });
-
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#F9F8F3' }}>
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden h-full" style={{ background: '#19130E' }}>
-        <div className="absolute inset-0 z-0">
-          <img src="/auth-bg.png" alt="Luxury Car" loading="lazy" className="w-full h-full object-cover opacity-60" />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(25,19,14,0.7), transparent)' }} />
-        </div>
-        <div className="relative z-10 p-12 flex flex-col justify-between w-full h-full">
-          <Link to="/" className="flex flex-col -space-y-1.5 w-fit no-underline">
-            <span className="text-2xl font-black tracking-tight leading-tight uppercase" style={{ color: '#FFFFFF' }}>Modern</span>
-            <span className="text-[11px] font-bold tracking-[0.25em] uppercase" style={{ color: 'rgba(220,207,186,0.5)' }}>Selfdrive</span>
-          </Link>
-          <div className="max-w-md">
-            <h2 className="text-4xl font-bold leading-tight mb-4 tracking-tight" style={{ color: '#FFFFFF' }}>Join the Elite.</h2>
-            <p className="text-lg font-medium leading-relaxed" style={{ color: 'rgba(220,207,186,0.5)' }}>Become a part of Junagadh's most exclusive self-drive car rental community.</p>
-          </div>
-        </div>
+    <div className="auth-sanctuary-container">
+      <div className="sanctuary-bg">
+        <div className="sanctuary-leaf sanctuary-leaf-1"></div>
+        <div className="sanctuary-leaf sanctuary-leaf-2"></div>
+        <div className="sanctuary-leaf sanctuary-leaf-3"></div>
+        <div className="sanctuary-leaf sanctuary-leaf-4"></div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 h-full overflow-y-auto" style={{ background: '#F9F8F3' }}>
-        <div className="w-full max-w-[380px] flex flex-col my-auto py-4">
-          <div className="mb-6 text-center lg:text-left">
-            <div className="lg:hidden flex justify-center mb-6">
-              <Link to="/" className="flex flex-col items-center -space-y-1.5 no-underline">
-                <span className="text-2xl font-black tracking-tight leading-tight uppercase" style={{ color: '#19130E' }}>Modern</span>
-                <span className="text-[11px] font-bold tracking-[0.25em] uppercase" style={{ color: '#6b5e50' }}>Selfdrive</span>
-              </Link>
+      <div className="wellness-card" style={{ maxWidth: '460px' }}>
+        <div className="organic-border"></div>
+
+        <div className="mindful-header">
+          <div className="flex items-center justify-center gap-3 no-underline leading-tight mb-4">
+            <img src="/irck-removebg-preview.png" alt="Logo" className="h-9 w-auto object-contain" />
+            <div className="flex flex-col text-left">
+              <span className="text-xl font-black tracking-tighter uppercase leading-none" style={{ color: '#121212' }}>modern</span>
+              <span className="text-sm font-bold tracking-tight uppercase leading-none" style={{ color: '#A56A43' }}>self drive</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: '#19130E' }}>Create Account</h1>
-            <p className="text-[14px] font-medium" style={{ color: '#6b5e50' }}>Start your journey today</p>
+          </div>
+          <p className="text-[12px] font-bold uppercase tracking-wider mt-1.5" style={{ color: '#A56A43' }}>Sign up to book your ride</p>
+        </div>
+
+        <div className="flex justify-center w-full z-10 mb-4">
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => { setLoading(true); try { await loginWithGoogle(credentialResponse.credential); toast.success('Account created & Signed in with Google!'); navigate('/'); } catch (err) { toast.error(err.response?.data?.message || 'Google Login failed'); } finally { setLoading(false); } }}
+            onError={() => { toast.error('Google Login Failed'); }}
+            theme="outline" size="large" width="300" text="signup_with" shape="pill"
+          />
+        </div>
+
+        <div className="balance-divider">
+          <div className="divider-branch"></div>
+          <div className="divider-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L8 8h8l-4-6zM12 22l4-6H8l4 6zM2 12l6-4v8l-6-4zM22 12l-6 4V8l6 4z" fill="currentColor" opacity="0.6"/>
+            </svg>
+          </div>
+          <div className="divider-branch"></div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="z-10 flex flex-col w-full">
+          <div className="drive-ignition-panel">
+            <div className="ignition-row">
+              <div className="ignition-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div className="ignition-field-body">
+                <label htmlFor="name">Full Name</label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  value={form.name} 
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Your Full Name"
+                  required 
+                  autoComplete="name"
+                />
+              </div>
+            </div>
+            {errors.name && <div className="px-4 pb-2"><span className="gentle-error">{errors.name}</span></div>}
+
+            <div className="ignition-row">
+              <div className="ignition-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="6" cy="19" r="3" />
+                  <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+                  <circle cx="18" cy="5" r="3" />
+                </svg>
+              </div>
+              <div className="ignition-field-body">
+                <label htmlFor="email">Email Address</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  value={form.email} 
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="name@email.com"
+                  required 
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+            {errors.email && <div className="px-4 pb-2"><span className="gentle-error">{errors.email}</span></div>}
+
+            <div className="ignition-row">
+              <div className="ignition-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+              </div>
+              <div className="ignition-field-body">
+                <label htmlFor="phone">Phone Number</label>
+                <input 
+                  type="tel" 
+                  id="phone" 
+                  value={form.phone} 
+                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="Mobile Number"
+                  required 
+                  autoComplete="tel"
+                />
+              </div>
+            </div>
+            {errors.phone && <div className="px-4 pb-2"><span className="gentle-error">{errors.phone}</span></div>}
+
+            <div className="ignition-row">
+              <div className="ignition-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                </svg>
+              </div>
+              <div className="ignition-field-body">
+                <label htmlFor="password">Password</label>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  id="password" 
+                  value={form.password} 
+                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                  placeholder="••••••••"
+                  required 
+                  autoComplete="new-password"
+                />
+              </div>
+              <button 
+                type="button" 
+                className="ignition-toggle" 
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {errors.password && <div className="px-4 pb-2"><span className="gentle-error">{errors.password}</span></div>}
+
+            <div className="ignition-row">
+              <div className="ignition-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                </svg>
+              </div>
+              <div className="ignition-field-body">
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <input 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  id="confirmPassword" 
+                  value={form.confirmPassword} 
+                  onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                  placeholder="••••••••"
+                  required 
+                  autoComplete="new-password"
+                />
+              </div>
+              <button 
+                type="button" 
+                className="ignition-toggle" 
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label="Toggle confirm password visibility"
+              >
+                {showConfirmPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {errors.confirmPassword && <div className="px-4 pb-2"><span className="gentle-error">{errors.confirmPassword}</span></div>}
           </div>
 
-          <div className="flex justify-center w-full mb-6">
-            <GoogleLogin
-              onSuccess={async (credentialResponse) => { setLoading(true); try { await loginWithGoogle(credentialResponse.credential); toast.success('Account created & Signed in with Google!'); navigate('/'); } catch (err) { toast.error(err.response?.data?.message || 'Google Login failed'); } finally { setLoading(false); } }}
-              onError={() => { toast.error('Google Login Failed'); }}
-              theme="outline" size="large" width="380" text="signup_with" shape="rectangular"
-            />
-          </div>
+          <button type="submit" disabled={loading} className="animate-btn w-full justify-center">
+            <span>{loading ? 'Registering...' : 'Start Engine'}</span>
+          </button>
+        </form>
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px" style={{ background: 'rgba(182,124,61,0.2)' }}></div>
-            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#6b5e50' }}>Or register with email</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(182,124,61,0.2)' }}></div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div>
-              <label className="block text-sm font-bold mb-1.5" style={{ color: '#19130E' }}>Full Name</label>
-              <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full px-4 py-3 rounded-[8px] text-sm font-medium outline-none" style={inputStyle(errors.name)} placeholder="Your full name" />
-              {errors.name && <p className="text-xs mt-1" style={{ color: '#b91c1c' }}>{errors.name}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-1.5" style={{ color: '#19130E' }}>Email</label>
-              <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                className="w-full px-4 py-3 rounded-[8px] text-sm font-medium outline-none" style={inputStyle(errors.email)} placeholder="you@example.com" />
-              {errors.email && <p className="text-xs mt-1" style={{ color: '#b91c1c' }}>{errors.email}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-1.5" style={{ color: '#19130E' }}>Phone</label>
-              <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                className="w-full px-4 py-3 rounded-[8px] text-sm font-medium outline-none" style={inputStyle(errors.phone)} placeholder="+91 9876543210" />
-              {errors.phone && <p className="text-xs mt-1" style={{ color: '#b91c1c' }}>{errors.phone}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-1.5" style={{ color: '#19130E' }}>Password</label>
-              <input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                className="w-full px-4 py-3 rounded-[8px] text-sm font-medium outline-none" style={inputStyle(errors.password)} placeholder="Min. 8 chars with uppercase, number & special" />
-              {errors.password && <p className="text-xs mt-1" style={{ color: '#b91c1c' }}>{errors.password}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-1.5" style={{ color: '#19130E' }}>Confirm Password</label>
-              <input type="password" value={form.confirmPassword} onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                className="w-full px-4 py-3 rounded-[8px] text-sm font-medium outline-none" style={inputStyle(errors.confirmPassword)} placeholder="Re-enter password" />
-              {errors.confirmPassword && <p className="text-xs mt-1" style={{ color: '#b91c1c' }}>{errors.confirmPassword}</p>}
-            </div>
-            <button type="submit" disabled={loading} className="w-full py-3 text-sm font-bold rounded-[8px] disabled:opacity-50 mt-2" style={{ background: '#19130E', color: '#FFFFFF' }}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-[13.5px] font-medium" style={{ color: '#6b5e50' }}>
-            Already have an account? <Link to="/signin" className="font-bold no-underline ml-1" style={{ color: '#19130E' }}>Sign In</Link>
-          </p>
+        <div className="text-center text-[13.5px] font-semibold z-10 mt-6" style={{ color: '#5C5C5C' }}>
+          Already have an account? <Link to="/signin" className="font-bold no-underline ml-1 text-[#121212] hover:text-[#A56A43] transition-colors">Sign In</Link>
         </div>
       </div>
     </div>

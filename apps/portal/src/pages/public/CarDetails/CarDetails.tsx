@@ -406,7 +406,7 @@ export default function CarDetails() {
                       <span className="text-[9px] font-bold uppercase tracking-widest text-secondary">Primary Office</span>
                       <h4 className="text-sm font-bold text-on-surface">Junagadh Office</h4>
                       <p className="text-xs leading-relaxed text-on-surface-variant">
-                        GIDC 1, Joshipara, Junagadh - 362002, Gujarat, India
+                        GIDC-1 , NEAR MAHAVEER MARBLE, DOLATPARA,JUNAGADH 362037
                       </p>
                       <a href="https://g.page/modern-selfdrive" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mt-2 text-secondary hover:underline">
                         <span>📍 View on Google Maps</span>
