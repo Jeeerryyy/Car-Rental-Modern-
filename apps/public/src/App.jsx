@@ -26,6 +26,7 @@ const SignIn            = React.lazy(() => import('./pages/SignIn'));
 const SignUp            = React.lazy(() => import('./pages/SignUp'));
 const BookingConfirmation = React.lazy(() => import('./pages/BookingConfirmation'));
 const NotFound          = React.lazy(() => import('./pages/NotFound'));
+const FAQ               = React.lazy(() => import('./pages/FAQ'));
 
 function ScrollRestoration() {
   const { hash, pathname } = useLocation();
@@ -93,6 +94,7 @@ function PublicShell() {
               <Route path="/my-bookings"        element={<MyBookings />} />
               <Route path="/my-bookings/:id"    element={<BookingDetail />} />
               <Route path="/booking-confirmation/:id" element={<BookingConfirmation />} />
+              <Route path="/faq"               element={<FAQ />} />
               <Route path="*"                   element={<NotFound />} />
             </Routes>
           </Suspense>

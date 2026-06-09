@@ -1,5 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/((?!robots.txt|sitemap.xml|googleaca8863660191277.html|assets/).*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/assets/(.*)",

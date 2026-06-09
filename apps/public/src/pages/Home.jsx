@@ -14,6 +14,7 @@ import PopularFleetSection from '../components/home/PopularFleetSection';
 import FeaturesSection from '../components/home/FeaturesSection';
 import TravelHubSection from '../components/home/TravelHubSection';
 import ReviewsSection from '../components/home/ReviewsSection';
+import SEO from '../components/SEO';
 
 const DESTINATIONS = [
   { name: 'Gir National Park', distance: '75 km' },
@@ -79,8 +80,52 @@ function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const homeSchema = {
+    "@context": "https://schema.org",
+    "@type": "AutoRental",
+    "name": "Modern Selfdrive Car",
+    "description": "Premium self drive car and bike rental services in Junagadh and across Gujarat since 2017.",
+    "url": window.location.origin,
+    "logo": `${window.location.origin}/irck-removebg-preview.png`,
+    "telephone": "+918792492717",
+    "priceRange": "$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Kalwa Chowk",
+      "addressLocality": "Junagadh",
+      "addressRegion": "Gujarat",
+      "postalCode": "362001",
+      "addressCountry": "IN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 21.5222,
+      "longitude": 70.4579
+    },
+    "areaServed": [
+      { "@type": "AdministrativeArea", "name": "Gujarat" },
+      { "@type": "City", "name": "Junagadh" },
+      { "@type": "City", "name": "Somnath" },
+      { "@type": "City", "name": "Diu" },
+      { "@type": "City", "name": "Rajkot" }
+    ],
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    }
+  };
+
   return (
     <main id="main-content" className="overflow-x-hidden" style={{ background: '#F4F1EA' }}>
+      <SEO 
+        title="Self Drive Car Rental in Junagadh, Gujarat | Modern Selfdrive"
+        description="Book self drive cars & bikes in Junagadh, Somnath, Diu, and Gir, Gujarat. Rent with or without driver since 2017. Clean cars, transparent pricing, 24/7 support. Book online!"
+        keywords={['self drive car rental gujarat', 'car rental in junagadh', 'rent a car gujarat', 'somnath self drive car', 'diu car rental', 'gir national park car rental', 'modern selfdrive car', 'car hire gujarat']}
+        canonical={window.location.href}
+        schema={homeSchema}
+      />
       <HeroSection />
       <AboutSection />
 

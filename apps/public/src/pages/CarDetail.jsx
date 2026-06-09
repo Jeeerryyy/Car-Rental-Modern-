@@ -4,6 +4,7 @@ import { carAPI, reviewAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { ChevronRightIcon } from '../components/ui/Icons';
 import CarBookingForm from '../components/cars/CarBookingForm';
+import SEO from '../components/SEO';
 
 function CarDetail() {
   const { id } = useParams();
@@ -58,8 +59,36 @@ function CarDetail() {
 
   const images = car.images?.length > 0 ? car.images.map(img => img.url) : ['/no-car.png'];
 
+  const carSchema = car ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `${car.make} ${car.model}`,
+    "image": car.images?.length > 0 ? car.images[0].url : "",
+    "description": car.description,
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": car.pricePerHour || car.pricePerDay || "1000",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "priceCurrency": "INR",
+        "price": car.pricePerHour || car.pricePerDay || "1000",
+        "unitText": car.pricePerHour ? "hour" : "day"
+      },
+      "itemCondition": "https://schema.org/UsedCondition",
+      "availability": car.isBooked ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+    }
+  } : null;
+
   return (
     <div className="min-h-screen pt-24 pb-20" style={{ background: '#F4F1EA' }}>
+      <SEO 
+        title={`${car.make} ${car.model} Rental in Junagadh, Gujarat | Modern Selfdrive`}
+        description={`Rent a ${car.make} ${car.model} (${car.year}) in Junagadh and Gujarat. Fuel: ${car.fuelType}, Transmission: ${car.transmission}. Premium quality self drive car available at affordable rates.`}
+        keywords={[`rent ${car.make} ${car.model}`, `${car.make} ${car.model} self drive`, `car hire ${car.make} gujarat`, `cheap car rental ${car.make}`]}
+        canonical={window.location.href}
+        schema={carSchema}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-8" style={{ color: '#5C5C5C' }}>
           <Link to="/" className="no-underline" style={{ color: '#5C5C5C' }}>Home</Link>

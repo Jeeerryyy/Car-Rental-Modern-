@@ -1,0 +1,23 @@
+# Allow all major search engines and AI crawlers
+User-agent: *
+Allow: /
+
+# Specifically allow AI crawlers for citation building
+User-agent: GPTBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# Disallow administrative and dynamic booking folders from crawl noise
+Disallow: /signin
+Disallow: /signup
+Disallow: /profile
+Disallow: /my-bookings
+Disallow: /booking-confirmation
+
+# Sitemap location
+Sitemap: https://modernselfdrive.in/sitemap.xml

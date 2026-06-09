@@ -8,7 +8,8 @@ const SEO = ({
   url, 
   type = 'website',
   canonical,
-  noIndex = false
+  noIndex = false,
+  schema
 }) => {
   useEffect(() => {
     if (title) {
@@ -94,7 +95,26 @@ const SEO = ({
       }
       linkCanonical.href = canonical;
     }
-  }, [title, description, keywords, image, url, type, canonical, noIndex]);
+
+    let scriptSchema = document.querySelector('script[type="application/ld+json"]');
+    if (schema) {
+      if (!scriptSchema) {
+        scriptSchema = document.createElement('script');
+        scriptSchema.type = 'application/ld+json';
+        document.head.appendChild(scriptSchema);
+      }
+      scriptSchema.textContent = JSON.stringify(schema);
+    } else if (scriptSchema) {
+      scriptSchema.remove();
+    }
+
+    return () => {
+      const existingSchema = document.querySelector('script[type="application/ld+json"]');
+      if (existingSchema) {
+        existingSchema.remove();
+      }
+    };
+  }, [title, description, keywords, image, url, type, canonical, noIndex, schema]);
   
   return null;
 };

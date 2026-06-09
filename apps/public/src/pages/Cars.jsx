@@ -5,6 +5,7 @@ import { carAPI } from '../services/api';
 import { FilterIcon, XIcon, SearchIcon } from '../components/ui/Icons';
 import SidebarFilters from '../components/cars/SidebarFilters';
 import CarGrid from '../components/cars/CarGrid';
+import SEO from '../components/SEO';
 
 const ITEMS_PER_PAGE = 100;
 const EMPTY_FILTERS = { type: [], maxPrice: 10000, transmission: '', fuelType: '', driveOption: '' };
@@ -64,6 +65,12 @@ const Cars = () => {
 
   return (
     <div className="min-h-screen pt-12 pb-24" style={{ background: '#F4F1EA' }}>
+      <SEO 
+        title="Our Fleet: Rent Self Drive Cars & Bikes | Modern Selfdrive"
+        description="Explore our wide range of rental cars, SUVs, and bikes in Junagadh, Gujarat. Hatchbacks, sedans, 4WD SUVs, and standard bikes available with flexible same-day rental options."
+        keywords={['rental fleet gujarat', 'rent automatic SUV', 'hatchback rental gujarat', 'self drive bikes junagadh', 'hire Thar in Gujarat', 'rent Ertiga gujarat']}
+        canonical={window.location.origin + '/cars'}
+      />
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col lg:flex-row gap-10">
         <button className="lg:hidden flex items-center gap-2 rounded-btn px-4 py-2.5 text-sm font-bold transition-colors duration-200 hover:bg-[#A56A43]"
           style={{ background: '#E7E0D4', color: '#121212', border: '1px solid #D6D0C7' }}

@@ -31,6 +31,7 @@ function Footer() {
             <h4 className="text-[11px] font-black uppercase tracking-[0.2em] mb-6" style={{ color: '#A56A43' }}>Navigation</h4>
             <ul className="flex flex-col gap-3 text-[14px] font-medium" style={{ color: '#8B8B8B' }}>
               <li><Link to="/cars" className="no-underline" style={{ color: '#8B8B8B' }}>Browse Fleet</Link></li>
+              <li><Link to="/faq" className="no-underline" style={{ color: '#8B8B8B' }}>FAQs</Link></li>
               <li><Link to="/contact" className="no-underline" style={{ color: '#8B8B8B' }}>Contact Support</Link></li>
               <li><Link to="/terms" className="no-underline" style={{ color: '#8B8B8B' }}>Terms of Service</Link></li>
               <li><Link to="/privacy" className="no-underline" style={{ color: '#8B8B8B' }}>Privacy Policy</Link></li>
