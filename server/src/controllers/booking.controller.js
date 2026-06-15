@@ -233,11 +233,33 @@ export const searchCustomer = catchAsync(async (req, res) => {
     return ApiResponse.success(res, 200, 'Customers retrieved', []);
   }
   const Customer = (await import('../models/Customer.js')).default;
+  
+  const conditions = [
+    { name: { $regex: q, $options: 'i' } }
+  ];
+
+  // Clean query for numeric digits
+  const cleanPhone = q.replace(/\D/g, '');
+  if (cleanPhone.length >= 3) {
+    conditions.push({ phone: { $regex: cleanPhone, $options: 'i' } });
+    
+    // If it's a 10-digit number or longer, also search by the last 10 digits
+    if (cleanPhone.length >= 10) {
+      const last10 = cleanPhone.slice(-10);
+      if (last10 !== cleanPhone) {
+        conditions.push({ phone: { $regex: last10, $options: 'i' } });
+      }
+    }
+  }
+
+  // Also include regex match for the raw query
+  if (cleanPhone !== q) {
+    conditions.push({ phone: { $regex: q, $options: 'i' } });
+  }
+
   const customers = await Customer.find({
-    $or: [
-      { phone: { $regex: q, $options: 'i' } },
-      { name: { $regex: q, $options: 'i' } }
-    ]
+    $or: conditions
   }).limit(10);
+  
   return ApiResponse.success(res, 200, 'Customers retrieved', customers);
 });
