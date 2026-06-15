@@ -8,8 +8,9 @@ export default function AddBooking() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [cars, setCars] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [customerSearchResults, setCustomerSearchResults] = useState([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [formData, setFormData] = useState({
     customer: { name: '', email: '', phone: '', address: '', drivingLicenceNumber: '', aadhaarNumber: '' },
     booking: {
@@ -53,34 +54,50 @@ export default function AddBooking() {
   // Close search results dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (!e.target.closest('#customer-phone-container')) {
-        setShowDropdown(false);
+      if (!e.target.closest('#customer-search-container')) {
+        setShowCustomerDropdown(false);
       }
     };
-    if (showDropdown) {
+    if (showCustomerDropdown) {
       document.addEventListener('click', handleOutsideClick);
     }
     return () => {
       document.removeEventListener('click', handleOutsideClick);
     };
-  }, [showDropdown]);
+  }, [showCustomerDropdown]);
 
-  const handlePhoneChange = async (val) => {
-    const cleanVal = val.replace(/\D/g, '');
-    set('customer', { phone: cleanVal });
-
-    if (cleanVal.length >= 3) {
+  const handleCustomerSearch = async (val) => {
+    setCustomerSearchQuery(val);
+    if (val.trim().length >= 2) {
       try {
-        const res = await searchCustomers(cleanVal);
-        setSearchResults(res.data.data || res.data || []);
-        setShowDropdown(true);
+        const res = await searchCustomers(val);
+        setCustomerSearchResults(res.data.data || res.data || []);
+        setShowCustomerDropdown(true);
       } catch (err) {
         console.error('Failed to search customers:', err);
       }
     } else {
-      setSearchResults([]);
-      setShowDropdown(false);
+      setCustomerSearchResults([]);
+      setShowCustomerDropdown(false);
     }
+  };
+
+  const handleSelectCustomer = (cust) => {
+    setFormData(prev => ({
+      ...prev,
+      customer: {
+        name: cust.name || '',
+        email: cust.email?.includes('@modern-selfdrive.local') ? '' : (cust.email || ''),
+        phone: cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '',
+        address: cust.address || '',
+        drivingLicenceNumber: cust.drivingLicenceNumber || '',
+        aadhaarNumber: cust.aadhaarNumber || ''
+      }
+    }));
+    setCustomerSearchQuery('');
+    setCustomerSearchResults([]);
+    setShowCustomerDropdown(false);
+    toast.success(`Filled details for ${cust.name}`);
   };
 
   useEffect(() => {
@@ -141,6 +158,65 @@ export default function AddBooking() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-5">
           <h3 className="font-label-large font-semibold text-on-surface">Customer Details</h3>
+
+          {/* Dedicated Customer Search Box */}
+          <div className="relative mb-6 pb-6 border-b border-outline-variant" id="customer-search-container">
+            <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Search Existing Customer (Phone or Name)</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary text-lg">search</span>
+                <input
+                  type="text"
+                  placeholder="Type phone number or name to search..."
+                  value={customerSearchQuery}
+                  onChange={e => handleCustomerSearch(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary font-semibold text-primary"
+                />
+              </div>
+              {customerSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerSearchQuery('');
+                    setCustomerSearchResults([]);
+                    setShowCustomerDropdown(false);
+                  }}
+                  className="px-4 py-3 border border-outline-variant rounded-xl text-xs font-semibold hover:bg-surface transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {showCustomerDropdown && customerSearchResults.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 max-h-[220px] overflow-y-auto p-1.5 space-y-0.5">
+                <p className="text-[10px] font-bold text-secondary uppercase px-3 py-1 bg-surface-container-low rounded-lg mb-1">Select Customer to Autofill</p>
+                {customerSearchResults.map(cust => (
+                  <button
+                    key={cust._id}
+                    type="button"
+                    onClick={() => handleSelectCustomer(cust)}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="font-bold text-primary">{cust.name}</p>
+                      <p className="text-[10px] text-secondary">{cust.phone} {cust.email ? `• ${cust.email}` : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                      <span>Autofill</span>
+                      <span className="material-symbols-outlined text-xs">input</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showCustomerDropdown && customerSearchResults.length === 0 && customerSearchQuery.trim().length >= 2 && (
+              <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 p-4 text-center">
+                <p className="text-xs text-secondary font-semibold">No existing customers found matching "{customerSearchQuery}"</p>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Customer Name *</label>
@@ -154,47 +230,16 @@ export default function AddBooking() {
                 onChange={e => set('customer', { email: e.target.value })}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="customer@email.com" />
             </div>
-            <div className="relative" id="customer-phone-container">
+            <div>
               <label className="block text-sm font-semibold text-dark mb-2">Phone *</label>
               <input type="tel" value={formData.customer.phone} required
                 pattern="[0-9]{10}"
                 title="Please enter a valid 10-digit phone number"
-                onChange={e => handlePhoneChange(e.target.value)}
+                onChange={e => {
+                  const cleanVal = e.target.value.replace(/\D/g, '');
+                  set('customer', { phone: cleanVal });
+                }}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="9876543210" />
-              
-              {showDropdown && searchResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 max-h-[200px] overflow-y-auto p-1.5 space-y-0.5">
-                  <p className="text-[10px] font-bold text-secondary uppercase px-3 py-1 bg-surface-container-low rounded-lg mb-1">Select Existing Customer</p>
-                  {searchResults.map(cust => (
-                    <button
-                      key={cust._id}
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          customer: {
-                            name: cust.name || '',
-                            email: cust.email?.includes('@modern-selfdrive.local') ? '' : (cust.email || ''),
-                            phone: cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '',
-                            address: cust.address || '',
-                            drivingLicenceNumber: cust.drivingLicenceNumber || '',
-                            aadhaarNumber: cust.aadhaarNumber || ''
-                          }
-                        }));
-                        setShowDropdown(false);
-                        toast.success(`Filled details for ${cust.name}`);
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors flex justify-between items-center"
-                    >
-                      <div>
-                        <p className="font-bold">{cust.name}</p>
-                        <p className="text-[10px] text-secondary">{cust.phone}</p>
-                      </div>
-                      <span className="material-symbols-outlined text-sm text-secondary">input</span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Driving Licence Number (Optional)</label>
