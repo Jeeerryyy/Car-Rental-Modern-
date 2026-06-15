@@ -229,37 +229,50 @@ export const remove = catchAsync(async (req, res) => {
 
 export const searchCustomer = catchAsync(async (req, res) => {
   const { q } = req.query;
-  if (!q) {
+  if (!q || !q.trim()) {
     return ApiResponse.success(res, 200, 'Customers retrieved', []);
   }
+
+  // Helper: escape regex special characters to prevent MongoDB regex crash
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // First, find customer IDs who have bookings with this owner
+  const ownerId = req.ownerId;
+  const customerIds = await Booking.distinct('customer', { owner: ownerId });
+
+  if (!customerIds || customerIds.length === 0) {
+    return ApiResponse.success(res, 200, 'Customers retrieved', []);
+  }
+
   const Customer = (await import('../models/Customer.js')).default;
-  
+
+  const safeQ = escapeRegex(q.trim());
   const conditions = [
-    { name: { $regex: q, $options: 'i' } }
+    { name: { $regex: safeQ, $options: 'i' } }
   ];
 
   // Clean query for numeric digits
   const cleanPhone = q.replace(/\D/g, '');
   if (cleanPhone.length >= 3) {
-    conditions.push({ phone: { $regex: cleanPhone, $options: 'i' } });
-    
+    const safePhone = escapeRegex(cleanPhone);
+    conditions.push({ phone: { $regex: safePhone, $options: 'i' } });
+
     // If it's a 10-digit number or longer, also search by the last 10 digits
     if (cleanPhone.length >= 10) {
       const last10 = cleanPhone.slice(-10);
       if (last10 !== cleanPhone) {
-        conditions.push({ phone: { $regex: last10, $options: 'i' } });
+        conditions.push({ phone: { $regex: escapeRegex(last10), $options: 'i' } });
       }
     }
   }
 
-  // Also include regex match for the raw query
-  if (cleanPhone !== q) {
-    conditions.push({ phone: { $regex: q, $options: 'i' } });
-  }
-
   const customers = await Customer.find({
+    _id: { $in: customerIds },
     $or: conditions
-  }).limit(10);
-  
+  })
+    .select('-password')
+    .limit(10)
+    .lean();
+
   return ApiResponse.success(res, 200, 'Customers retrieved', customers);
 });
