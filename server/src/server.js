@@ -63,7 +63,11 @@ const allowedOrigins = [
   'https://www.modernselfdrive.in',
   'https://admin.modernselfdrive.in',
   'https://car-rental-modern.vercel.app',
-  'https://car-rental-modern-p7uu.vercel.app'
+  'https://car-rental-modern-p7uu.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174'
 ].map(url => url?.replace(/\/$/, '')).filter(Boolean);
 
 logger.info(`Allowed CORS Origins: ${allowedOrigins.join(', ')}`);
