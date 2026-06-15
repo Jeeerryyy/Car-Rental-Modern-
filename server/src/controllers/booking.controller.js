@@ -226,3 +226,18 @@ export const remove = catchAsync(async (req, res) => {
   const booking = await deleteBooking(req.params.id, req.ownerId);
   return ApiResponse.success(res, 200, 'Booking deleted successfully', { booking });
 });
+
+export const searchCustomer = catchAsync(async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return ApiResponse.success(res, 200, 'Customers retrieved', []);
+  }
+  const Customer = (await import('../models/Customer.js')).default;
+  const customers = await Customer.find({
+    $or: [
+      { phone: { $regex: q, $options: 'i' } },
+      { name: { $regex: q, $options: 'i' } }
+    ]
+  }).limit(10);
+  return ApiResponse.success(res, 200, 'Customers retrieved', customers);
+});

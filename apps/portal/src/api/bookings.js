@@ -11,3 +11,4 @@ export const deleteBooking = (id) => api.delete(`/owner/bookings/${id}`);
  * Get the invoice HTML content for a booking
  */
 export const getInvoiceHTML = (id) => api.get(`/owner/bookings/${id}/invoice`);
+export const searchCustomers = (query) => api.get('/owner/bookings/search-customer', { params: { q: query } });

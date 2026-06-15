@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCars } from '../api/cars.js';
-import { createManualBooking } from '../api/bookings.js';
+import { createManualBooking, searchCustomers } from '../api/bookings.js';
 import toast from 'react-hot-toast';
 
 export default function AddBooking() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [cars, setCars] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [formData, setFormData] = useState({
     customer: { name: '', email: '', phone: '', address: '', drivingLicenceNumber: '', aadhaarNumber: '' },
     booking: {
@@ -46,6 +48,39 @@ export default function AddBooking() {
       }));
     };
     reader.readAsDataURL(file);
+  };
+
+  // Close search results dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('#customer-phone-container')) {
+        setShowDropdown(false);
+      }
+    };
+    if (showDropdown) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showDropdown]);
+
+  const handlePhoneChange = async (val) => {
+    const cleanVal = val.replace(/\D/g, '');
+    set('customer', { phone: cleanVal });
+
+    if (cleanVal.length >= 3) {
+      try {
+        const res = await searchCustomers(cleanVal);
+        setSearchResults(res.data.data || res.data || []);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error('Failed to search customers:', err);
+      }
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
   };
 
   useEffect(() => {
@@ -119,13 +154,47 @@ export default function AddBooking() {
                 onChange={e => set('customer', { email: e.target.value })}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="customer@email.com" />
             </div>
-            <div>
+            <div className="relative" id="customer-phone-container">
               <label className="block text-sm font-semibold text-dark mb-2">Phone *</label>
               <input type="tel" value={formData.customer.phone} required
                 pattern="[0-9]{10}"
                 title="Please enter a valid 10-digit phone number"
-                onChange={e => set('customer', { phone: e.target.value.replace(/\D/g, '') })}
+                onChange={e => handlePhoneChange(e.target.value)}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="9876543210" />
+              
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 max-h-[200px] overflow-y-auto p-1.5 space-y-0.5">
+                  <p className="text-[10px] font-bold text-secondary uppercase px-3 py-1 bg-surface-container-low rounded-lg mb-1">Select Existing Customer</p>
+                  {searchResults.map(cust => (
+                    <button
+                      key={cust._id}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          customer: {
+                            name: cust.name || '',
+                            email: cust.email?.includes('@modern-selfdrive.local') ? '' : (cust.email || ''),
+                            phone: cust.phone || '',
+                            address: cust.address || '',
+                            drivingLicenceNumber: cust.drivingLicenceNumber || '',
+                            aadhaarNumber: cust.aadhaarNumber || ''
+                          }
+                        }));
+                        setShowDropdown(false);
+                        toast.success(`Filled details for ${cust.name}`);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-bold">{cust.name}</p>
+                        <p className="text-[10px] text-secondary">{cust.phone}</p>
+                      </div>
+                      <span className="material-symbols-outlined text-sm text-secondary">input</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Driving Licence Number (Optional)</label>
