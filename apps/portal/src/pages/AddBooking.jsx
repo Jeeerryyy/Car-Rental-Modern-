@@ -175,7 +175,7 @@ export default function AddBooking() {
                           customer: {
                             name: cust.name || '',
                             email: cust.email?.includes('@modern-selfdrive.local') ? '' : (cust.email || ''),
-                            phone: cust.phone || '',
+                            phone: cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '',
                             address: cust.address || '',
                             drivingLicenceNumber: cust.drivingLicenceNumber || '',
                             aadhaarNumber: cust.aadhaarNumber || ''
