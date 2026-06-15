@@ -12,7 +12,24 @@ export default function BookingCalendar() {
   const [loading, setLoading] = useState(false);
   const [cars, setCars] = useState([]);
   const [selectedCarId, setSelectedCarId] = useState('all');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const socket = useSocket();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('#vehicle-select-dropdown')) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [dropdownOpen]);
 
   useEffect(() => {
     getCars({ page: 1, limit: 100 })
@@ -137,6 +154,11 @@ export default function BookingCalendar() {
     cancelled: 'bg-red-100 text-red-800',
   };
 
+  const filteredCars = cars.filter(c => {
+    const searchStr = `${c.make} ${c.model} ${c.registrationNumber || ''} ${c.type}`.toLowerCase();
+    return searchStr.includes(searchQuery.toLowerCase());
+  });
+
   const calendarDays = [];
   // Padding for first week
   for (let i = 0; i < firstDayOfMonth; i++) {
@@ -190,18 +212,74 @@ export default function BookingCalendar() {
             {/* Vehicle Selector Dropdown */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-secondary">Vehicle:</span>
-              <select
-                value={selectedCarId}
-                onChange={e => setSelectedCarId(e.target.value)}
-                className="px-4 py-2 border border-outline-variant rounded-xl text-xs bg-surface outline-none focus:border-primary cursor-pointer font-semibold text-primary min-w-[200px]"
-              >
-                <option value="all">All Vehicles (Cars & Bikes)</option>
-                {cars.map(c => (
-                  <option key={c._id} value={c._id}>
-                    {c.make} {c.model} - {c.registrationNumber || 'No Plate'} ({c.type})
-                  </option>
-                ))}
-              </select>
+              <div id="vehicle-select-dropdown" className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDropdownOpen(!dropdownOpen);
+                    setSearchQuery('');
+                  }}
+                  className="flex items-center justify-between px-4 py-2 border border-outline-variant rounded-xl text-xs bg-surface outline-none focus:border-primary cursor-pointer font-semibold text-primary min-w-[220px] max-w-[320px] text-left"
+                >
+                  <span className="truncate">
+                    {selectedCarId === 'all' 
+                      ? 'All Vehicles (Cars & Bikes)' 
+                      : (() => {
+                          const currentCar = cars.find(c => c._id === selectedCarId);
+                          return currentCar 
+                            ? `${currentCar.make} ${currentCar.model} - ${currentCar.registrationNumber || 'No Plate'}` 
+                            : 'Select Vehicle';
+                        })()
+                    }
+                  </span>
+                  <span className="material-symbols-outlined text-sm ml-2">expand_more</span>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-1.5 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl z-50 overflow-hidden min-w-[250px] max-w-[320px] w-full">
+                    <div className="p-2 border-b border-outline-variant flex items-center gap-2 bg-surface">
+                      <span className="material-symbols-outlined text-sm text-secondary pl-1">search</span>
+                      <input
+                        type="text"
+                        placeholder="Search vehicle..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full bg-transparent outline-none text-xs text-primary placeholder-secondary"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-[240px] overflow-y-auto p-1.5 space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCarId('all');
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${selectedCarId === 'all' ? 'bg-primary text-white' : 'text-primary hover:bg-surface-container-low'}`}
+                      >
+                        All Vehicles (Cars & Bikes)
+                      </button>
+                      {filteredCars.length > 0 ? (
+                        filteredCars.map(c => (
+                          <button
+                            key={c._id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCarId(c._id);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors truncate ${selectedCarId === c._id ? 'bg-primary text-white' : 'text-primary hover:bg-surface-container-low'}`}
+                          >
+                            {c.make} {c.model} - {c.registrationNumber || 'No Plate'} ({c.type})
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-center text-secondary py-4">No matching vehicles</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
