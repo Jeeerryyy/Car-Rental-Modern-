@@ -236,14 +236,6 @@ export const searchCustomer = catchAsync(async (req, res) => {
   // Helper: escape regex special characters to prevent MongoDB regex crash
   const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  // First, find customer IDs who have bookings with this owner
-  const ownerId = req.ownerId;
-  const customerIds = await Booking.distinct('customer', { owner: ownerId });
-
-  if (!customerIds || customerIds.length === 0) {
-    return ApiResponse.success(res, 200, 'Customers retrieved', []);
-  }
-
   const Customer = (await import('../models/Customer.js')).default;
 
   const safeQ = escapeRegex(q.trim());
@@ -267,7 +259,6 @@ export const searchCustomer = catchAsync(async (req, res) => {
   }
 
   const customers = await Customer.find({
-    _id: { $in: customerIds },
     $or: conditions
   })
     .select('-password')
