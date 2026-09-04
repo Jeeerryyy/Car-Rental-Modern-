@@ -13,12 +13,17 @@ import { assignInvoiceToBooking } from './invoice.service.js';
 import { config } from '../config/env.js';
 import cacheService from '../config/redis.js';
 
-const invalidateBookingCache = async () => {
+const invalidateBookingCache = async (carId = null) => {
   try {
     await Promise.all([
       cacheService.delPattern('cars:*'),
       cacheService.delPattern('owner:dashboard-stats:*')
     ]);
+    try {
+      getIO().to('public').emit(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, { carId });
+    } catch {
+      // Socket might not be active in some test contexts
+    }
   } catch (err) {
     console.error('[Cache] Targeted invalidation failed on booking mutation:', err);
   }
@@ -536,7 +541,7 @@ export const createManualBooking = async (ownerId, customerData, bookingData, ac
     );
   }
 
-  invalidateBookingCache();
+  invalidateBookingCache(bookingData.carId);
   return booking;
   } finally {
     await cacheService.releaseLock(lockKey);

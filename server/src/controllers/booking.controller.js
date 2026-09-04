@@ -202,7 +202,11 @@ export const createCashBooking = catchAsync(async (req, res) => {
 
     const { getIO } = await import('../config/socket.js');
     const { SOCKET_EVENTS } = await import('../config/socket.events.js');
-    try { getIO().to(`owner:${car.owner}`).emit(SOCKET_EVENTS.BOOKING_CREATED, booking); } catch {}
+    try { 
+      getIO().to(`owner:${car.owner}`).emit(SOCKET_EVENTS.BOOKING_CREATED, booking); 
+      getIO().to('public').emit(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, { carId });
+      await cacheService.delPattern('cars:*');
+    } catch {}
     const { createNotification } = await import('../services/notification.service.js');
     try { await createNotification(car.owner, 'Owner', 'new_booking', 'New Cash Booking', `A pay-at-car booking for ${car.make} ${car.model}`, `/owner/bookings/${booking._id}`); } catch {}
     return ApiResponse.success(res, 201, 'Cash booking created', {

@@ -74,8 +74,9 @@ export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10
     .limit(pagination.limit)
     .sort({ createdAt: -1 });
 
+  const dateRange = { startDate: filters.startDate, endDate: filters.endDate };
   const { injectBookingStatus } = await import('../utils/carUtils.js');
-  const carsWithStatus = await injectBookingStatus(cars);
+  const carsWithStatus = await injectBookingStatus(cars, dateRange);
   const result = {
     cars: carsWithStatus,
     pagination: {
@@ -96,7 +97,7 @@ export const getAllCars = async (filters = {}, pagination = { page: 1, limit: 10
   return result;
 };
 
-export const getCarById = async (carId) => {
+export const getCarById = async (carId, dateRange = {}) => {
   const car = await Car.findOne({ _id: carId, isDeleted: false }).populate('owner', 'name businessName phone');
   
   if (!car) {
@@ -104,8 +105,26 @@ export const getCarById = async (carId) => {
   }
 
   const { injectBookingStatus } = await import('../utils/carUtils.js');
-  const carsWithStatus = await injectBookingStatus([car]);
+  const carsWithStatus = await injectBookingStatus([car], dateRange);
   return carsWithStatus[0];
+};
+
+export const getCarAvailability = async (carId) => {
+  const car = await Car.findOne({ _id: carId, isDeleted: false });
+  if (!car) {
+    throw new AppError('Car not found', 404);
+  }
+
+  const { injectBookingStatus } = await import('../utils/carUtils.js');
+  const [carWithStatus] = await injectBookingStatus([car]);
+
+  return {
+    carId,
+    isBooked: carWithStatus.isBooked,
+    bookedUntil: carWithStatus.bookedUntil,
+    nextAvailableDate: carWithStatus.nextAvailableDate,
+    bookedRanges: carWithStatus.bookedRanges || []
+  };
 };
 
 export const createCar = async (carData, ownerId, imageFiles = []) => {

@@ -51,6 +51,7 @@ export const authAPI = {
 export const carAPI = {
   getAll: (params?: Record<string, any>) => api.get('/cars', { params }),
   getById: (id: string) => api.get(`/cars/${id}`),
+  getAvailability: (id: string) => api.get(`/cars/${id}/availability`),
   search: (params?: Record<string, any>) => api.get('/search', { params }),
   getCategories: () => api.get('/cars/categories'),
   getLocations: () => api.get('/cars/locations'),

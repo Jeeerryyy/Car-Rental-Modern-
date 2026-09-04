@@ -3,9 +3,11 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useNavigate, Link } from 'react-router-dom';
 import { LockIcon, ArrowRightIcon, ShieldIcon, CameraIcon, CheckIcon } from '../ui/Icons';
 import { useAuth } from '../../context/AuthContext';
-import { bookingAPI, promoAPI, uploadAPI } from '../../services/api';
+import { bookingAPI, promoAPI, uploadAPI, carAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import SignaturePad from '../ui/SignaturePad';
+import { getSocket } from '../../lib/socket.js';
+import { SOCKET_EVENTS } from '../../lib/socket.events.js';
 
 export default function CarBookingForm({ car }) {
   if (!car) return null;
@@ -39,6 +41,66 @@ export default function CarBookingForm({ car }) {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [payAtCar, setPayAtCar] = useState(false);
+
+  // Availability State
+  const [availability, setAvailability] = useState({
+    isBooked: car.isBooked || false,
+    bookedUntil: car.bookedUntil || null,
+    nextAvailableDate: car.nextAvailableDate || null,
+    bookedRanges: car.bookedRanges || []
+  });
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+
+  const fetchAvailability = async () => {
+    if (!car?._id) return;
+    try {
+      setLoadingAvailability(true);
+      const res = await carAPI.getAvailability(car._id);
+      if (res.data?.data) {
+        setAvailability(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load availability:', err);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [car?._id]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const handleAvailabilityUpdate = (data) => {
+      if (!data?.carId || data.carId === car._id) {
+        fetchAvailability();
+      }
+    };
+    socket.on(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailabilityUpdate);
+    return () => {
+      socket.off(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailabilityUpdate);
+    };
+  }, [car?._id]);
+
+  // Auto-fill dates if currently booked
+  useEffect(() => {
+    if (availability?.isBooked && availability?.nextAvailableDate) {
+      const nextDateStr = new Date(availability.nextAvailableDate).toISOString().split('T')[0];
+      setBookingData(prev => {
+        if (!prev.startDate || prev.startDate < nextDateStr) {
+          const nextDay = new Date(new Date(nextDateStr).getTime() + 86400000).toISOString().split('T')[0];
+          return {
+            ...prev,
+            startDate: nextDateStr,
+            endDate: prev.endDate && prev.endDate > nextDateStr ? prev.endDate : nextDay
+          };
+        }
+        return prev;
+      });
+    }
+  }, [availability?.isBooked, availability?.nextAvailableDate]);
 
   // Load search criteria from localStorage
   useEffect(() => {
@@ -86,8 +148,11 @@ export default function CarBookingForm({ car }) {
     }
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const applyDayPreset = (days) => {
-    const start = bookingData.startDate ? new Date(bookingData.startDate) : new Date();
+    const baseDateStr = bookingData.startDate || (availability.isBooked && availability.nextAvailableDate ? new Date(availability.nextAvailableDate).toISOString().split('T')[0] : todayStr);
+    const start = new Date(baseDateStr);
     const end = new Date(start);
     end.setDate(start.getDate() + days);
     
@@ -97,6 +162,25 @@ export default function CarBookingForm({ car }) {
       endDate: end.toISOString().split('T')[0]
     });
   };
+
+  const checkConflict = (startDate, endDate) => {
+    if (!startDate || !endDate || !availability?.bookedRanges || availability.bookedRanges.length === 0) {
+      return null;
+    }
+    const reqStart = new Date(`${startDate}T00:00:00.000Z`).getTime();
+    const reqEnd = new Date(`${endDate}T23:59:59.999Z`).getTime();
+
+    for (const range of availability.bookedRanges) {
+      const rStart = new Date(range.startDate).getTime();
+      const rEnd = new Date(range.endDate).getTime();
+      if (Math.max(reqStart, rStart) <= Math.min(reqEnd, rEnd)) {
+        return range;
+      }
+    }
+    return null;
+  };
+
+  const dateConflict = checkConflict(bookingData.startDate, bookingData.endDate);
 
   const handleProceed = () => {
     if (!customer) {
@@ -114,6 +198,10 @@ export default function CarBookingForm({ car }) {
       const endDateTime = new Date(`${bookingData.endDate}T${bookingData.returnTime}`);
       if (endDateTime <= startDateTime) {
         toast.error('Return date & time must be later than pickup date & time');
+        return;
+      }
+      if (dateConflict) {
+        toast.error('Selected dates overlap with an existing booking. Please pick another date range.');
         return;
       }
       if (!bookingData.phone || bookingData.phone.trim() === '') {
@@ -367,13 +455,50 @@ export default function CarBookingForm({ car }) {
             <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-4 sm:mb-6" style={{ color: '#5C5C5C' }}>Choose your preferred dates and pickup point</p>
           </div>
 
+          {/* Currently Booked Notice */}
+          {availability.isBooked && (
+            <div className="p-4 rounded-xl border border-amber-600/30 bg-amber-500/10 shadow-sm">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider mb-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-600 animate-ping inline-block" />
+                <span>Vehicle Currently Reserved</span>
+              </div>
+              <p className="text-xs text-[#121212] leading-relaxed">
+                This vehicle is currently on a trip and will be ready for pickup from{' '}
+                <strong className="text-amber-950 font-black underline decoration-amber-600">
+                  {availability.nextAvailableDate
+                    ? new Date(availability.nextAvailableDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : (availability.bookedUntil ? new Date(availability.bookedUntil).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Soon')}
+                </strong>.
+                We have automatically prefilled the next available rental dates below.
+              </p>
+            </div>
+          )}
+
+          {/* Reserved Schedule Badges if any upcoming reservations exist */}
+          {availability.bookedRanges && availability.bookedRanges.length > 0 && (
+            <div className="p-3.5 rounded-xl border border-[#D6D0C7] bg-[#F4F1EA]">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#5C5C5C] mb-2">
+                <span>Unavailable / Booked Periods</span>
+                <span className="text-[9px] lowercase font-semibold text-amber-800">auto-detected</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {availability.bookedRanges.map((range, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-bold bg-amber-100/80 text-amber-900 border border-amber-300">
+                    <span className="text-amber-700">🚫</span>
+                    {new Date(range.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {new Date(range.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Quick Presets */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest mb-3 block" style={{ color: '#5C5C5C' }}>Quick Select Duration</label>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[1, 2, 3].map(d => (
                 <button key={d} onClick={() => applyDayPreset(d)}
-                  className="flex flex-col items-center justify-center py-3 sm:py-4 rounded-xl sm:rounded-2xl"
+                  className="flex flex-col items-center justify-center py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all"
                   style={days === d ? { border: '1px solid #A56A43', background: 'rgba(182,124,61,0.05)' } : { border: '1px solid #D6D0C7', background: '#E7E0D4' }}>
                   <span className="text-xl sm:text-2xl font-display font-bold" style={{ color: days === d ? '#A56A43' : '#121212' }}>{d}</span>
                   <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest" style={{ color: days === d ? '#A56A43' : '#5C5C5C' }}>Day{d > 1 ? 's' : ''}</span>
@@ -385,7 +510,7 @@ export default function CarBookingForm({ car }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Pickup Date</label>
-              <input type="date" min={today} value={bookingData.startDate}
+              <input type="date" min={todayStr} value={bookingData.startDate}
                 onChange={e => setBookingData({ ...bookingData, startDate: e.target.value })}
                 className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
@@ -400,7 +525,7 @@ export default function CarBookingForm({ car }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest ml-1 block" style={{ color: '#5C5C5C' }}>Return Date</label>
-              <input type="date" min={bookingData.startDate || today} value={bookingData.endDate}
+              <input type="date" min={bookingData.startDate || todayStr} value={bookingData.endDate}
                 onChange={e => setBookingData({ ...bookingData, endDate: e.target.value })}
                 className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
@@ -411,6 +536,22 @@ export default function CarBookingForm({ car }) {
                 className="w-full rounded-xl px-4 py-3 text-sm font-bold outline-none" style={{ background: '#E7E0D4', border: '1px solid #D6D0C7', color: '#121212' }} />
             </div>
           </div>
+
+          {/* Date Overlap Conflict Alert */}
+          {dateConflict && (
+            <div className="p-4 rounded-xl border border-red-500/40 bg-red-500/10 text-red-900 shadow-sm flex items-start gap-3">
+              <span className="text-lg">⚠️</span>
+              <div className="text-xs">
+                <p className="font-black uppercase tracking-wider text-red-700">Dates Not Available</p>
+                <p className="mt-1 font-medium leading-relaxed text-red-900">
+                  This car is already booked from{' '}
+                  <strong>{new Date(dateConflict.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</strong> to{' '}
+                  <strong>{new Date(dateConflict.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>.
+                  Please adjust your dates to proceed.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Pickup Location */}
           <div>
@@ -475,10 +616,13 @@ export default function CarBookingForm({ car }) {
           )}
 
           <button onClick={handleProceed}
-            className="w-full py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4"
-            style={{ background: '#A56A43', color: '#121212', border: '1px solid #A56A43' }}>
-            <span>Continue to Verification</span>
-            <ArrowRightIcon className="w-4 h-4" />
+            disabled={!!dateConflict}
+            className={`w-full py-3.5 sm:py-4 rounded-xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[11px] sm:text-xs flex items-center justify-center gap-2 sm:gap-3 mt-3 sm:mt-4 transition-all ${
+              dateConflict ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90 active:scale-[0.99]'
+            }`}
+            style={dateConflict ? { background: '#D6D0C7', color: '#5C5C5C', border: '1px solid #D6D0C7' } : { background: '#A56A43', color: '#121212', border: '1px solid #A56A43' }}>
+            <span>{dateConflict ? 'Selected Dates Unavailable' : 'Continue to Verification'}</span>
+            {!dateConflict && <ArrowRightIcon className="w-4 h-4" />}
           </button>
         </div>
       )}

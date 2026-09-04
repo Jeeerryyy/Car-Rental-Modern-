@@ -64,9 +64,7 @@ function PublicShell() {
   const isHome = pathname === '/';
 
   useEffect(() => {
-    if (customer) {
-      connectSocket();
-    }
+    connectSocket();
     return () => {
       disconnectSocket();
     };

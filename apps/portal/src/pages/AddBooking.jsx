@@ -271,8 +271,37 @@ export default function AddBooking() {
                 onChange={e => set('booking', { carId: e.target.value })}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary">
                 <option value="">Select a car</option>
-                {cars.map(c => <option key={c._id} value={c._id}>{c.make} {c.model} - ₹{c.pricePerDay}/day</option>)}
+                {cars.map(c => (
+                  <option key={c._id} value={c._id}>
+                    {c.make} {c.model} {c.isBooked ? '• [Currently Booked]' : ''} - ₹{c.pricePerDay}/day
+                  </option>
+                ))}
               </select>
+
+              {(() => {
+                const selectedCar = cars.find(c => c._id === formData.booking.carId);
+                if (!selectedCar) return null;
+                return (
+                  <div className="mt-2.5 space-y-1.5">
+                    {selectedCar.isBooked && (
+                      <div className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 font-medium flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+                        <span>Currently booked. Free from: <strong>{selectedCar.nextAvailableDate ? new Date(selectedCar.nextAvailableDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Soon'}</strong></span>
+                      </div>
+                    )}
+                    {selectedCar.bookedRanges && selectedCar.bookedRanges.length > 0 && (
+                      <div className="text-[11px] text-secondary">
+                        <span className="font-bold">Reserved Intervals: </span>
+                        {selectedCar.bookedRanges.map((r, i) => (
+                          <span key={i} className="inline-block bg-surface-container-high px-2 py-0.5 rounded text-[10.5px] mr-1.5 font-medium">
+                            {new Date(r.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {new Date(r.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Payment Status</label>

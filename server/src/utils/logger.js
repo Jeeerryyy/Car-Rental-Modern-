@@ -48,7 +48,12 @@ const sanitizeFormat = winston.format((info) => {
     info.traceId = context.traceId;
     info.parentId = context.parentId;
   }
-  return sanitizeValue(info);
+  const sanitized = sanitizeValue(info);
+  const symbols = Object.getOwnPropertySymbols(info);
+  for (const sym of symbols) {
+    sanitized[sym] = info[sym];
+  }
+  return sanitized;
 });
 
 const consoleFormat = printf(({ level, message, timestamp, stack, correlationId, traceId }) => {

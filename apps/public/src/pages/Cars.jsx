@@ -6,6 +6,8 @@ import { FilterIcon, XIcon, SearchIcon } from '../components/ui/Icons';
 import SidebarFilters from '../components/cars/SidebarFilters';
 import CarGrid from '../components/cars/CarGrid';
 import SEO from '../components/SEO';
+import { getSocket } from '../lib/socket.js';
+import { SOCKET_EVENTS } from '../lib/socket.events.js';
 
 const ITEMS_PER_PAGE = 100;
 const EMPTY_FILTERS = { type: [], maxPrice: 10000, transmission: '', fuelType: '', driveOption: '' };
@@ -37,15 +39,35 @@ const Cars = () => {
       if (committedFilters.transmission) params.transmission = committedFilters.transmission;
       if (committedFilters.maxPrice) params.maxPrice = committedFilters.maxPrice;
       if (search.trim()) params.search = search.trim();
+      
+      const startDate = searchParams.get('startDate') || searchParams.get('from');
+      const endDate = searchParams.get('endDate') || searchParams.get('to');
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
       const res = await carAPI.getAll(params);
       setCars(res.data.data || []);
       setTotalCount(res.data.pagination?.total || 0);
     } catch (err) {
       setError('Failed to load cars. Please try again.'); setCars([]);
     } finally { setLoading(false); }
-  }, [currentPage, committedFilters, search, quickType]);
+  }, [currentPage, committedFilters, search, quickType, searchParams]);
 
   useEffect(() => { fetchCars(); }, [fetchCars]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleAvailability = () => {
+      fetchCars();
+    };
+
+    socket.on(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailability);
+    return () => {
+      socket.off(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailability);
+    };
+  }, [fetchCars]);
 
   const applyFilters = useCallback(() => { setCommittedFilters({ ...localFilters }); setFilterOpen(false); setCurrentPage(1); }, [localFilters]);
   const clearFilters = useCallback(() => { setLocalFilters(EMPTY_FILTERS); setCommittedFilters(EMPTY_FILTERS); setSearch(''); setCurrentPage(1); }, []);

@@ -1,10 +1,20 @@
-import { getAllCars, getCarById, createCar, updateCar, deleteCar, toggleAvailability, addBlockedDates, removeBlockedDates, getOwnerCars } from '../services/car.service.js';
+import { getAllCars, getCarById, getCarAvailability, createCar, updateCar, deleteCar, toggleAvailability, addBlockedDates, removeBlockedDates, getOwnerCars } from '../services/car.service.js';
 import { uploadCarImages as uploadToCloudinary } from '../services/cloudinary.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const getAll = catchAsync(async (req, res) => {
-  const filters = { category: req.query.category, type: req.query.type, minPrice: req.query.minPrice, maxPrice: req.query.maxPrice, search: req.query.search, fuelType: req.query.fuelType, transmission: req.query.transmission };
+  const filters = {
+    category: req.query.category,
+    type: req.query.type,
+    minPrice: req.query.minPrice,
+    maxPrice: req.query.maxPrice,
+    search: req.query.search,
+    fuelType: req.query.fuelType,
+    transmission: req.query.transmission,
+    startDate: req.query.startDate,
+    endDate: req.query.endDate
+  };
   const pagination = { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 10 };
   const result = await getAllCars(filters, pagination);
   
@@ -17,13 +27,18 @@ export const getAll = catchAsync(async (req, res) => {
 });
 
 export const getOne = catchAsync(async (req, res) => {
-  const car = await getCarById(req.params.id);
+  const car = await getCarById(req.params.id, { startDate: req.query.startDate, endDate: req.query.endDate });
   
   if (!req.ownerId) {
     delete car.registrationNumber;
   }
   
   return ApiResponse.success(res, 200, 'Car retrieved', { car });
+});
+
+export const getAvailability = catchAsync(async (req, res) => {
+  const availability = await getCarAvailability(req.params.id);
+  return ApiResponse.success(res, 200, 'Car availability retrieved', availability);
 });
 
 export const create = catchAsync(async (req, res) => {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAll, getOne } from '../../controllers/car.controller.js';
+import { getAll, getOne, getAvailability } from '../../controllers/car.controller.js';
 import { search } from '../../controllers/search.controller.js';
 import { categories } from '../../controllers/search.controller.js';
 import { locations } from '../../controllers/search.controller.js';
@@ -81,6 +81,7 @@ router.get('/categories', categories);
 router.get('/locations', locations);
 router.get('/featured', featured);
 router.get('/:id', getOne);
+router.get('/:id/availability', getAvailability);
 router.get('/:carId/reviews', forCar);
 
 export default router;

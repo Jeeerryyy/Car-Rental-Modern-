@@ -37,15 +37,18 @@ export const initSocket = (httpServer) => {
       }
 
       if (!token) {
-        return next(new Error('Authentication error: Token missing'));
+        // Allow guest connection for public broadcasts
+        socket.data.user = { id: `anon_${socket.id}`, role: 'guest' };
+        return next();
       }
 
       const decoded = jwt.verify(token, config.jwt.secret);
       socket.data.user = decoded;
       next();
     } catch (error) {
-      logger.error(`[Socket] Auth error: ${error.message}`);
-      next(new Error('Authentication error: Invalid token'));
+      // Fallback to guest so public broadcasts still work
+      socket.data.user = { id: `anon_${socket.id}`, role: 'guest' };
+      next();
     }
   });
 
@@ -53,21 +56,23 @@ export const initSocket = (httpServer) => {
     const user = socket.data.user;
     logger.info(`[Socket] User connected: ${user.id} (${user.role})`);
     
-    // Join personal room
-    socket.join(`user:${user.id}`);
-    logger.info(`[Socket] ${user.id} joined room: user:${user.id}`);
-    
-    // Join owner room if owner or staff
-    if (user.role === 'owner') {
-      socket.join(`owner:${user.id}`);
-      logger.info(`[Socket] ${user.id} joined room: owner:${user.id}`);
-    } else if (user.role === 'staff' && user.parentOwner) {
-      socket.join(`owner:${user.parentOwner}`);
-      logger.info(`[Socket] Staff ${user.id} joined room: owner:${user.parentOwner}`);
-    }
-
-    // Join public room for broadcast events
+    // Always join public room for broadcast events
     socket.join('public');
+
+    if (user.role !== 'guest') {
+      // Join personal room
+      socket.join(`user:${user.id}`);
+      logger.info(`[Socket] ${user.id} joined room: user:${user.id}`);
+      
+      // Join owner room if owner or staff
+      if (user.role === 'owner') {
+        socket.join(`owner:${user.id}`);
+        logger.info(`[Socket] ${user.id} joined room: owner:${user.id}`);
+      } else if (user.role === 'staff' && user.parentOwner) {
+        socket.join(`owner:${user.parentOwner}`);
+        logger.info(`[Socket] Staff ${user.id} joined room: owner:${user.parentOwner}`);
+      }
+    }
 
     socket.on('error', (error) => {
       logger.error(`[Socket] Socket error for user ${user.id}: ${error.message}`);

@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { carAPI, reviewAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { ChevronRightIcon } from '../components/ui/Icons';
 import CarBookingForm from '../components/cars/CarBookingForm';
 import SEO from '../components/SEO';
+import { getSocket } from '../lib/socket.js';
+import { SOCKET_EVENTS } from '../lib/socket.events.js';
 
 function CarDetail() {
   const { id } = useParams();
@@ -15,18 +17,35 @@ function CarDetail() {
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [carRes, reviewsRes] = await Promise.all([carAPI.getById(id), reviewAPI.getByCar(id, { page: 1, limit: 5 })]);
-        setCar(carRes.data.data.car);
-        setReviews(reviewsRes.data.data || []);
-      } catch { setError('Failed to load car details'); }
-      finally { setLoading(false); }
-    };
-    if (id) fetchData();
+  const fetchCarData = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const [carRes, reviewsRes] = await Promise.all([carAPI.getById(id), reviewAPI.getByCar(id, { page: 1, limit: 5 })]);
+      setCar(carRes.data.data.car);
+      setReviews(reviewsRes.data.data || []);
+    } catch { setError('Failed to load car details'); }
+    finally { if (showLoading) setLoading(false); }
   }, [id]);
+
+  useEffect(() => {
+    if (id) fetchCarData(true);
+  }, [id, fetchCarData]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleAvailability = (data) => {
+      if (!data?.carId || data.carId === id) {
+        fetchCarData(false);
+      }
+    };
+
+    socket.on(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailability);
+    return () => {
+      socket.off(SOCKET_EVENTS.CAR_AVAILABILITY_CHANGED, handleAvailability);
+    };
+  }, [id, fetchCarData]);
 
   if (loading) {
     return (
@@ -104,13 +123,19 @@ function CarDetail() {
               <div className="relative h-[400px] flex items-center justify-center p-8" style={{ background: 'rgba(213,201,180,0.3)' }}>
                 <img src={images[selectedImage]} alt={`${car.make} ${car.model}`} loading="lazy" className={`max-h-full max-w-full object-contain ${car.isBooked ? 'blur-sm grayscale' : ''}`} />
                 {car.isBooked && (
-                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center" style={{ background: 'rgba(214,208,199,0.2)', backdropFilter: 'blur(2px)' }}>
-                    <div className="p-8 rounded-[12px] max-w-sm transform -rotate-2" style={{ background: 'rgba(18,18,18,0.95)', border: '1px solid rgba(214,208,199,0.1)' }}>
-                      <h3 className="text-2xl font-bold mb-2" style={{ color: '#FFFFFF' }}>On a Trip</h3>
-                      <p className="text-sm font-medium leading-relaxed" style={{ color: 'rgba(214,208,199,0.5)' }}>
-                        This vehicle is currently rented and will be available from
-                        <span className="block text-lg mt-1 font-display" style={{ color: '#FFFFFF' }}>
-                          {new Date(new Date(car.bookedUntil).getTime() + 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center" style={{ background: 'rgba(214,208,199,0.3)', backdropFilter: 'blur(3px)' }}>
+                    <div className="p-8 rounded-[16px] max-w-sm transform -rotate-1 shadow-2xl" style={{ background: 'rgba(18,18,18,0.95)', border: '1px solid rgba(214,208,199,0.2)' }}>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-3 bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                        Currently Reserved
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2 text-white">Vehicle On Trip</h3>
+                      <p className="text-sm font-medium leading-relaxed" style={{ color: 'rgba(214,208,199,0.7)' }}>
+                        This vehicle is currently on a journey and will be ready for pickup from
+                        <span className="block text-lg mt-2 font-display font-bold text-white tracking-wide">
+                          {car.nextAvailableDate 
+                            ? new Date(car.nextAvailableDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+                            : (car.bookedUntil ? new Date(car.bookedUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Soon')}
                         </span>
                       </p>
                     </div>

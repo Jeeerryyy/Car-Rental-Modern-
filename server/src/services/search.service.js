@@ -44,8 +44,9 @@ export const searchCars = async (params = {}) => {
     .limit(parseInt(limit))
     .sort({ averageRating: -1, totalBookings: -1 });
 
+  const dateRange = { startDate: params.startDate, endDate: params.endDate };
   const { injectBookingStatus } = await import('../utils/carUtils.js');
-  const carsWithStatus = await injectBookingStatus(cars);
+  const carsWithStatus = await injectBookingStatus(cars, dateRange);
 
   return {
     cars: carsWithStatus,
