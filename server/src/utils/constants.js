@@ -44,9 +44,9 @@ export const NOTIFICATION_TYPES = {
 
 export const RATE_LIMIT = {
   AUTH_WINDOW_MS: 15 * 60 * 1000,
-  AUTH_MAX: 5,
+  AUTH_MAX: 10,
   GENERAL_WINDOW_MS: 15 * 60 * 1000,
-  GENERAL_MAX: 100
+  GENERAL_MAX: 1000
 };
 
 export const JWT_EXPIRY = {

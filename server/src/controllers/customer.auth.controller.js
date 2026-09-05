@@ -1,4 +1,6 @@
 import { registerCustomer, loginCustomer, googleLoginCustomer, getCustomerById, updateCustomerProfile, changeCustomerPassword, requestPasswordReset, resetCustomerPassword } from '../services/customer.auth.service.js';
+import { updateOwnerProfile, changeOwnerPassword } from '../services/owner.auth.service.js';
+import { USER_ROLES } from '../utils/constants.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
@@ -49,8 +51,9 @@ export const logout = catchAsync(async (req, res) => {
     await blacklistToken(token);
   }
   
-  if (req.customer) {
-    await logAudit('auth.customer_logout', req.customer._id.toString(), 'customer', {}, req);
+  const user = req.customer || req.owner || req.user;
+  if (user?._id) {
+    await logAudit('auth.customer_logout', user._id.toString(), req.role || 'customer', {}, req);
   }
 
   res.clearCookie('customerToken', {
@@ -101,13 +104,43 @@ export const getProfile = catchAsync(async (req, res) => {
 });
 
 export const updateProfile = catchAsync(async (req, res) => {
-  const customer = await updateCustomerProfile(req.customer._id, req.body);
-  return ApiResponse.success(res, 200, 'Profile updated', { customer });
+  const user = req.customer || req.owner || req.user;
+  if (!user?._id) {
+    throw new AppError('Profile not found', 404);
+  }
+
+  let updatedUser;
+  if (req.role === USER_ROLES.OWNER || req.owner) {
+    updatedUser = await updateOwnerProfile(user._id, req.body);
+  } else {
+    updatedUser = await updateCustomerProfile(user._id, req.body);
+  }
+
+  const profileData = {
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    role: req.role || updatedUser.role,
+    phone: updatedUser.phone
+  };
+
+  return ApiResponse.success(res, 200, 'Profile updated', { customer: profileData, user: profileData });
 });
 
 export const changePassword = catchAsync(async (req, res) => {
+  const user = req.customer || req.owner || req.user;
+  if (!user?._id) {
+    throw new AppError('User not found', 404);
+  }
+
   const { currentPassword, newPassword } = req.body;
-  const result = await changeCustomerPassword(req.customer._id, currentPassword, newPassword);
+  let result;
+  if (req.role === USER_ROLES.OWNER || req.owner) {
+    result = await changeOwnerPassword(user._id, currentPassword, newPassword);
+  } else {
+    result = await changeCustomerPassword(user._id, currentPassword, newPassword);
+  }
+
   return ApiResponse.success(res, 200, result.message);
 });
 

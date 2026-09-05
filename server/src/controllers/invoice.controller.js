@@ -8,7 +8,8 @@ import { catchAsync } from '../utils/catchAsync.js';
  */
 export const getInvoiceHTML = catchAsync(async (req, res) => {
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
-  const html = await renderInvoiceHTML(req.params.id, userId);
+  const ownerId = req.ownerId || req.owner?._id;
+  const html = await renderInvoiceHTML(req.params.id, userId, ownerId);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 });
@@ -19,6 +20,7 @@ export const getInvoiceHTML = catchAsync(async (req, res) => {
  */
 export const getInvoiceJSON = catchAsync(async (req, res) => {
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
-  const data = await getInvoiceData(req.params.id, userId);
+  const ownerId = req.ownerId || req.owner?._id;
+  const data = await getInvoiceData(req.params.id, userId, ownerId);
   return ApiResponse.success(res, 200, 'Invoice data retrieved', { invoice: data });
 });

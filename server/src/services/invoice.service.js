@@ -62,10 +62,15 @@ export const validateInvoiceData = (booking) => {
  * @param {string} userId - The requesting user's ID (customer or owner)
  * @returns {Object} Invoice data object ready for template rendering
  */
-export const getInvoiceData = async (bookingId, userId) => {
+export const getInvoiceData = async (bookingId, userId, ownerId = null) => {
+  const orConditions = [{ customer: userId }, { owner: userId }];
+  if (ownerId && ownerId.toString() !== userId?.toString()) {
+    orConditions.push({ owner: ownerId });
+  }
+
   const booking = await Booking.findOne({
     _id: bookingId,
-    $or: [{ customer: userId }, { owner: userId }]
+    $or: orConditions
   })
     .populate('car', 'type make model images pricePerDay category fuelType transmission year registrationNumber color')
     .populate('customer', 'name email phone address drivingLicenceNumber aadhaarNumber documents');
@@ -147,8 +152,8 @@ export const getInvoiceData = async (bookingId, userId) => {
  * @param {string} userId
  * @returns {string} Complete HTML document
  */
-export const renderInvoiceHTML = async (bookingId, userId) => {
-  const data = await getInvoiceData(bookingId, userId);
+export const renderInvoiceHTML = async (bookingId, userId, ownerId = null) => {
+  const data = await getInvoiceData(bookingId, userId, ownerId);
   return generateInvoiceHTML(data);
 };
 

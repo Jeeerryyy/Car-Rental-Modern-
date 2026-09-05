@@ -12,3 +12,4 @@ export const deleteBooking = (id) => api.delete(`/owner/bookings/${id}`);
  */
 export const getInvoiceHTML = (id) => api.get(`/owner/bookings/${id}/invoice`);
 export const searchCustomers = (query) => api.get('/owner/bookings/search-customer', { params: { q: query } });
+export const lookupCustomerByPhone = (phone) => api.get('/owner/bookings/customer-by-phone', { params: { phone } });

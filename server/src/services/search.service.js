@@ -1,4 +1,7 @@
 import Car from '../models/Car.js';
+import cacheService from '../config/redis.js';
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const searchCars = async (params = {}) => {
   const {
@@ -13,11 +16,12 @@ export const searchCars = async (params = {}) => {
 
   const query = { isActive: true, isDeleted: false };
 
-  if (q) {
+  if (q && typeof q === 'string') {
+    const safeQ = escapeRegex(q.trim());
     query.$or = [
-      { make: { $regex: q, $options: 'i' } },
-      { model: { $regex: q, $options: 'i' } },
-      { description: { $regex: q, $options: 'i' } }
+      { make: { $regex: safeQ, $options: 'i' } },
+      { model: { $regex: safeQ, $options: 'i' } },
+      { description: { $regex: safeQ, $options: 'i' } }
     ];
   }
 
@@ -31,8 +35,8 @@ export const searchCars = async (params = {}) => {
     if (maxPrice) query.pricePerDay.$lte = parseFloat(maxPrice);
   }
 
-  if (location) {
-    query.location = { $regex: location, $options: 'i' };
+  if (location && typeof location === 'string') {
+    query.location = { $regex: escapeRegex(location.trim()), $options: 'i' };
   }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -60,15 +64,38 @@ export const searchCars = async (params = {}) => {
 };
 
 export const getCategories = async () => {
+  const cacheKey = 'cars:categories:distinct';
+  try {
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+  } catch {}
+
   const categories = await Car.distinct('category', { isActive: true, isDeleted: false });
-  return categories.map(cat => ({
+  const formatted = categories.map(cat => ({
     name: cat.charAt(0).toUpperCase() + cat.slice(1),
     value: cat
   }));
+
+  try {
+    await cacheService.set(cacheKey, formatted, 600); // 10 min TTL
+  } catch {}
+
+  return formatted;
 };
 
 export const getLocations = async () => {
+  const cacheKey = 'cars:locations:distinct';
+  try {
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+  } catch {}
+
   const locations = await Car.distinct('location', { isActive: true, isDeleted: false });
+
+  try {
+    await cacheService.set(cacheKey, locations, 600); // 10 min TTL
+  } catch {}
+
   return locations;
 };
 

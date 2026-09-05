@@ -225,7 +225,7 @@ export default function BookingCalendar() {
                     {selectedCarId === 'all' 
                       ? 'All Vehicles (Cars & Bikes)' 
                       : (() => {
-                          const currentCar = cars.find(c => c._id === selectedCarId);
+                          const currentCar = (cars || []).find(c => c?._id === selectedCarId);
                           return currentCar 
                             ? `${currentCar.make} ${currentCar.model} - ${currentCar.registrationNumber || 'No Plate'}` 
                             : 'Select Vehicle';
@@ -260,17 +260,17 @@ export default function BookingCalendar() {
                         All Vehicles (Cars & Bikes)
                       </button>
                       {filteredCars.length > 0 ? (
-                        filteredCars.map(c => (
+                        filteredCars.filter(Boolean).map(c => (
                           <button
-                            key={c._id}
+                            key={c?._id || Math.random()}
                             type="button"
                             onClick={() => {
-                              setSelectedCarId(c._id);
+                              setSelectedCarId(c?._id);
                               setDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors truncate ${selectedCarId === c._id ? 'bg-primary text-white' : 'text-primary hover:bg-surface-container-low'}`}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors truncate ${selectedCarId === c?._id ? 'bg-primary text-white' : 'text-primary hover:bg-surface-container-low'}`}
                           >
-                            {c.make} {c.model} - {c.registrationNumber || 'No Plate'} ({c.type})
+                            {c?.make} {c?.model} - {c?.registrationNumber || 'No Plate'} ({c?.type})
                           </button>
                         ))
                       ) : (

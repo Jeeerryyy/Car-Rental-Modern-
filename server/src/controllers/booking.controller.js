@@ -10,7 +10,8 @@ import { AppError } from '../utils/AppError.js';
 
 export const getOne = catchAsync(async (req, res) => {
   const userId = req.customer?._id || req.owner?._id || req.user?._id;
-  const booking = await getBookingById(req.params.id, userId);
+  const ownerId = req.ownerId || req.owner?._id;
+  const booking = await getBookingById(req.params.id, userId, ownerId);
   return ApiResponse.success(res, 200, 'Booking retrieved', { 
     booking,
     razorpayKeyId: config.payment.keyId
@@ -241,33 +242,247 @@ export const searchCustomer = catchAsync(async (req, res) => {
   const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const Customer = (await import('../models/Customer.js')).default;
+  const Booking = (await import('../models/Booking.js')).default;
 
-  const safeQ = escapeRegex(q.trim());
+  const cleanQ = q.trim();
+  const safeQ = escapeRegex(cleanQ);
+
   const conditions = [
-    { name: { $regex: safeQ, $options: 'i' } }
+    { name: { $regex: safeQ, $options: 'i' } },
+    { email: { $regex: safeQ, $options: 'i' } },
+    { drivingLicenceNumber: { $regex: safeQ, $options: 'i' } },
+    { aadhaarNumber: { $regex: safeQ, $options: 'i' } }
   ];
 
   // Clean query for numeric digits
-  const cleanPhone = q.replace(/\D/g, '');
-  if (cleanPhone.length >= 3) {
-    const safePhone = escapeRegex(cleanPhone);
-    conditions.push({ phone: { $regex: safePhone, $options: 'i' } });
+  const digits = cleanQ.replace(/\D/g, '');
+  if (digits.length >= 3) {
+    // Allows flexible matching when spaces or dashes are stored in DB (e.g. "98765 43210")
+    const digitPattern = digits.split('').join('[\\s\\-\\.]*');
+    conditions.push({ phone: { $regex: digitPattern, $options: 'i' } });
 
-    // If it's a 10-digit number or longer, also search by the last 10 digits
-    if (cleanPhone.length >= 10) {
-      const last10 = cleanPhone.slice(-10);
-      if (last10 !== cleanPhone) {
-        conditions.push({ phone: { $regex: escapeRegex(last10), $options: 'i' } });
+    // Handle country code prefix (e.g. +91 entered by user)
+    if (digits.startsWith('91') && digits.length > 4) {
+      const without91 = digits.slice(2);
+      conditions.push({ phone: { $regex: without91.split('').join('[\\s\\-\\.]*'), $options: 'i' } });
+    }
+
+    // Handle last 10 digits
+    if (digits.length >= 10) {
+      const last10 = digits.slice(-10);
+      conditions.push({ phone: { $regex: last10.split('').join('[\\s\\-\\.]*'), $options: 'i' } });
+    }
+  }
+
+  // 1. Search in Customer collection
+  const rawCustomers = await Customer.find({ $or: conditions })
+    .select('-password')
+    .sort({ updatedAt: -1 })
+    .limit(30)
+    .lean();
+
+  // 2. Also search past bookings in case phone/customer is in Bookings
+  if (digits.length >= 3) {
+    const bookingConditions = [
+      { phone: { $regex: digits.split('').join('[\\s\\-\\.]*'), $options: 'i' } }
+    ];
+    if (digits.length >= 10) {
+      bookingConditions.push({ phone: { $regex: digits.slice(-10).split('').join('[\\s\\-\\.]*'), $options: 'i' } });
+    }
+
+    const pastBookings = await Booking.find({ $or: bookingConditions })
+      .populate('customer', '-password')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    for (const b of pastBookings) {
+      if (b.customer && typeof b.customer === 'object') {
+        rawCustomers.push(b.customer);
       }
     }
   }
 
-  const customers = await Customer.find({
-    $or: conditions
+  // 3. Deduplicate customers by normalized phone number or email or ID
+  const map = new Map();
+  for (const cust of rawCustomers) {
+    const cleanPhone = cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '';
+    const key = cleanPhone || (cust.email && !cust.email.includes('@modern-selfdrive.local') ? cust.email : cust._id.toString());
+
+    if (!map.has(key)) {
+      map.set(key, { ...cust });
+    } else {
+      const existing = map.get(key);
+      if (!existing.address && cust.address) existing.address = cust.address;
+      if (!existing.drivingLicenceNumber && cust.drivingLicenceNumber) existing.drivingLicenceNumber = cust.drivingLicenceNumber;
+      if (!existing.aadhaarNumber && cust.aadhaarNumber) existing.aadhaarNumber = cust.aadhaarNumber;
+      if (existing.email?.includes('@modern-selfdrive.local') && cust.email && !cust.email.includes('@modern-selfdrive.local')) {
+        existing.email = cust.email;
+      }
+      if ((!existing.phone || existing.phone === 'Not provided') && cust.phone && cust.phone !== 'Not provided') {
+        existing.phone = cust.phone;
+      }
+    }
+  }
+
+  const deduplicated = Array.from(map.values()).slice(0, 10);
+
+  // 4. Enrich each customer with real past booking count & last booking date via batch aggregation
+  const customerIds = deduplicated.map(c => c._id);
+  const allPhones = [];
+  for (const c of deduplicated) {
+    const clean = c.phone ? c.phone.replace(/\D/g, '').slice(-10) : '';
+    if (clean && clean.length === 10) {
+      allPhones.push(clean, `+91${clean}`);
+    }
+  }
+
+  try {
+    const stats = await Booking.aggregate([
+      {
+        $match: {
+          $or: [
+            { customer: { $in: customerIds } },
+            ...(allPhones.length > 0 ? [{ phone: { $in: allPhones } }] : [])
+          ]
+        }
+      },
+      {
+        $project: {
+          customer: 1,
+          phone: 1,
+          date: { $ifNull: ['$startDate', '$createdAt'] }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $ifNull: [
+              '$customer',
+              '$phone'
+            ]
+          },
+          count: { $sum: 1 },
+          lastBookingDate: { $max: '$date' }
+        }
+      }
+    ]);
+
+    const statsMap = new Map();
+    for (const item of stats) {
+      if (item._id) statsMap.set(item._id.toString(), item);
+    }
+
+    for (const cust of deduplicated) {
+      const idStr = cust._id?.toString();
+      const cleanPhone = cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '';
+      const byId = idStr ? statsMap.get(idStr) : null;
+      const byPhone = cleanPhone ? (statsMap.get(cleanPhone) || statsMap.get(`+91${cleanPhone}`)) : null;
+      
+      const count = Math.max(byId?.count || 0, byPhone?.count || 0);
+      const lastDate = byId?.lastBookingDate || byPhone?.lastBookingDate || null;
+      
+      cust.pastBookingsCount = count;
+      cust.lastBookingDate = lastDate;
+    }
+  } catch (err) {
+    for (const cust of deduplicated) {
+      cust.pastBookingsCount = 0;
+      cust.lastBookingDate = null;
+    }
+  }
+
+  // Sort by past bookings count (descending) and updated timestamp
+  deduplicated.sort((a, b) => (b.pastBookingsCount || 0) - (a.pastBookingsCount || 0));
+
+  return ApiResponse.success(res, 200, 'Customers retrieved', deduplicated);
+});
+
+export const lookupCustomerByPhone = catchAsync(async (req, res) => {
+  const { phone } = req.query;
+  if (!phone || typeof phone !== 'string') {
+    return ApiResponse.success(res, 200, 'Customer lookup result', { found: false, customer: null });
+  }
+
+  const cleanDigits = phone.replace(/\D/g, '');
+  const last10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : cleanDigits;
+
+  if (last10.length < 10) {
+    return ApiResponse.success(res, 200, 'Customer lookup result', { found: false, customer: null });
+  }
+
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safe10 = escapeRegex(last10);
+
+  const Customer = (await import('../models/Customer.js')).default;
+  const Booking = (await import('../models/Booking.js')).default;
+
+  // 1. Try finding in Customer collection
+  let customer = await Customer.findOne({
+    $or: [
+      { phone: last10 },
+      { phone: `+91${last10}` },
+      { phone: { $regex: safe10, $options: 'i' } }
+    ]
   })
     .select('-password')
-    .limit(10)
     .lean();
 
-  return ApiResponse.success(res, 200, 'Customers retrieved', customers);
+  // 2. If not found in Customer, check previous bookings of this owner
+  if (!customer && req.ownerId) {
+    const pastBooking = await Booking.findOne({
+      owner: req.ownerId,
+      $or: [
+        { phone: last10 },
+        { phone: `+91${last10}` },
+        { phone: { $regex: safe10, $options: 'i' } }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .populate('customer', '-password')
+      .lean();
+
+    if (pastBooking && pastBooking.customer) {
+      customer = pastBooking.customer;
+    }
+  }
+
+  if (!customer) {
+    return ApiResponse.success(res, 200, 'Customer lookup result', { found: false, customer: null });
+  }
+
+  // Count past bookings with this owner
+  let pastBookingsCount = 0;
+  let lastBookingDate = null;
+  if (req.ownerId) {
+    pastBookingsCount = await Booking.countDocuments({
+      owner: req.ownerId,
+      $or: [
+        { customer: customer._id },
+        { phone: last10 }
+      ]
+    });
+
+    const lastBooking = await Booking.findOne({
+      owner: req.ownerId,
+      $or: [
+        { customer: customer._id },
+        { phone: last10 }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .select('createdAt startDate')
+      .lean();
+
+    if (lastBooking) {
+      lastBookingDate = lastBooking.startDate || lastBooking.createdAt;
+    }
+  }
+
+  return ApiResponse.success(res, 200, 'Customer lookup result', {
+    found: true,
+    customer,
+    pastBookingsCount,
+    lastBookingDate
+  });
 });

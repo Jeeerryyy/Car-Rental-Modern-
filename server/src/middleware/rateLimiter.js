@@ -10,7 +10,7 @@ import { logger } from '../utils/logger.js';
  */
 const createRateLimiter = (options) => {
   return async (req, res, next) => {
-    if (config.disableRateLimit) {
+    if (config.disableRateLimit || config.nodeEnv === 'development') {
       return next();
     }
 

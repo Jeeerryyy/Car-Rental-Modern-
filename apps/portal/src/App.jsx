@@ -132,6 +132,7 @@ export default function App() {
             <Route path="/fleet/:id"     element={<RequireOwner><FleetDetail /></RequireOwner>} />
             <Route path="/bookings"      element={<Bookings />} />
             <Route path="/bookings/new"  element={<AddBooking />} />
+            <Route path="/bookings/add"  element={<Navigate to="/bookings/new" replace />} />
             <Route path="/clients"       element={<RequireOwner><Clients /></RequireOwner>} />
             <Route path="/notifications"   element={<Notifications />} />
             <Route path="/profile"       element={<Profile />} />

@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { logger } from '../../utils/logger.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
+import { generalLimiter } from '../../middleware/rateLimiter.js';
 
 const router = Router();
 
-router.post('/report', (req, res) => {
+router.post('/report', generalLimiter, (req, res) => {
   const { type, error, componentStack, vitals, route } = req.body;
   const userAgent = req.headers['user-agent'];
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;

@@ -41,7 +41,8 @@ const reviewSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-reviewSchema.index({ car: 1 }, { unique: true });
+reviewSchema.index({ booking: 1 }, { unique: true });
+reviewSchema.index({ car: 1 });
 reviewSchema.index({ customer: 1 });
 reviewSchema.index({ status: 1 });
 

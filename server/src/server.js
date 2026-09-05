@@ -78,10 +78,11 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const cleanOrigin = origin.replace(/\/$/, '');
+    const isProjectVercel = /^https:\/\/(modern-drive|car-rental)[a-z0-9-]*\.vercel\.app$/.test(cleanOrigin);
     if (
       allowedOrigins.includes(cleanOrigin) || 
       config.nodeEnv === 'development' ||
-      (config.nodeEnv === 'production' && cleanOrigin.endsWith('.vercel.app'))
+      (config.nodeEnv === 'production' && isProjectVercel)
     ) {
       callback(null, true);
     } else {

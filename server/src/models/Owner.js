@@ -51,6 +51,14 @@ const ownerSchema = new mongoose.Schema({
     default: 0
   },
   lockUntil: Date,
+  passwordResetToken: {
+    type: String,
+    select: false
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false
+  },
   isActive: {
     type: Boolean,
     default: true

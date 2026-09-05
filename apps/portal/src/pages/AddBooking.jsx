@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCars } from '../api/cars.js';
-import { createManualBooking, searchCustomers } from '../api/bookings.js';
+import { createManualBooking, searchCustomers, lookupCustomerByPhone } from '../api/bookings.js';
 import toast from 'react-hot-toast';
 
 export default function AddBooking() {
@@ -11,6 +11,10 @@ export default function AddBooking() {
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [customerSearchResults, setCustomerSearchResults] = useState([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const [isLookingUpPhone, setIsLookingUpPhone] = useState(false);
+  const [returningCustomer, setReturningCustomer] = useState(null);
   const [formData, setFormData] = useState({
     customer: { name: '', email: '', phone: '', address: '', drivingLicenceNumber: '', aadhaarNumber: '' },
     booking: {
@@ -29,6 +33,45 @@ export default function AddBooking() {
       }
     }
   });
+
+  const fetchCustomerByPhone = async (phone) => {
+    const clean = phone.replace(/\D/g, '');
+    const last10 = clean.length >= 10 ? clean.slice(-10) : clean;
+    if (last10.length < 10) return;
+
+    setIsLookingUpPhone(true);
+    try {
+      const res = await lookupCustomerByPhone(last10);
+      const data = res.data?.data || res.data;
+      if (data?.found && data?.customer) {
+        const cust = data.customer;
+        setFormData(prev => ({
+          ...prev,
+          customer: {
+            ...prev.customer,
+            name: cust.name || prev.customer.name,
+            email: (cust.email && !cust.email.includes('@modern-selfdrive.local')) ? cust.email : prev.customer.email,
+            phone: last10,
+            address: cust.address || prev.customer.address,
+            drivingLicenceNumber: cust.drivingLicenceNumber || prev.customer.drivingLicenceNumber,
+            aadhaarNumber: cust.aadhaarNumber || prev.customer.aadhaarNumber,
+          }
+        }));
+        setReturningCustomer({
+          name: cust.name,
+          bookingsCount: data.pastBookingsCount || 1,
+          lastBookingDate: data.lastBookingDate
+        });
+        toast.success(`Returning client found: ${cust.name}! Details auto-filled.`);
+      } else {
+        setReturningCustomer(null);
+      }
+    } catch (err) {
+      console.error('Customer lookup error:', err);
+    } finally {
+      setIsLookingUpPhone(false);
+    }
+  };
 
   const handleFileChange = (field, side, file) => {
     if (!file) return;
@@ -66,34 +109,55 @@ export default function AddBooking() {
     };
   }, [showCustomerDropdown]);
 
-  const handleCustomerSearch = async (val) => {
+  const handleCustomerSearch = (val) => {
     setCustomerSearchQuery(val);
-    if (val.trim().length >= 2) {
-      try {
-        const res = await searchCustomers(val);
-        setCustomerSearchResults(res.data.data || res.data || []);
-        setShowCustomerDropdown(true);
-      } catch (err) {
-        console.error('Failed to search customers:', err);
-      }
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    const trimmed = val.trim();
+    if (trimmed.length >= 2) {
+      setIsSearchingCustomers(true);
+      setShowCustomerDropdown(true);
+
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await searchCustomers(trimmed);
+          const list = res.data?.data || res.data || [];
+          setCustomerSearchResults(list);
+          setShowCustomerDropdown(true);
+        } catch (err) {
+          console.error('Failed to search customers:', err);
+          setCustomerSearchResults([]);
+        } finally {
+          setIsSearchingCustomers(false);
+        }
+      }, 250);
     } else {
+      setIsSearchingCustomers(false);
       setCustomerSearchResults([]);
       setShowCustomerDropdown(false);
     }
   };
 
   const handleSelectCustomer = (cust) => {
+    const cleanP = cust.phone && cust.phone !== 'Not provided' ? cust.phone.replace(/\D/g, '').slice(-10) : '';
     setFormData(prev => ({
       ...prev,
       customer: {
         name: cust.name || '',
         email: cust.email?.includes('@modern-selfdrive.local') ? '' : (cust.email || ''),
-        phone: cust.phone ? cust.phone.replace(/\D/g, '').slice(-10) : '',
+        phone: cleanP,
         address: cust.address || '',
         drivingLicenceNumber: cust.drivingLicenceNumber || '',
         aadhaarNumber: cust.aadhaarNumber || ''
       }
     }));
+    setReturningCustomer({
+      name: cust.name,
+      bookingsCount: cust.pastBookingsCount || 1,
+      lastBookingDate: cust.lastBookingDate || null
+    });
     setCustomerSearchQuery('');
     setCustomerSearchResults([]);
     setShowCustomerDropdown(false);
@@ -161,16 +225,21 @@ export default function AddBooking() {
 
           {/* Dedicated Customer Search Box */}
           <div className="relative mb-6 pb-6 border-b border-outline-variant" id="customer-search-container">
-            <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Search Existing Customer (Phone or Name)</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Search Existing Customer (Phone, Name or DL)</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary text-lg">search</span>
+                <span className={`material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg ${isSearchingCustomers ? 'text-primary animate-spin' : 'text-secondary'}`}>
+                  {isSearchingCustomers ? 'progress_activity' : 'search'}
+                </span>
                 <input
                   type="text"
-                  placeholder="Type phone number or name to search..."
+                  placeholder="Search by phone, name, email or driving licence..."
                   value={customerSearchQuery}
                   onChange={e => handleCustomerSearch(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary font-semibold text-primary"
+                  onFocus={() => {
+                    if (customerSearchResults.length > 0) setShowCustomerDropdown(true);
+                  }}
+                  className="w-full pl-11 pr-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary font-semibold text-primary placeholder:font-normal placeholder:text-outline"
                 />
               </div>
               {customerSearchQuery && (
@@ -180,6 +249,7 @@ export default function AddBooking() {
                     setCustomerSearchQuery('');
                     setCustomerSearchResults([]);
                     setShowCustomerDropdown(false);
+                    setIsSearchingCustomers(false);
                   }}
                   className="px-4 py-3 border border-outline-variant rounded-xl text-xs font-semibold hover:bg-surface transition-colors"
                 >
@@ -188,36 +258,150 @@ export default function AddBooking() {
               )}
             </div>
 
-            {showCustomerDropdown && customerSearchResults.length > 0 && (
-              <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 max-h-[220px] overflow-y-auto p-1.5 space-y-0.5">
-                <p className="text-[10px] font-bold text-secondary uppercase px-3 py-1 bg-surface-container-low rounded-lg mb-1">Select Customer to Autofill</p>
-                {customerSearchResults.map(cust => (
-                  <button
-                    key={cust._id}
-                    type="button"
-                    onClick={() => handleSelectCustomer(cust)}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-bold text-primary">{cust.name}</p>
-                      <p className="text-[10px] text-secondary">{cust.phone} {cust.email ? `• ${cust.email}` : ''}</p>
+            {showCustomerDropdown && (
+              <div className="absolute left-0 right-0 mt-1.5 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl z-50 max-h-[280px] overflow-y-auto p-2 space-y-1 divide-y divide-outline-variant/30">
+                {isSearchingCustomers && customerSearchResults.length === 0 ? (
+                  <div className="p-4 text-center text-secondary text-xs flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined animate-spin text-sm text-primary">progress_activity</span>
+                    <span>Searching database...</span>
+                  </div>
+                ) : customerSearchResults.length > 0 ? (
+                  <>
+                    <div className="flex justify-between items-center px-3 py-1 bg-surface-container-low rounded-lg mb-1">
+                      <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">Matching Clients ({customerSearchResults.length})</span>
+                      <span className="text-[10px] text-outline">Click to Autofill</span>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
-                      <span>Autofill</span>
-                      <span className="material-symbols-outlined text-xs">input</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {showCustomerDropdown && customerSearchResults.length === 0 && customerSearchQuery.trim().length >= 2 && (
-              <div className="absolute left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 p-4 text-center">
-                <p className="text-xs text-secondary font-semibold">No existing customers found matching "{customerSearchQuery}"</p>
+                    {customerSearchResults.map(cust => (
+                      <button
+                        key={cust._id}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectCustomer(cust);
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-lg text-xs hover:bg-surface-container-low transition-colors flex justify-between items-center group cursor-pointer"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-primary group-hover:text-primary transition-colors">{cust.name}</span>
+                            {cust.pastBookingsCount > 0 && (
+                              <span className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                {cust.pastBookingsCount} {cust.pastBookingsCount === 1 ? 'Booking' : 'Bookings'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-secondary">
+                            {cust.phone && cust.phone !== 'Not provided' && (
+                              <span className="font-medium">📞 {cust.phone}</span>
+                            )}
+                            {cust.email && !cust.email.includes('@modern-selfdrive.local') && (
+                              <span>✉️ {cust.email}</span>
+                            )}
+                            {cust.drivingLicenceNumber && (
+                              <span className="bg-surface-container-high px-1.5 py-0.2 rounded text-[10px] text-primary">DL: {cust.drivingLicenceNumber}</span>
+                            )}
+                          </div>
+                          {cust.address && (
+                            <p className="text-[10px] text-outline truncate max-w-[400px]">📍 {cust.address}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 group-hover:bg-primary group-hover:text-white px-2.5 py-1.5 rounded-lg transition-all shrink-0 ml-2">
+                          <span>Autofill</span>
+                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                ) : customerSearchQuery.trim().length >= 2 ? (
+                  <div className="p-4 text-center">
+                    <p className="text-xs text-secondary font-semibold">No existing clients found matching "{customerSearchQuery}"</p>
+                    <p className="text-[11px] text-outline mt-0.5">You can proceed to fill in the customer details below</p>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
 
+          {/* Returning Customer Detected Notification */}
+          {returningCustomer && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-green-950 animate-fadeIn">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-lg">verified_user</span>
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-green-950 flex items-center gap-2">
+                    <span>Returning Client: {returningCustomer.name}</span>
+                    <span className="bg-green-200 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      {returningCustomer.bookingsCount} Past {returningCustomer.bookingsCount === 1 ? 'Booking' : 'Bookings'}
+                    </span>
+                  </p>
+                  <p className="text-green-700 mt-0.5">
+                    Customer details auto-filled from database. You only need to pick car and dates!
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setReturningCustomer(null);
+                  setFormData(prev => ({
+                    ...prev,
+                    customer: { name: '', email: '', phone: '', address: '', drivingLicenceNumber: '', aadhaarNumber: '' }
+                  }));
+                  toast('Cleared customer details', { icon: '🧹' });
+                }}
+                className="self-start sm:self-auto px-3 py-1.5 rounded-lg border border-green-300 hover:bg-green-100 font-semibold text-green-900 transition-colors shrink-0"
+              >
+                Clear / New Client
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-dark">Phone *</label>
+                {isLookingUpPhone && (
+                  <span className="text-[11px] text-primary font-medium flex items-center gap-1 animate-pulse">
+                    <span className="material-symbols-outlined text-xs">sync</span> Checking...
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={formData.customer.phone}
+                  required
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  title="Please enter a valid 10-digit phone number"
+                  onChange={e => {
+                    const cleanVal = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    set('customer', { phone: cleanVal });
+                    if (cleanVal.length === 10) {
+                      fetchCustomerByPhone(cleanVal);
+                    } else if (returningCustomer) {
+                      setReturningCustomer(null);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (formData.customer.phone.length === 10 && !returningCustomer) {
+                      fetchCustomerByPhone(formData.customer.phone);
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm bg-surface outline-none transition-colors ${
+                    returningCustomer ? 'border-green-500 bg-green-50/20' : 'border-outline-variant focus:border-primary'
+                  }`}
+                  placeholder="Enter 10-digit mobile number"
+                />
+                {returningCustomer && (
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-green-600 text-lg pointer-events-none">
+                    check_circle
+                  </span>
+                )}
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Customer Name *</label>
               <input type="text" value={formData.customer.name} required
@@ -229,17 +413,6 @@ export default function AddBooking() {
               <input type="email" value={formData.customer.email}
                 onChange={e => set('customer', { email: e.target.value })}
                 className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="customer@email.com" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-2">Phone *</label>
-              <input type="tel" value={formData.customer.phone} required
-                pattern="[0-9]{10}"
-                title="Please enter a valid 10-digit phone number"
-                onChange={e => {
-                  const cleanVal = e.target.value.replace(/\D/g, '');
-                  set('customer', { phone: cleanVal });
-                }}
-                className="w-full px-4 py-3 border border-outline-variant rounded-xl text-sm bg-surface outline-none focus:border-primary" placeholder="9876543210" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-dark mb-2">Driving Licence Number (Optional)</label>

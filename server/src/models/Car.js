@@ -126,6 +126,8 @@ carSchema.index({ isDeleted: 1 });
 carSchema.index({ pricePerDay: 1 });
 carSchema.index({ owner: 1 });
 carSchema.index({ owner: 1, isDeleted: 1, isActive: 1 });
+carSchema.index({ isActive: 1, isDeleted: 1, category: 1 });
+carSchema.index({ isActive: 1, isDeleted: 1, location: 1 });
 carSchema.index({ make: 'text', model: 'text', location: 'text' });
 
 const Car = mongoose.model('Car', carSchema);

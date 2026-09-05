@@ -260,9 +260,9 @@ export const getOwnerBookings = async (ownerId, filters = {}, pagination = { pag
   // Using denormalized owner field for performance
   const query = { owner: ownerId };
 
-  if (filters.status) {
+  if (filters.status && filters.status !== 'all') {
     query.status = filters.status;
-  } else {
+  } else if (!filters.status && !filters.search && !filters.q) {
     query.status = { $ne: BOOKING_STATUS.PENDING };
   }
 
@@ -272,12 +272,62 @@ export const getOwnerBookings = async (ownerId, filters = {}, pagination = { pag
     if (filters.endDate) query.startDate.$lte = new Date(filters.endDate);
   }
 
+  const searchQuery = (filters.search || filters.q || '').trim();
+  if (searchQuery) {
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safeSearch = escapeRegex(searchQuery);
+    const cleanDigits = searchQuery.replace(/\D/g, '');
+
+    const CustomerModel = (await import('../models/Customer.js')).default;
+    const CarModel = (await import('../models/Car.js')).default;
+
+    const customerConditions = [
+      { name: { $regex: safeSearch, $options: 'i' } },
+      { email: { $regex: safeSearch, $options: 'i' } }
+    ];
+    if (cleanDigits.length >= 3) {
+      customerConditions.push({ phone: { $regex: cleanDigits, $options: 'i' } });
+      if (cleanDigits.length >= 10) {
+        customerConditions.push({ phone: { $regex: cleanDigits.slice(-10), $options: 'i' } });
+      }
+    }
+
+    const matchedCustomerIds = await CustomerModel.find({ $or: customerConditions }).distinct('_id');
+
+    const matchedCarIds = await CarModel.find({
+      owner: ownerId,
+      $or: [
+        { make: { $regex: safeSearch, $options: 'i' } },
+        { model: { $regex: safeSearch, $options: 'i' } },
+        { registrationNumber: { $regex: safeSearch, $options: 'i' } }
+      ]
+    }).distinct('_id');
+
+    const orConditions = [
+      { referenceId: { $regex: safeSearch, $options: 'i' } }
+    ];
+    if (matchedCustomerIds.length > 0) {
+      orConditions.push({ customer: { $in: matchedCustomerIds } });
+    }
+    if (matchedCarIds.length > 0) {
+      orConditions.push({ car: { $in: matchedCarIds } });
+    }
+    if (cleanDigits.length >= 3) {
+      orConditions.push({ phone: { $regex: cleanDigits, $options: 'i' } });
+      if (cleanDigits.length >= 10) {
+        orConditions.push({ phone: { $regex: cleanDigits.slice(-10), $options: 'i' } });
+      }
+    }
+
+    query.$or = orConditions;
+  }
+
   const skip = (pagination.page - 1) * pagination.limit;
   const total = await Booking.countDocuments(query);
 
   const bookings = await Booking.find(query)
-    .populate('car', 'make model images')
-    .populate('customer', 'name email phone')
+    .populate('car', 'make model images registrationNumber pricePerDay')
+    .populate('customer', 'name email phone address drivingLicenceNumber aadhaarNumber')
     .skip(skip)
     .limit(pagination.limit)
     .sort({ createdAt: -1 });
@@ -414,38 +464,64 @@ export const createManualBooking = async (ownerId, customerData, bookingData, ac
 
   let customer;
   let email = customerData.email;
-
-  // If no email provided, generate a unique placeholder
-  if (!email) {
-    const randomId = Math.random().toString(36).substring(2, 8);
-    const identifier = customerData.phone ? customerData.phone.replace(/\+/g, '') : randomId;
-    email = `walkin_${identifier}_${randomId}@modern-selfdrive.local`;
-  }
+  const cleanPhone = customerData.phone ? String(customerData.phone).replace(/\D/g, '') : '';
+  const last10 = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
 
   const CustomerModel = (await import('../models/Customer.js')).default;
-  customer = await CustomerModel.findOne({ email });
+
+  // 1. Check if customer exists by phone
+  if (last10) {
+    customer = await CustomerModel.findOne({
+      $or: [
+        { phone: last10 },
+        { phone: `+91${last10}` },
+        { phone: { $regex: last10, $options: 'i' } }
+      ]
+    });
+  }
+
+  // 2. If not found by phone, check by email if provided
+  if (!customer && email) {
+    customer = await CustomerModel.findOne({ email });
+  }
+
+  // 3. If still no customer and no email provided, generate placeholder email
+  if (!customer && !email) {
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const identifier = last10 || randomId;
+    email = `walkin_${identifier}_${randomId}@modern-selfdrive.local`;
+  }
 
   if (!customer) {
     customer = await CustomerModel.create({
       ...customerData,
+      phone: last10 || customerData.phone,
       email,
       password: 'ChangeMe@123'
     });
   } else {
     let changed = false;
-    if (customerData.phone && !customer.phone) {
-      customer.phone = customerData.phone;
+    if (customerData.name && customer.name !== customerData.name) {
+      customer.name = customerData.name;
       changed = true;
     }
-    if (customerData.address && !customer.address) {
+    if (last10 && (!customer.phone || customer.phone !== last10)) {
+      customer.phone = last10;
+      changed = true;
+    }
+    if (customerData.email && (!customer.email || customer.email.includes('@modern-selfdrive.local'))) {
+      customer.email = customerData.email;
+      changed = true;
+    }
+    if (customerData.address) {
       customer.address = customerData.address;
       changed = true;
     }
-    if (customerData.drivingLicenceNumber && !customer.drivingLicenceNumber) {
+    if (customerData.drivingLicenceNumber) {
       customer.drivingLicenceNumber = customerData.drivingLicenceNumber;
       changed = true;
     }
-    if (customerData.aadhaarNumber && !customer.aadhaarNumber) {
+    if (customerData.aadhaarNumber) {
       customer.aadhaarNumber = customerData.aadhaarNumber;
       changed = true;
     }
@@ -505,7 +581,7 @@ export const createManualBooking = async (ownerId, customerData, bookingData, ac
     status: bookingData.status || 'confirmed',
     paymentStatus: bookingData.paymentStatus || 'paid',
     notes: bookingData.notes,
-    phone: customerData.phone || '',
+    phone: last10 || customerData.phone || customer.phone || '',
     securityDeposit,
     amountPaid,
     documents
@@ -547,10 +623,15 @@ export const createManualBooking = async (ownerId, customerData, bookingData, ac
     await cacheService.releaseLock(lockKey);
   }
 };
-export const getBookingById = async (bookingId, userId) => {
+export const getBookingById = async (bookingId, userId, ownerId = null) => {
+  const orConditions = [{ customer: userId }, { owner: userId }];
+  if (ownerId && ownerId.toString() !== userId?.toString()) {
+    orConditions.push({ owner: ownerId });
+  }
+
   const booking = await Booking.findOne({
     _id: bookingId,
-    $or: [{ customer: userId }, { owner: userId }]
+    $or: orConditions
   })
     .populate('car', 'make model images pricePerDay category fuelType transmission seats year registrationNumber')
     .populate('customer', 'name email phone');

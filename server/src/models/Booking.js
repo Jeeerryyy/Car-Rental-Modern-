@@ -153,6 +153,8 @@ bookingSchema.index({ createdAt: -1 });
 bookingSchema.index({ owner: 1, status: 1 });
 bookingSchema.index({ owner: 1, status: 1, paymentStatus: 1 });
 bookingSchema.index({ car: 1, startDate: 1, endDate: 1 });
+bookingSchema.index({ phone: 1 });
+bookingSchema.index({ owner: 1, phone: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
 

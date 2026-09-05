@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getBookings, updateBookingStatus, uploadOwnerDocuments, deleteBooking, getInvoiceHTML } from '../api/bookings.js';
+import WhatsAppBookingModal from '../components/common/WhatsAppBookingModal.jsx';
 import toast from 'react-hot-toast';
 
 
@@ -15,6 +16,9 @@ const CANCELLATION_REASONS = [
 ];
 
 export default function Bookings() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get('q') || searchParams.get('search') || '';
+
   const formatUTCDate = (dateString) => {
     if (!dateString) return '—';
     const d = new Date(dateString);
@@ -28,8 +32,20 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [whatsAppModalBooking, setWhatsAppModalBooking] = useState(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Cancel modal state
   const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null, bookingName: '' });
@@ -49,8 +65,9 @@ export default function Bookings() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 20 };
+      const params = { page, limit: 30 };
       if (filter !== 'all') params.status = filter;
+      if (debouncedSearch) params.search = debouncedSearch;
       const res = await getBookings(params);
       setBookings(res.data.data || res.data || []);
     } catch {
@@ -60,7 +77,7 @@ export default function Bookings() {
     }
   };
 
-  useEffect(() => { fetchBookings(); }, [filter, page]);
+  useEffect(() => { fetchBookings(); }, [filter, page, debouncedSearch]);
 
   const handleStatusChange = async (id, newStatus) => {
     try {
@@ -140,6 +157,7 @@ export default function Bookings() {
         }))
       );
 
+      if (!selectedBooking?._id) return;
       const res = await uploadOwnerDocuments(selectedBooking._id, { documents: base64Files });
       toast.success('Documents uploaded successfully');
       
@@ -181,12 +199,67 @@ export default function Bookings() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-12 max-w-[1600px] mx-auto w-full flex flex-col gap-6 sm:gap-8 pb-24 md:pb-6 relative w-full max-w-full overflow-x-hidden">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Bookings</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">Manage all your car rental bookings</p>
+          <h2 className="font-headline-xl text-headline-xl text-primary mb-1">Bookings</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant">Manage and track all customer & offline car bookings</p>
+        </div>
+        <Link
+          to="/bookings/new"
+          className="self-start md:self-auto flex items-center gap-2 px-5 py-2.5 bg-dark text-white font-bold text-sm rounded-xl hover:bg-black/90 transition-all shadow-md shadow-dark/10 active:scale-95 shrink-0"
+        >
+          <span className="material-symbols-outlined text-lg">add_circle</span>
+          <span>Add Offline Booking</span>
+        </Link>
+      </div>
+
+      {/* Modern Search Bar */}
+      <div className="flex flex-col gap-3 w-full">
+        <div className="relative w-full">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl pointer-events-none">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search bookings by customer name, phone number, car make/model, or booking ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-12 py-3.5 bg-surface-container-lowest border border-outline-variant rounded-2xl text-sm font-semibold text-primary placeholder:text-on-surface-variant/60 outline-none focus:border-primary transition-all shadow-sm"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary p-1 rounded-full hover:bg-surface-container transition-colors"
+              title="Clear search"
+            >
+              <span className="material-symbols-outlined text-lg">cancel</span>
+            </button>
+          )}
         </div>
 
+        {debouncedSearch && (
+          <div className="flex items-center justify-between px-4 py-2 bg-surface-container-low border border-outline-variant/60 rounded-xl text-xs text-on-surface-variant">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-base">manage_search</span>
+              <span>
+                Search results for: <strong className="text-primary font-bold">"{debouncedSearch}"</strong>
+                {!loading && (
+                  <span className="ml-1 text-on-surface-variant">
+                    ({bookings.length} {bookings.length === 1 ? 'booking found' : 'bookings found'})
+                  </span>
+                )}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 w-full pb-2">
@@ -206,67 +279,81 @@ export default function Bookings() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 w-full max-w-full min-w-0">
-          {bookings.map(b => (
+          {bookings.filter(Boolean).map(b => (
             <div 
-              key={b._id} 
+              key={b?._id || Math.random()} 
               onClick={() => setSelectedBooking(b)}
               className="p-4 sm:p-5 bg-surface-container-lowest border border-outline-variant rounded-2xl cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden w-full max-w-full min-w-0"
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full min-w-0">
                 <div className="flex-1 min-w-0 w-full overflow-hidden">
                   <div className="flex items-center justify-between lg:justify-start gap-3 mb-2 w-full min-w-0">
-                    <p className="font-bold text-on-surface text-base sm:text-lg group-hover:text-primary transition-colors truncate min-w-0 flex-1 lg:flex-none">{b.customer?.name || 'Customer'}</p>
-                    <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shrink-0 ${statusColors[b.status] || 'bg-gray-100'}`}>{b.status}</span>
+                    <p className="font-bold text-on-surface text-base sm:text-lg group-hover:text-primary transition-colors truncate min-w-0 flex-1 lg:flex-none">{b?.customer?.name || 'Customer'}</p>
+                    <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shrink-0 ${statusColors[b?.status] || 'bg-gray-100'}`}>{b?.status}</span>
                   </div>
                   <div className="flex flex-col gap-1 w-full min-w-0">
                     <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
                       <span className="material-symbols-outlined text-[14px] shrink-0">mail</span>
-                      <span className="truncate break-all min-w-0">{b.customer?.email}</span>
+                      <span className="truncate break-all min-w-0">{b?.customer?.email}</span>
                     </p>
                     <p className="text-xs text-on-surface-variant font-medium flex items-center gap-2 min-w-0 w-full overflow-hidden">
                       <span className="material-symbols-outlined text-[14px] shrink-0">call</span>
-                      <span className="truncate min-w-0">{b.phone || b.customer?.phone || 'Not Provided'}</span>
+                      <span className="truncate min-w-0">{b?.phone || b?.customer?.phone || 'Not Provided'}</span>
                     </p>
                     <p className="text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2 w-full min-w-0">
-                      <span className="font-bold text-on-surface truncate min-w-0 max-w-full">{b.car?.make} {b.car?.model}</span>
+                      <span className="font-bold text-on-surface truncate min-w-0 max-w-full">{b?.car?.make} {b?.car?.model}</span>
                       <span className="opacity-50 shrink-0">·</span>
                       <span className="bg-surface-container px-2 py-0.5 rounded text-[11px] font-bold shrink-0">
-                        {b.startDate ? formatUTCDate(b.startDate) : 'N/A'} – {b.endDate ? formatUTCDate(b.endDate) : 'N/A'}
+                        {b?.startDate ? formatUTCDate(b.startDate) : 'N/A'} – {b?.endDate ? formatUTCDate(b.endDate) : 'N/A'}
                       </span>
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row lg:flex-row sm:items-center justify-between sm:justify-end gap-4 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-0 border-outline-variant min-w-0">
                   <div className="text-left sm:text-right flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-end w-full sm:w-auto min-w-0 shrink-0 gap-2">
-                    <p className="font-black text-xl text-primary shrink-0">₹{Number(b.totalPrice).toLocaleString('en-IN')}</p>
-                    <p className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${b.paymentStatus === 'paid' ? 'text-green-600' : b.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b.paymentStatus}</p>
+                    <p className="font-black text-xl text-primary shrink-0">₹{Number(b?.totalPrice || 0).toLocaleString('en-IN')}</p>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${b?.paymentStatus === 'paid' ? 'text-green-600' : b?.paymentStatus === 'pay_at_car' ? 'text-blue-600' : 'text-yellow-600'}`}>{b?.paymentStatus === 'pay_at_car' ? 'Pay at Car' : b?.paymentStatus}</p>
                   </div>
-                  {nextStatus[b.status] ? (
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end min-w-0">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCancelModal(b._id, b.customer?.name);
-                        }}
-                        className="w-full sm:w-auto px-4 py-2.5 text-xs sm:text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95 text-center shrink-0"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange(b._id, nextStatus[b.status]);
-                        }}
-                        className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10 text-center shrink-0 capitalize"
-                      >
-                        {nextStatus[b.status]}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-secondary self-end sm:self-auto shrink-0">
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </div>
-                  )}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end min-w-0">
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWhatsAppModalBooking(b);
+                      }}
+                      className="w-full sm:w-auto px-3.5 py-2 text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 hover:border-emerald-300 transition-all flex items-center justify-center gap-1.5 shrink-0 active:scale-95 shadow-sm cursor-pointer"
+                      title="Send WhatsApp Reminder or Dispatch Notice"
+                    >
+                      <span className="text-base leading-none">💬</span>
+                      <span>WhatsApp</span>
+                    </button>
+                    {nextStatus[b?.status] ? (
+                      <>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCancelModal(b?._id, b?.customer?.name);
+                          }}
+                          className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm font-bold border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-all active:scale-95 text-center shrink-0"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(b?._id, nextStatus[b?.status]);
+                          }}
+                          className="w-full sm:w-auto px-5 py-2 text-xs sm:text-sm font-bold bg-dark text-white rounded-xl hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-dark/10 text-center shrink-0 capitalize"
+                        >
+                          {nextStatus[b?.status]}
+                        </button>
+                      </>
+                    ) : (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-secondary self-end sm:self-auto shrink-0">
+                        <span className="material-symbols-outlined">chevron_right</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -287,7 +374,7 @@ export default function Bookings() {
                     {selectedBooking.status}
                   </span>
                 </div>
-                <p className="text-secondary text-[10px] md:text-sm mt-1 truncate">ID: {selectedBooking._id}</p>
+                <p className="text-secondary text-[10px] md:text-sm mt-1 truncate">ID: {selectedBooking?._id}</p>
               </div>
               <button onClick={() => setSelectedBooking(null)} className="p-2 hover:bg-surface-container rounded-full transition-colors shrink-0">
                 <span className="material-symbols-outlined">close</span>
@@ -515,10 +602,21 @@ export default function Bookings() {
             </div>
 
             <div className="p-4 sm:p-6 pb-10 border-t border-outline-variant bg-surface-container-low flex flex-col gap-3 sm:gap-4 w-full">
+              {/* WhatsApp Action Button */}
+              <button
+                type="button"
+                onClick={() => setWhatsAppModalBooking(selectedBooking)}
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-center cursor-pointer"
+              >
+                <span className="text-lg">💬</span>
+                <span>Send WhatsApp Reminder & Dispatch Notice</span>
+              </button>
+
               {/* Download Invoice Button */}
-              {['confirmed', 'active', 'completed'].includes(selectedBooking.status) && (
+              {['confirmed', 'active', 'completed'].includes(selectedBooking?.status) && (
                 <button
                   onClick={async () => {
+                    if (!selectedBooking?._id) return;
                     try {
                       const res = await getInvoiceHTML(selectedBooking._id);
                       const newWindow = window.open('', '_blank');
@@ -535,28 +633,28 @@ export default function Bookings() {
                   className="w-full py-3 bg-[#141414] text-white rounded-btn font-bold text-sm shadow-lg shadow-black/10 hover:bg-[#A56A43] transition-all active:scale-[0.98] flex items-center justify-center gap-2 px-4 text-center shrink-0"
                 >
                   <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-                  Download Invoice {selectedBooking.invoiceNumber ? `(${selectedBooking.invoiceNumber})` : ''}
+                  Download Invoice {selectedBooking?.invoiceNumber ? `(${selectedBooking.invoiceNumber})` : ''}
                 </button>
               )}
-              {nextStatus[selectedBooking.status] && (
+              {nextStatus[selectedBooking?.status] && (
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <button 
-                    onClick={() => openCancelModal(selectedBooking._id, selectedBooking.customer?.name)}
+                    onClick={() => openCancelModal(selectedBooking?._id, selectedBooking?.customer?.name)}
                     className="w-full sm:flex-1 py-3 bg-surface hover:bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold text-sm transition-all active:scale-[0.98] text-center"
                   >
                     Cancel Booking
                   </button>
                   <button 
-                    onClick={() => handleStatusChange(selectedBooking._id, nextStatus[selectedBooking.status])}
+                    onClick={() => handleStatusChange(selectedBooking?._id, nextStatus[selectedBooking?.status])}
                     className="w-full sm:flex-1 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/10 hover:bg-primary/90 transition-all active:scale-[0.98] text-center capitalize"
                   >
-                    Mark as {nextStatus[selectedBooking.status]}
+                    Mark as {nextStatus[selectedBooking?.status]}
                   </button>
                 </div>
               )}
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button 
-                  onClick={() => openDeleteModal(selectedBooking._id, selectedBooking.customer?.name)}
+                  onClick={() => openDeleteModal(selectedBooking?._id, selectedBooking?.customer?.name)}
                   className="w-full sm:flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-center"
                 >
                   <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -683,6 +781,12 @@ export default function Bookings() {
           </div>
         </div>
       )}
+      {/* WhatsApp Booking Dispatch & Notification Modal */}
+      <WhatsAppBookingModal
+        isOpen={!!whatsAppModalBooking}
+        onClose={() => setWhatsAppModalBooking(null)}
+        booking={whatsAppModalBooking}
+      />
     </div>
   );
 }

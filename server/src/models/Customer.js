@@ -68,6 +68,14 @@ const customerSchema = new mongoose.Schema({
     default: 0
   },
   lockUntil: Date,
+  passwordResetToken: {
+    type: String,
+    select: false
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -77,6 +85,9 @@ const customerSchema = new mongoose.Schema({
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
+
+customerSchema.index({ phone: 1 });
+customerSchema.index({ name: 1 });
 
 customerSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
